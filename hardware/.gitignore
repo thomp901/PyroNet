@@ -1,0 +1,56 @@
+# For PCBs designed using KiCad: https://www.kicad.org/
+# Format documentation: https://kicad.org/help/file-formats/
+
+# --- Temporary and Backup Files ---
+*.000
+*.bak
+*.bck
+*.kicad_pcb-bak
+*.kicad_sch-bak
+*-backups/
+*-backups
+*-cache*
+*-bak
+*-bak*
+*~
+~*
+_autosave-*
+\#auto_saved_files\#
+\#auto_saved_files#
+*.tmp
+*-save.pro
+*-save.kicad_pcb
+fp-info-cache
+*.lck
+~*.lck
+
+# --- Component and Footprint Caches ---
+python_scripts/__pycache__/
+
+# --- Output and Manufacturing Directories ---
+# Remove these if you prefer to track your manufacturing outputs
+plots/
+gerbers/
+outputs/
+*.gbr
+*.drl
+*.pdf
+*.pos
+*.rpt
+
+# --- Netlist and Autorouter Files ---
+*.net
+*.dsn
+*.ses
+
+# --- Exported BOM and Archive Files ---
+*.xml
+*.csv
+**/*-backups/*.zip
+
+# --- Local Project Settings ---
+# These contain local window positions/settings and usually shouldn't be tracked
+*.kicad_prl
+
+# --- macOS System Files ---
+.DS_Store
