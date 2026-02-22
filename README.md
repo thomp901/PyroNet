@@ -9,7 +9,7 @@ Garrison Thompson
 
 # Hardware
 
-To download **only** the hardware folder that contains the KiCad files, use the following commands:
+To download **only** the hardware folder that contains the KiCad files, run the following commands:
 
 ```bash
 git clone --filter=blob:none --no-checkout https://github.com/thomp901/PyroNet.git
