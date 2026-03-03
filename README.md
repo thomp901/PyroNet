@@ -21,7 +21,7 @@ git checkout main
 
 Then, you can `pull`, `add`, `commit`, and `push` like normal.
 
-To push, use the following commands:
+To push, go to the project directory in your terminal and enter the following commands:
 
 ```bash
 git add .
