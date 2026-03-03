@@ -2618,156 +2618,6 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Diode:CSD01060A"
-			(pin_numbers
-				(hide yes)
-			)
-			(pin_names
-				(offset 1.016)
-				(hide yes)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" "D"
-				(at 0 2.54 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" "CSD01060A"
-				(at 0 -2.54 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" "Package_TO_SOT_THT:TO-220-2_Vertical"
-				(at 0 -4.445 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" "https://www.wolfspeed.com/media/downloads/87/CSD01060.pdf"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Description" "600V, 1A, SiC Schottky Diode, TO-220"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_keywords" "sic diode"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_fp_filters" "TO?220*"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "CSD01060A_0_1"
-				(polyline
-					(pts
-						(xy -1.905 0.635) (xy -1.905 1.27) (xy -1.27 1.27) (xy -1.27 -1.27) (xy -0.635 -1.27) (xy -0.635 -0.635)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 1.27 1.27) (xy 1.27 -1.27) (xy -1.27 0) (xy 1.27 1.27)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 1.27 0) (xy -1.27 0)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "CSD01060A_1_1"
-				(pin passive line
-					(at -3.81 0 0)
-					(length 2.54)
-					(name "K"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 3.81 0 180)
-					(length 2.54)
-					(name "A"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-			(embedded_fonts no)
-		)
 		(symbol "Interface_Ethernet:W5500"
 			(exclude_from_sim no)
 			(in_bom yes)
@@ -6411,12 +6261,6 @@
 		(uuid "0f68a7e6-eaa9-4846-a0ed-b5741486a3b1")
 	)
 	(junction
-		(at 205.74 134.62)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "271e4f0c-da93-4886-9ad3-6caefa358cdc")
-	)
-	(junction
 		(at 152.4 44.45)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -6495,12 +6339,6 @@
 		(uuid "5e0df67c-db77-48a3-b57b-5c87aeb867b7")
 	)
 	(junction
-		(at 208.28 139.7)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "6e15bdfe-ff26-4970-a993-9e35fba394a8")
-	)
-	(junction
 		(at 160.02 80.01)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -6537,12 +6375,6 @@
 		(uuid "93f3a311-7703-4edd-ae13-5af81bef77b9")
 	)
 	(junction
-		(at 212.09 132.08)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "963b93d1-e453-4e59-8dce-15aadc64fe16")
-	)
-	(junction
 		(at 142.24 52.07)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -6577,12 +6409,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "a77047d1-e490-4aeb-a93d-a2e4681c885b")
-	)
-	(junction
-		(at 212.09 142.24)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "af422c57-0cc4-4226-ac60-e52fcaf65dbf")
 	)
 	(junction
 		(at 77.47 135.89)
@@ -6726,7 +6552,7 @@
 	)
 	(wire
 		(pts
-			(xy 196.85 139.7) (xy 208.28 139.7)
+			(xy 196.85 139.7) (xy 213.36 139.7)
 		)
 		(stroke
 			(width 0)
@@ -6876,16 +6702,6 @@
 	)
 	(wire
 		(pts
-			(xy 203.2 142.24) (xy 212.09 142.24)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "2f1bc0d4-15aa-46d5-adca-42cf56b2d26f")
-	)
-	(wire
-		(pts
 			(xy 111.76 44.45) (xy 121.92 44.45)
 		)
 		(stroke
@@ -6903,16 +6719,6 @@
 			(type default)
 		)
 		(uuid "30eac240-0487-4421-adaa-fcb6df969435")
-	)
-	(wire
-		(pts
-			(xy 205.74 120.65) (xy 205.74 123.19)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "328e7627-c7c2-4b53-8d16-e3647c384a0d")
 	)
 	(wire
 		(pts
@@ -6986,7 +6792,7 @@
 	)
 	(wire
 		(pts
-			(xy 212.09 142.24) (xy 213.36 142.24)
+			(xy 204.47 142.24) (xy 213.36 142.24)
 		)
 		(stroke
 			(width 0)
@@ -7096,7 +6902,7 @@
 	)
 	(wire
 		(pts
-			(xy 196.85 132.08) (xy 212.09 132.08)
+			(xy 196.85 132.08) (xy 213.36 132.08)
 		)
 		(stroke
 			(width 0)
@@ -7113,16 +6919,6 @@
 			(type default)
 		)
 		(uuid "4b523aea-0975-41bc-aff7-93d08cddf9cb")
-	)
-	(wire
-		(pts
-			(xy 212.09 127) (xy 212.09 132.08)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "4d72ca7f-a447-4480-80ea-5cdf7bec3548")
 	)
 	(wire
 		(pts
@@ -7246,16 +7042,6 @@
 	)
 	(wire
 		(pts
-			(xy 205.74 130.81) (xy 205.74 134.62)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "605ddce8-af3e-4f7d-85f2-cee661e6063a")
-	)
-	(wire
-		(pts
 			(xy 157.48 104.14) (xy 163.83 104.14)
 		)
 		(stroke
@@ -7293,16 +7079,6 @@
 			(type default)
 		)
 		(uuid "66b9fc0b-f2fe-4078-9037-e58536912798")
-	)
-	(wire
-		(pts
-			(xy 212.09 132.08) (xy 213.36 132.08)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "675e0df1-99d5-4d47-b702-5fa94fb25cfb")
 	)
 	(wire
 		(pts
@@ -7406,7 +7182,7 @@
 	)
 	(wire
 		(pts
-			(xy 205.74 134.62) (xy 213.36 134.62)
+			(xy 204.47 134.62) (xy 213.36 134.62)
 		)
 		(stroke
 			(width 0)
@@ -7686,16 +7462,6 @@
 	)
 	(wire
 		(pts
-			(xy 208.28 146.05) (xy 208.28 139.7)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "a23887cc-8e79-4ec7-ba34-e8a2385dfd18")
-	)
-	(wire
-		(pts
 			(xy 152.4 44.45) (xy 152.4 45.72)
 		)
 		(stroke
@@ -7763,16 +7529,6 @@
 			(type default)
 		)
 		(uuid "a82ce5dc-2c1f-4bed-89ba-1b9a5125b95d")
-	)
-	(wire
-		(pts
-			(xy 208.28 139.7) (xy 213.36 139.7)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "a9857fc1-b34d-41e9-a3e0-257d3ab6c018")
 	)
 	(wire
 		(pts
@@ -8026,16 +7782,6 @@
 	)
 	(wire
 		(pts
-			(xy 208.28 153.67) (xy 208.28 156.21)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "e56da3b1-37e1-4d26-ba39-5d41056c2017")
-	)
-	(wire
-		(pts
 			(xy 82.55 80.01) (xy 87.63 80.01)
 		)
 		(stroke
@@ -8056,23 +7802,13 @@
 	)
 	(wire
 		(pts
-			(xy 191.77 142.24) (xy 198.12 142.24)
+			(xy 191.77 142.24) (xy 199.39 142.24)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
 		(uuid "e799e4b5-303d-446d-b6a1-35c0c8de500c")
-	)
-	(wire
-		(pts
-			(xy 204.47 134.62) (xy 205.74 134.62)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "ea0a0f36-e9fc-46be-a7c5-9aaf4c16ea5f")
 	)
 	(wire
 		(pts
@@ -8530,76 +8266,6 @@
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
 					(reference "C29")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Diode:CSD01060A")
-		(at 212.09 146.05 270)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "04e3a953-8e26-42e0-98e1-247003e4df79")
-		(property "Reference" "D8"
-			(at 214.63 144.4624 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "CSD01060A"
-			(at 214.63 147.0024 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Package_TO_SOT_THT:TO-220-2_Vertical"
-			(at 207.645 146.05 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "https://www.wolfspeed.com/media/downloads/87/CSD01060.pdf"
-			(at 212.09 146.05 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "600V, 1A, SiC Schottky Diode, TO-220"
-			(at 212.09 146.05 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "830fd46d-5b5c-4e02-a1c7-a2719524822d")
-		)
-		(pin "2"
-			(uuid "98b893d5-1e4d-423a-bf83-df615c22c76f")
-		)
-		(instances
-			(project "Senior_Design"
-				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
-					(reference "D8")
 					(unit 1)
 				)
 			)
@@ -9174,7 +8840,7 @@
 	)
 	(symbol
 		(lib_id "Device:R_Small")
-		(at 200.66 142.24 90)
+		(at 201.93 142.24 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -9182,7 +8848,7 @@
 		(dnp no)
 		(uuid "34f97907-f59c-468f-9232-8b43988e5a7e")
 		(property "Reference" "R8"
-			(at 200.406 146.812 90)
+			(at 201.676 146.812 90)
 			(effects
 				(font
 					(size 1.016 1.016)
@@ -9190,7 +8856,7 @@
 			)
 		)
 		(property "Value" "330R"
-			(at 200.914 144.526 90)
+			(at 202.184 144.526 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9198,7 +8864,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
-			(at 200.66 142.24 0)
+			(at 201.93 142.24 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9207,7 +8873,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 200.66 142.24 0)
+			(at 201.93 142.24 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9216,7 +8882,7 @@
 			)
 		)
 		(property "Description" "Resistor, small symbol"
-			(at 200.66 142.24 0)
+			(at 201.93 142.24 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9650,72 +9316,6 @@
 		)
 	)
 	(symbol
-		(lib_id "power:GND")
-		(at 212.09 119.38 180)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "41811513-5c3f-4e89-8337-59bc312d5a03")
-		(property "Reference" "#PWR016"
-			(at 212.09 113.03 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "GND"
-			(at 212.09 114.3 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 212.09 119.38 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 212.09 119.38 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 212.09 119.38 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "12c5f511-1828-4f96-a87a-b1c280a42fe7")
-		)
-		(instances
-			(project "Senior_Design"
-				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
-					(reference "#PWR016")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Device:C_Small")
 		(at 166.37 104.14 90)
 		(unit 1)
@@ -9955,75 +9555,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Diode:CSD01060A")
-		(at 208.28 149.86 270)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "4e66c5ab-7f28-4901-8cbd-09a8f700573e")
-		(property "Reference" "D4"
-			(at 202.946 149.606 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "CSD01060A"
-			(at 195.834 151.638 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Package_TO_SOT_THT:TO-220-2_Vertical"
-			(at 203.835 149.86 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "https://www.wolfspeed.com/media/downloads/87/CSD01060.pdf"
-			(at 208.28 149.86 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "600V, 1A, SiC Schottky Diode, TO-220"
-			(at 208.28 149.86 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "26f258c8-451d-42b9-acfc-fa3191c49c8d")
-		)
-		(pin "2"
-			(uuid "6bb78b8b-62a4-4fec-b7bd-262a8f0aab58")
-		)
-		(instances
-			(project "Senior_Design"
-				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
-					(reference "D4")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Device:C_Small")
 		(at 152.4 48.26 0)
 		(unit 1)
@@ -10161,72 +9692,6 @@
 		)
 	)
 	(symbol
-		(lib_id "power:GND")
-		(at 205.74 120.65 180)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "5d2ccae8-5e60-468f-8e21-f0dc8d167c16")
-		(property "Reference" "#PWR011"
-			(at 205.74 114.3 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "GND"
-			(at 205.74 115.57 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 205.74 120.65 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 205.74 120.65 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 205.74 120.65 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "cc06fa04-6384-4891-9dc8-7171ea8dd9ab")
-		)
-		(instances
-			(project "Senior_Design"
-				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
-					(reference "#PWR011")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "power:+3.3VA")
 		(at 160.02 67.31 0)
 		(unit 1)
@@ -10286,76 +9751,6 @@
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
 					(reference "#PWR017")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Diode:CSD01060A")
-		(at 212.09 123.19 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "67f9591f-2308-42ca-9f92-a8d2f39ec979")
-		(property "Reference" "D6"
-			(at 214.63 122.2374 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
-		(property "Value" "CSD01060A"
-			(at 214.63 124.7774 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
-		(property "Footprint" "Package_TO_SOT_THT:TO-220-2_Vertical"
-			(at 216.535 123.19 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "https://www.wolfspeed.com/media/downloads/87/CSD01060.pdf"
-			(at 212.09 123.19 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "600V, 1A, SiC Schottky Diode, TO-220"
-			(at 212.09 123.19 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "c57b79d6-0fe2-4b93-b701-da0687942b33")
-		)
-		(pin "2"
-			(uuid "fa54d373-6139-4e12-9505-1fa47dfc1c18")
-		)
-		(instances
-			(project "Senior_Design"
-				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
-					(reference "D6")
 					(unit 1)
 				)
 			)
@@ -11189,72 +10584,6 @@
 		)
 	)
 	(symbol
-		(lib_id "power:GND")
-		(at 212.09 149.86 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "bd269e9b-dae2-48ce-b8bc-f7a521eae263")
-		(property "Reference" "#PWR025"
-			(at 212.09 156.21 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "GND"
-			(at 212.09 154.94 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 212.09 149.86 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 212.09 149.86 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 212.09 149.86 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "8a3d3995-e99d-4590-8fd9-c33f83a17dda")
-		)
-		(instances
-			(project "Senior_Design"
-				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
-					(reference "#PWR025")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Device:R_Small")
 		(at 58.42 118.11 0)
 		(unit 1)
@@ -11724,142 +11053,6 @@
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
 					(reference "R12")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 208.28 156.21 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "d970ec4f-b682-4a01-8e5c-be96bf54857e")
-		(property "Reference" "#PWR014"
-			(at 208.28 162.56 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "GND"
-			(at 208.28 161.29 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 208.28 156.21 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 208.28 156.21 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 208.28 156.21 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "ab57e8d7-6a84-43db-accb-40770da59751")
-		)
-		(instances
-			(project "Senior_Design"
-				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
-					(reference "#PWR014")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Diode:CSD01060A")
-		(at 205.74 127 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "dae2c60d-2025-402f-bbea-fd8cba9f5f82")
-		(property "Reference" "D3"
-			(at 208.28 126.0474 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
-		(property "Value" "CSD01060A"
-			(at 208.28 128.5874 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
-		(property "Footprint" "Package_TO_SOT_THT:TO-220-2_Vertical"
-			(at 210.185 127 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "https://www.wolfspeed.com/media/downloads/87/CSD01060.pdf"
-			(at 205.74 127 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "600V, 1A, SiC Schottky Diode, TO-220"
-			(at 205.74 127 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "7d17cb7a-da4f-4918-b862-eb95569ef5c8")
-		)
-		(pin "2"
-			(uuid "39fed7f6-fafa-44d4-8e82-b5e4d3cd6109")
-		)
-		(instances
-			(project "Senior_Design"
-				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
-					(reference "D3")
 					(unit 1)
 				)
 			)
