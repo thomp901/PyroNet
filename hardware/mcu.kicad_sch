@@ -3610,6 +3610,12 @@
 		(uuid "8bc954aa-a84d-476e-9226-0b2c443e8d95")
 	)
 	(junction
+		(at 114.3 29.21)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "0a3ffb90-805e-4d91-ba36-09750139580d")
+	)
+	(junction
 		(at 210.82 22.86)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -3674,6 +3680,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "45c7e0c1-b918-4e25-abf8-bb6dbef2ce26")
+	)
+	(junction
+		(at 114.3 31.75)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "512562d8-515b-462b-885a-9ddbdbd0a4e6")
 	)
 	(junction
 		(at 153.67 54.61)
@@ -3932,6 +3944,16 @@
 			(type default)
 		)
 		(uuid "20176229-d0a2-45ae-8c4e-47cf8a749978")
+	)
+	(wire
+		(pts
+			(xy 114.3 34.29) (xy 114.3 31.75)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2075282e-1785-46c0-93ff-3fe88dd24572")
 	)
 	(wire
 		(pts
@@ -4345,7 +4367,7 @@
 	)
 	(wire
 		(pts
-			(xy 109.22 29.21) (xy 127 29.21)
+			(xy 109.22 29.21) (xy 114.3 29.21)
 		)
 		(stroke
 			(width 0)
@@ -4362,16 +4384,6 @@
 			(type default)
 		)
 		(uuid "914a5f9c-cb07-4d21-a77a-0b2ac2554a01")
-	)
-	(wire
-		(pts
-			(xy 109.22 34.29) (xy 127 34.29)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "930dbc3e-1584-445d-92b6-d1123acd8430")
 	)
 	(wire
 		(pts
@@ -4442,6 +4454,16 @@
 			(type default)
 		)
 		(uuid "a282832e-d74d-4e0c-90ee-10f0182f4358")
+	)
+	(wire
+		(pts
+			(xy 114.3 31.75) (xy 114.3 29.21)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a355ecd1-d58b-49d3-aab0-7b14c78547fa")
 	)
 	(wire
 		(pts
@@ -4545,6 +4567,16 @@
 	)
 	(wire
 		(pts
+			(xy 114.3 29.21) (xy 127 29.21)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c596747b-2e2d-4f2e-aaee-134500df9ad4")
+	)
+	(wire
+		(pts
 			(xy 109.22 39.37) (xy 127 39.37)
 		)
 		(stroke
@@ -4592,6 +4624,16 @@
 			(type default)
 		)
 		(uuid "d70d1d1b-a986-4f03-9a54-a17268aa8196")
+	)
+	(wire
+		(pts
+			(xy 109.22 34.29) (xy 114.3 34.29)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "db24723f-b23b-49ce-9856-db721ca7f68d")
 	)
 	(wire
 		(pts
@@ -4924,7 +4966,7 @@
 		(uuid "82a1f2aa-dda8-4e84-a4b3-32ad6937d001")
 	)
 	(label "PAVDD"
-		(at 127 34.29 0)
+		(at 115.57 34.29 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5231,17 +5273,6 @@
 			(justify left)
 		)
 		(uuid "a846d62d-be6d-44c9-a15c-a05ba7700163")
-	)
-	(hierarchical_label "BUCK_3.3V"
-		(shape input)
-		(at 114.3 31.75 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "b3175e84-a785-4461-b650-ba2ca4da526a")
 	)
 	(hierarchical_label "BUCK_3.3V"
 		(shape input)
