@@ -20,3 +20,14 @@ git checkout main
 ```
 
 Then, you can `pull`, `add`, `commit`, and `push` like normal.
+
+To push, use the folling commands:
+
+```bash
+git add .
+git commit -m 'YOUR MESSAGE'
+git push
+```
+
+Replace `YOUR MESSAGE` with a brief description of your changes.
+
