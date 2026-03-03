@@ -21,7 +21,7 @@ git checkout main
 
 Then, you can `pull`, `add`, `commit`, and `push` like normal.
 
-To push, use the folling commands:
+To push, use the following commands:
 
 ```bash
 git add .
