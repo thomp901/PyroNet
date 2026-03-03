@@ -5365,7 +5365,7 @@
 				(hide yes)
 			)
 		)
-		(property "Value" "Crystal_GND2"
+		(property "Value" "HF_Crystal"
 			(at 132.08 104.902 90)
 			(effects
 				(font
@@ -5638,7 +5638,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "Crystal"
+		(property "Value" "LF_Crystal"
 			(at 124.46 90.1699 90)
 			(effects
 				(font
