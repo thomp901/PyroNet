@@ -3616,6 +3616,18 @@
 		(uuid "10a94bbf-2f81-4fd7-b474-0b6346de408f")
 	)
 	(junction
+		(at 124.46 64.77)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "16fad6ed-43e1-4ec7-98bb-fa51e86fa418")
+	)
+	(junction
+		(at 124.46 50.8)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "17f84846-4feb-4cab-a18e-5626c88556f9")
+	)
+	(junction
 		(at 181.61 41.91)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -3698,6 +3710,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "64ae5563-3f61-47d0-82c3-8c870697cedb")
+	)
+	(junction
+		(at 115.57 62.23)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "7fa0f177-4a9c-42ea-999a-ca6bc67a9755")
 	)
 	(junction
 		(at 207.01 114.3)
@@ -3814,6 +3832,16 @@
 			(type default)
 		)
 		(uuid "0acc684e-b2e9-46f5-a42b-7d6657e493bf")
+	)
+	(wire
+		(pts
+			(xy 132.08 62.23) (xy 115.57 62.23)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0d6795ca-c473-49d8-bed2-17052c1129a5")
 	)
 	(wire
 		(pts
@@ -3977,6 +4005,16 @@
 	)
 	(wire
 		(pts
+			(xy 124.46 64.77) (xy 109.22 64.77)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "420b0c37-957c-47bb-a47a-f637cbdc98f0")
+	)
+	(wire
+		(pts
 			(xy 166.37 54.61) (xy 171.45 54.61)
 		)
 		(stroke
@@ -4034,6 +4072,26 @@
 			(type default)
 		)
 		(uuid "58322c69-ad59-42a9-bb27-6a8c9e2ce0c4")
+	)
+	(wire
+		(pts
+			(xy 124.46 50.8) (xy 125.73 50.8)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "58df169c-2599-494d-9d73-4976399344fe")
+	)
+	(wire
+		(pts
+			(xy 115.57 60.96) (xy 115.57 62.23)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5ff76bb1-7d5c-4940-924b-1a26fa0e3c08")
 	)
 	(wire
 		(pts
@@ -4144,6 +4202,16 @@
 			(type default)
 		)
 		(uuid "72efe294-8f79-4dee-8b87-53b1787054d3")
+	)
+	(wire
+		(pts
+			(xy 115.57 62.23) (xy 109.22 62.23)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "746cec19-8df6-4337-b1fd-185a7f930f2e")
 	)
 	(wire
 		(pts
@@ -4467,6 +4535,16 @@
 	)
 	(wire
 		(pts
+			(xy 124.46 60.96) (xy 124.46 64.77)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c362edbe-00dc-463c-88ef-9bfc08a35e22")
+	)
+	(wire
+		(pts
 			(xy 109.22 39.37) (xy 127 39.37)
 		)
 		(stroke
@@ -4474,6 +4552,16 @@
 			(type default)
 		)
 		(uuid "cbcf5b91-45af-4055-a975-0f0dc6492c13")
+	)
+	(wire
+		(pts
+			(xy 132.08 64.77) (xy 124.46 64.77)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "cec37c40-20e9-41c9-a05f-ff5bed9987d9")
 	)
 	(wire
 		(pts
@@ -4604,6 +4692,36 @@
 			(type default)
 		)
 		(uuid "f4be987d-e079-48d5-a98e-dc9aa6b9b7a1")
+	)
+	(wire
+		(pts
+			(xy 115.57 50.8) (xy 124.46 50.8)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f5313860-333a-43c2-b456-dcd65e560a86")
+	)
+	(wire
+		(pts
+			(xy 124.46 50.8) (xy 124.46 53.34)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f65e0485-aec8-4ee6-8707-2eb3e7e1b924")
+	)
+	(wire
+		(pts
+			(xy 115.57 53.34) (xy 115.57 50.8)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f69d2d4a-d139-425e-b755-74e07edb37de")
 	)
 	(wire
 		(pts
@@ -5017,7 +5135,7 @@
 	)
 	(hierarchical_label "SDA"
 		(shape bidirectional)
-		(at 109.22 62.23 0)
+		(at 132.08 62.23 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5028,7 +5146,7 @@
 	)
 	(hierarchical_label "SCL"
 		(shape output)
-		(at 109.22 64.77 0)
+		(at 132.08 64.77 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5124,6 +5242,17 @@
 			(justify left)
 		)
 		(uuid "b3175e84-a785-4461-b650-ba2ca4da526a")
+	)
+	(hierarchical_label "BUCK_3.3V"
+		(shape input)
+		(at 125.73 50.8 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "be8aaab5-21b0-486b-b927-4f52e9d93dc3")
 	)
 	(hierarchical_label "BUCK_3.3V"
 		(shape input)
@@ -7436,6 +7565,75 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:R")
+		(at 115.57 57.15 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "7d351182-6170-4473-81f2-429fb7c11174")
+		(property "Reference" "R40"
+			(at 118.618 56.642 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "4.7k"
+			(at 117.602 58.928 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
+			(at 113.792 57.15 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 115.57 57.15 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 115.57 57.15 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "687fb4f2-0eaf-41aa-9d60-d59b6424cb6c")
+		)
+		(pin "2"
+			(uuid "8f45e911-6161-44c4-accf-d74eb131fdca")
+		)
+		(instances
+			(project "Senior_Design"
+				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/eaf224bf-a12f-4d12-aa0a-28551b47d007"
+					(reference "R40")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:C")
 		(at 214.63 118.11 0)
 		(unit 1)
@@ -7500,6 +7698,75 @@
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/eaf224bf-a12f-4d12-aa0a-28551b47d007"
 					(reference "C22")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 124.46 57.15 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "82186586-fdda-46f8-864e-72d55ec33a00")
+		(property "Reference" "R41"
+			(at 127.508 56.642 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "4.7k"
+			(at 126.492 58.928 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
+			(at 122.682 57.15 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 124.46 57.15 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 124.46 57.15 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "2e041b16-2238-438b-ab14-edc2a2cab70c")
+		)
+		(pin "2"
+			(uuid "a4f372c3-449b-4ba3-978c-61cc82a407a2")
+		)
+		(instances
+			(project "Senior_Design"
+				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/eaf224bf-a12f-4d12-aa0a-28551b47d007"
+					(reference "R41")
 					(unit 1)
 				)
 			)

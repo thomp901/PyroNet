@@ -5023,7 +5023,7 @@
 	)
 	(wire
 		(pts
-			(xy 116.84 88.9) (xy 116.84 97.79)
+			(xy 116.84 88.9) (xy 116.84 96.52)
 		)
 		(stroke
 			(width 0)
@@ -5423,16 +5423,6 @@
 	)
 	(wire
 		(pts
-			(xy 105.41 86.36) (xy 105.41 97.79)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "8ab21b06-d1e6-4dae-94f0-5ae56e426bd7")
-	)
-	(wire
-		(pts
 			(xy 104.14 45.72) (xy 111.76 45.72)
 		)
 		(stroke
@@ -5513,7 +5503,7 @@
 	)
 	(wire
 		(pts
-			(xy 128.27 97.79) (xy 128.27 91.44)
+			(xy 128.27 96.52) (xy 128.27 91.44)
 		)
 		(stroke
 			(width 0)
@@ -6153,16 +6143,6 @@
 	)
 	(wire
 		(pts
-			(xy 95.25 83.82) (xy 95.25 97.79)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "f25d22a0-e5af-4e07-b573-6c12ce5c8245")
-	)
-	(wire
-		(pts
 			(xy 123.19 57.15) (xy 130.81 57.15)
 		)
 		(stroke
@@ -6489,28 +6469,6 @@
 		)
 		(uuid "33250adb-9a2b-4ac6-a3f1-82aa529e79a3")
 	)
-	(hierarchical_label "BUCK_3.3V"
-		(shape input)
-		(at 95.25 105.41 270)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "3bc844e9-3875-4725-83ad-7013e7064348")
-	)
-	(hierarchical_label "BUCK_3.3V"
-		(shape input)
-		(at 105.41 105.41 270)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "406312fb-9d6a-4032-b9ec-3dd2cf850863")
-	)
 	(hierarchical_label "SDA"
 		(shape bidirectional)
 		(at 95.25 83.82 180)
@@ -6524,7 +6482,7 @@
 	)
 	(hierarchical_label "BUCK_3.3V"
 		(shape input)
-		(at 116.84 105.41 270)
+		(at 116.84 104.14 270)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6546,7 +6504,7 @@
 	)
 	(hierarchical_label "BUCK_3.3V"
 		(shape input)
-		(at 128.27 105.41 270)
+		(at 128.27 104.14 270)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -9194,75 +9152,6 @@
 	)
 	(symbol
 		(lib_id "Device:R")
-		(at 95.25 101.6 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "71938b6c-8633-4fa4-9213-dd40e9544fbe")
-		(property "Reference" "R_SDA1"
-			(at 96.774 99.822 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "4.7K"
-			(at 97.028 103.378 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
-			(at 93.472 101.6 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 95.25 101.6 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor"
-			(at 95.25 101.6 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "dfe729e8-6ee2-4355-90ad-7e801dda663d")
-		)
-		(pin "1"
-			(uuid "f4e9692a-9810-4166-886d-9fcbb836c266")
-		)
-		(instances
-			(project "Senior_Design"
-				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
-					(reference "R_SDA1")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R")
 		(at 257.81 25.4 0)
 		(unit 1)
 		(exclude_from_sim no)
@@ -9403,7 +9292,7 @@
 	)
 	(symbol
 		(lib_id "Device:R")
-		(at 116.84 101.6 0)
+		(at 116.84 100.33 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -9412,7 +9301,7 @@
 		(fields_autoplaced yes)
 		(uuid "76c066f5-cd26-4c56-bbf2-23bd5ac48372")
 		(property "Reference" "R_INT1"
-			(at 119.38 100.3299 0)
+			(at 119.38 99.0599 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9421,7 +9310,7 @@
 			)
 		)
 		(property "Value" "10K"
-			(at 119.38 102.8699 0)
+			(at 119.38 101.5999 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9430,7 +9319,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
-			(at 115.062 101.6 90)
+			(at 115.062 100.33 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9439,7 +9328,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 116.84 101.6 0)
+			(at 116.84 100.33 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9448,7 +9337,7 @@
 			)
 		)
 		(property "Description" "Resistor"
-			(at 116.84 101.6 0)
+			(at 116.84 100.33 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12439,7 +12328,7 @@
 	)
 	(symbol
 		(lib_id "Device:R")
-		(at 128.27 101.6 0)
+		(at 128.27 100.33 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -12447,7 +12336,7 @@
 		(dnp no)
 		(uuid "e81b7485-03fa-4251-be0b-df0dd3006213")
 		(property "Reference" "R_QON1"
-			(at 130.048 99.822 0)
+			(at 130.048 98.552 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12456,7 +12345,7 @@
 			)
 		)
 		(property "Value" "100k"
-			(at 130.302 103.632 0)
+			(at 130.302 102.362 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12465,7 +12354,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
-			(at 126.492 101.6 90)
+			(at 126.492 100.33 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12474,7 +12363,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 128.27 101.6 0)
+			(at 128.27 100.33 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12483,7 +12372,7 @@
 			)
 		)
 		(property "Description" "Resistor"
-			(at 128.27 101.6 0)
+			(at 128.27 100.33 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -12632,76 +12521,6 @@
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
 					(reference "#PWR063")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R")
-		(at 105.41 101.6 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "f23acfbe-888c-4da8-8eeb-fa16d47f3133")
-		(property "Reference" "R_SCL1"
-			(at 107.95 100.3299 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "4.7K"
-			(at 107.95 102.8699 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
-			(at 103.632 101.6 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 105.41 101.6 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor"
-			(at 105.41 101.6 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "41d8fa73-ce69-4b3c-9ad8-35aa6c4aae0e")
-		)
-		(pin "1"
-			(uuid "18162a58-6205-4ede-b6a6-411867df681c")
-		)
-		(instances
-			(project "Senior_Design"
-				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
-					(reference "R_SCL1")
 					(unit 1)
 				)
 			)
