@@ -21,6 +21,8 @@ git checkout main
 
 Then, you can `pull`, `add`, `commit`, and `push` like normal.
 
+## Pushing
+
 To push, go to the project directory in your terminal and enter the following commands:
 
 ```bash
@@ -30,4 +32,16 @@ git push
 ```
 
 Replace `YOUR MESSAGE` with a brief description of your changes.
+
+## Discarding your changes
+
+To **discard your changes** and pull the latest version, enter: 
+
+```bash
+git fetch --all
+git reset --hard origin/main
+```
+
+> [!WARNING]
+> Warning: This will permanently delete any local work.
 
