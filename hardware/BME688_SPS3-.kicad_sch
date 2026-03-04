@@ -1426,17 +1426,34 @@
 			(embedded_fonts no)
 		)
 	)
+	(rectangle
+		(start 130.81 51.054)
+		(end 181.864 84.328)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(fill
+			(type none)
+		)
+		(uuid 7ff76969-a151-4ed3-8acb-fbd5202b929a)
+	)
+	(text "Do we need this?"
+		(exclude_from_sim no)
+		(at 165.1 79.502 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+				(color 255 0 0 1)
+			)
+		)
+		(uuid "4dbdda80-bf89-428f-9c2c-3ed10603c5f0")
+	)
 	(junction
 		(at 135.89 104.14)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "3a7a19dc-8653-43e0-9bcb-55cadc85d833")
-	)
-	(junction
-		(at 190.5 95.25)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "4f2345fd-52f2-4750-802d-887d94c26c14")
 	)
 	(junction
 		(at 121.92 121.92)
@@ -1463,6 +1480,12 @@
 		(uuid "8ebe90e1-706a-408d-9b95-2fa80a183371")
 	)
 	(junction
+		(at 190.5 101.6)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "94d83d6f-2550-42a4-a5fd-db336119a194")
+	)
+	(junction
 		(at 130.81 109.22)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -1480,6 +1503,16 @@
 	)
 	(wire
 		(pts
+			(xy 198.12 101.6) (xy 200.66 101.6)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1fe76f2a-1ab7-4353-a03c-c90775ebdc60")
+	)
+	(wire
+		(pts
 			(xy 135.89 120.65) (xy 135.89 121.92)
 		)
 		(stroke
@@ -1487,16 +1520,6 @@
 			(type default)
 		)
 		(uuid "2faa1773-c5a3-4a3c-8c55-2b3c9e0da58e")
-	)
-	(wire
-		(pts
-			(xy 190.5 93.98) (xy 190.5 95.25)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "3569dd34-cc32-4e1e-9573-441399ebd124")
 	)
 	(wire
 		(pts
@@ -1520,6 +1543,16 @@
 	)
 	(wire
 		(pts
+			(xy 190.5 93.98) (xy 190.5 101.6)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "54f8d55d-6682-4fd5-b7b6-d5eeb5ffe1ef")
+	)
+	(wire
+		(pts
 			(xy 118.11 114.3) (xy 121.92 114.3)
 		)
 		(stroke
@@ -1537,16 +1570,6 @@
 			(type default)
 		)
 		(uuid "65b1c697-5200-4e00-9ff8-d71ee2b55718")
-	)
-	(wire
-		(pts
-			(xy 190.5 95.25) (xy 190.5 109.22)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "65eaec9b-eb4f-4098-b9a5-91b041f307bc")
 	)
 	(wire
 		(pts
@@ -1650,6 +1673,16 @@
 	)
 	(wire
 		(pts
+			(xy 190.5 101.6) (xy 190.5 109.22)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "bc845a51-efee-48de-be3b-b52055b05d85")
+	)
+	(wire
+		(pts
 			(xy 190.5 109.22) (xy 193.04 109.22)
 		)
 		(stroke
@@ -1720,7 +1753,7 @@
 	)
 	(hierarchical_label "SDA"
 		(shape bidirectional)
-		(at 148.59 72.39 180)
+		(at 139.7 69.85 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1742,7 +1775,7 @@
 	)
 	(hierarchical_label "BUCK_3.3V"
 		(shape input)
-		(at 153.67 67.31 90)
+		(at 144.78 64.77 90)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1764,7 +1797,7 @@
 	)
 	(hierarchical_label "SCL"
 		(shape input)
-		(at 148.59 74.93 180)
+		(at 139.7 72.39 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1808,7 +1841,7 @@
 	)
 	(hierarchical_label "SDA"
 		(shape bidirectional)
-		(at 158.75 72.39 0)
+		(at 149.86 69.85 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1830,7 +1863,7 @@
 	)
 	(hierarchical_label "SCL"
 		(shape input)
-		(at 158.75 74.93 0)
+		(at 149.86 72.39 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1977,7 +2010,7 @@
 	)
 	(symbol
 		(lib_id "Power_Protection:USBLC6-2P6")
-		(at 153.67 72.39 0)
+		(at 144.78 69.85 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -1986,7 +2019,7 @@
 		(fields_autoplaced yes)
 		(uuid "514f0d22-5270-4410-b96f-af4e3c428744")
 		(property "Reference" "U59"
-			(at 155.3211 64.77 0)
+			(at 146.4311 62.23 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1995,7 +2028,7 @@
 			)
 		)
 		(property "Value" "USBLC6-2P6"
-			(at 155.3211 67.31 0)
+			(at 146.4311 64.77 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2004,7 +2037,7 @@
 			)
 		)
 		(property "Footprint" "Package_TO_SOT_SMD:SOT-666"
-			(at 154.686 79.121 0)
+			(at 145.796 76.581 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2015,7 +2048,7 @@
 			)
 		)
 		(property "Datasheet" "https://www.st.com/resource/en/datasheet/usblc6-2.pdf"
-			(at 154.686 81.026 0)
+			(at 145.796 78.486 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2025,7 +2058,7 @@
 			)
 		)
 		(property "Description" "Very low capacitance ESD protection diode, 2 data-line, SOT-666"
-			(at 153.67 72.39 0)
+			(at 144.78 69.85 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2538,7 +2571,7 @@
 	)
 	(symbol
 		(lib_id "Diode:CSD01060A")
-		(at 194.31 95.25 0)
+		(at 194.31 101.6 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -2546,7 +2579,7 @@
 		(dnp no)
 		(uuid "c3466c38-4650-42f7-83b8-e136cbe143f4")
 		(property "Reference" "D11"
-			(at 187.198 94.488 90)
+			(at 196.596 98.044 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2555,7 +2588,7 @@
 			)
 		)
 		(property "Value" "CSD01060A"
-			(at 188.976 91.694 90)
+			(at 203.962 95.504 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2564,7 +2597,7 @@
 			)
 		)
 		(property "Footprint" "Package_TO_SOT_THT:TO-220-2_Vertical"
-			(at 194.31 99.695 0)
+			(at 194.31 106.045 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2573,7 +2606,7 @@
 			)
 		)
 		(property "Datasheet" "https://www.wolfspeed.com/media/downloads/87/CSD01060.pdf"
-			(at 194.31 95.25 0)
+			(at 194.31 101.6 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2582,7 +2615,7 @@
 			)
 		)
 		(property "Description" "600V, 1A, SiC Schottky Diode, TO-220"
-			(at 194.31 95.25 0)
+			(at 194.31 101.6 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2607,16 +2640,15 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 198.12 95.25 90)
+		(at 200.66 101.6 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "d63ed01e-1889-4f4a-8325-3081c4347d36")
 		(property "Reference" "#PWR0116"
-			(at 204.47 95.25 0)
+			(at 200.66 107.95 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2625,16 +2657,15 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 201.93 95.2499 90)
+			(at 204.724 104.394 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right)
 			)
 		)
 		(property "Footprint" ""
-			(at 198.12 95.25 0)
+			(at 200.66 101.6 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2643,7 +2674,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 198.12 95.25 0)
+			(at 200.66 101.6 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2652,7 +2683,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 198.12 95.25 0)
+			(at 200.66 101.6 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2674,7 +2705,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 153.67 80.01 0)
+		(at 144.78 77.47 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -2683,7 +2714,7 @@
 		(fields_autoplaced yes)
 		(uuid "edd1925b-653b-418d-8b8a-a096204985e8")
 		(property "Reference" "#PWR0114"
-			(at 153.67 86.36 0)
+			(at 144.78 83.82 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2692,7 +2723,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 156.21 81.2799 0)
+			(at 147.32 78.7399 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2701,7 +2732,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 153.67 80.01 0)
+			(at 144.78 77.47 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2710,7 +2741,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 153.67 80.01 0)
+			(at 144.78 77.47 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2719,7 +2750,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 153.67 80.01 0)
+			(at 144.78 77.47 0)
 			(effects
 				(font
 					(size 1.27 1.27)

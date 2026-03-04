@@ -653,7 +653,7 @@
 			(color 0 0 0 0.0000)
 		)
 		(uuid "09dae378-4d12-4dca-bc21-c216f94ec21f")
-		(property "Sheetname" "PSU"
+		(property "Sheetname" "BMS"
 			(at 172.72 82.3464 0)
 			(effects
 				(font
@@ -744,7 +744,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e"
-					(page "2")
+					(page "3")
 				)
 			)
 		)
@@ -826,7 +826,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e"
-					(page "4")
+					(page "5")
 				)
 			)
 		)
@@ -847,7 +847,7 @@
 			(color 0 0 0 0.0000)
 		)
 		(uuid "53a20cc4-87c9-41e2-9c0c-c30bc75df497")
-		(property "Sheetname" "USBC"
+		(property "Sheetname" "USB-C"
 			(at 168.91 106.4764 0)
 			(effects
 				(font
@@ -908,7 +908,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e"
-					(page "7")
+					(page "6")
 				)
 			)
 		)
@@ -929,7 +929,7 @@
 			(color 0 0 0 0.0000)
 		)
 		(uuid "d4b85e6c-5f5c-4400-806e-353edbeb9b74")
-		(property "Sheetname" "ethernet"
+		(property "Sheetname" "Ethernet"
 			(at 93.98 88.1884 0)
 			(effects
 				(font
@@ -1020,7 +1020,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e"
-					(page "3")
+					(page "7")
 				)
 			)
 		)
@@ -1041,7 +1041,7 @@
 			(color 0 0 0 0.0000)
 		)
 		(uuid "dd2813e4-a810-44d7-8b7e-d46ce1c3fa30")
-		(property "Sheetname" "Antenna Module"
+		(property "Sheetname" "Wi-SUN Module"
 			(at 76.2 61.5184 0)
 			(effects
 				(font
@@ -1142,7 +1142,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e"
-					(page "5")
+					(page "4")
 				)
 			)
 		)
@@ -1384,7 +1384,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e"
-					(page "6")
+					(page "2")
 				)
 			)
 		)
