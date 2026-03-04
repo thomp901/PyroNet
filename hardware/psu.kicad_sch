@@ -5385,7 +5385,7 @@
 	)
 	(wire
 		(pts
-			(xy 156.21 138.43) (xy 170.18 138.43)
+			(xy 158.75 138.43) (xy 170.18 138.43)
 		)
 		(stroke
 			(width 0)
@@ -6423,28 +6423,6 @@
 		)
 		(uuid "fc2da5cd-56c1-484d-9e2e-493e5855ec72")
 	)
-	(global_label "VINPUT"
-		(shape input)
-		(at 156.21 138.43 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "14903fc5-9616-45fb-8e08-32a1215229d3")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 146.6328 138.43 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-				(hide yes)
-			)
-		)
-	)
 	(hierarchical_label "BUCK_5V"
 		(shape input)
 		(at 229.87 134.62 90)
@@ -6532,6 +6510,17 @@
 			(justify right)
 		)
 		(uuid "7c6c897d-4a70-47aa-a560-c44669ec989d")
+	)
+	(hierarchical_label "BUCK_3.3V"
+		(shape input)
+		(at 158.75 138.43 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "e4c8d00e-2acf-47c2-b938-572949fa695e")
 	)
 	(hierarchical_label "5V_VBUS"
 		(shape input)

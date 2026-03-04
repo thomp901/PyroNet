@@ -3766,7 +3766,7 @@
 		)
 		(uuid "fcc93b2e-89ff-4317-9d1e-57f1c968d38a")
 	)
-	(label "CC_TWO"
+	(label "CC2"
 		(at 73.66 83.82 0)
 		(effects
 			(font
@@ -3786,7 +3786,7 @@
 		)
 		(uuid "243807e6-2f8e-47e6-81ab-05ecb82d9f9b")
 	)
-	(label "CC_TWO"
+	(label "CC2"
 		(at 83.82 163.83 270)
 		(effects
 			(font
@@ -3876,7 +3876,7 @@
 		)
 		(uuid "85a4fa5f-7a22-4099-a100-84866b2c90c2")
 	)
-	(label "CC_ONE"
+	(label "CC1"
 		(at 78.74 163.83 270)
 		(effects
 			(font
@@ -3886,7 +3886,7 @@
 		)
 		(uuid "93494918-4b7f-4bd1-818c-5fa987587d2c")
 	)
-	(label "CC_ONE"
+	(label "CC1"
 		(at 73.66 81.28 0)
 		(effects
 			(font
@@ -4361,7 +4361,7 @@
 		(dnp no)
 		(uuid "40e831b4-6d80-46b0-89e6-441da6485e18")
 		(property "Reference" "R300"
-			(at 81.534 78.994 90)
+			(at 82.55 78.486 90)
 			(effects
 				(font
 					(size 1.27 1.27)
