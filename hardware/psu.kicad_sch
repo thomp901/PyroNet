@@ -4656,7 +4656,7 @@
 						)
 					)
 				)
-				(pin bidirectional line
+				(pin power_in line
 					(at -15.24 2.54 0)
 					(length 5.08)
 					(name "VBAT"
@@ -4674,7 +4674,7 @@
 						)
 					)
 				)
-				(pin bidirectional line
+				(pin input line
 					(at -15.24 -2.54 0)
 					(length 5.08)
 					(name "EN"
@@ -4772,7 +4772,7 @@
 					)
 				)
 			)
-			(property "Footprint" "pyronet_footprints:IC_TPS63020DSJR"
+			(property "Footprint" "TPS63020DSJR:IC_TPS63020DSJR"
 				(at 0 0 0)
 				(effects
 					(font
@@ -4922,8 +4922,8 @@
 			)
 			(symbol "TPS63020DSJR_0_0"
 				(rectangle
-					(start -12.7 17.78)
-					(end 12.7 -20.32)
+					(start -12.7 -20.32)
+					(end 12.7 17.78)
 					(stroke
 						(width 0.254)
 						(type default)
@@ -13073,7 +13073,7 @@
 				)
 			)
 		)
-		(property "Footprint" "pyronet_footprints:IC_TPS63020DSJR"
+		(property "Footprint" "TPS63020DSJR:IC_TPS63020DSJR"
 			(at 57.15 152.4 0)
 			(effects
 				(font

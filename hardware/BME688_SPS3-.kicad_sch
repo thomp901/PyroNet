@@ -1768,8 +1768,8 @@
 		)
 	)
 	(rectangle
-		(start 130.81 51.054)
-		(end 181.864 84.328)
+		(start 125.73 49.784)
+		(end 176.784 83.058)
 		(stroke
 			(width 0)
 			(type default)
@@ -1781,7 +1781,7 @@
 	)
 	(text "Do we need this?"
 		(exclude_from_sim no)
-		(at 165.1 79.502 0)
+		(at 160.02 78.232 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -2058,7 +2058,7 @@
 	)
 	(hierarchical_label "SDA"
 		(shape bidirectional)
-		(at 139.7 69.85 180)
+		(at 134.62 68.58 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -2102,7 +2102,7 @@
 	)
 	(hierarchical_label "SCL"
 		(shape input)
-		(at 139.7 72.39 180)
+		(at 134.62 71.12 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -2135,7 +2135,7 @@
 	)
 	(hierarchical_label "SDA"
 		(shape bidirectional)
-		(at 149.86 69.85 0)
+		(at 144.78 68.58 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -2146,7 +2146,7 @@
 	)
 	(hierarchical_label "SCL"
 		(shape input)
-		(at 149.86 72.39 0)
+		(at 144.78 71.12 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -2359,7 +2359,7 @@
 	)
 	(symbol
 		(lib_id "Power_Protection:USBLC6-2P6")
-		(at 144.78 69.85 0)
+		(at 139.7 68.58 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -2368,7 +2368,7 @@
 		(fields_autoplaced yes)
 		(uuid "514f0d22-5270-4410-b96f-af4e3c428744")
 		(property "Reference" "U59"
-			(at 146.4311 62.23 0)
+			(at 141.3511 60.96 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2377,7 +2377,7 @@
 			)
 		)
 		(property "Value" "USBLC6-2P6"
-			(at 146.4311 64.77 0)
+			(at 141.3511 63.5 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2386,7 +2386,7 @@
 			)
 		)
 		(property "Footprint" "Package_TO_SOT_SMD:SOT-666"
-			(at 145.796 76.581 0)
+			(at 140.716 75.311 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2397,7 +2397,7 @@
 			)
 		)
 		(property "Datasheet" "https://www.st.com/resource/en/datasheet/usblc6-2.pdf"
-			(at 145.796 78.486 0)
+			(at 140.716 77.216 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2407,7 +2407,7 @@
 			)
 		)
 		(property "Description" "Very low capacitance ESD protection diode, 2 data-line, SOT-666"
-			(at 144.78 69.85 0)
+			(at 139.7 68.58 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2444,7 +2444,7 @@
 	)
 	(symbol
 		(lib_id "power:+3.3V")
-		(at 144.78 64.77 0)
+		(at 139.7 63.5 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -2453,7 +2453,7 @@
 		(fields_autoplaced yes)
 		(uuid "58a6fc83-1c2c-46d1-abd4-b94cf0dd956d")
 		(property "Reference" "#PWR078"
-			(at 144.78 68.58 0)
+			(at 139.7 67.31 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2462,7 +2462,7 @@
 			)
 		)
 		(property "Value" "+3.3V"
-			(at 144.78 59.69 0)
+			(at 139.7 58.42 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2470,7 +2470,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 144.78 64.77 0)
+			(at 139.7 63.5 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2479,7 +2479,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 144.78 64.77 0)
+			(at 139.7 63.5 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2488,7 +2488,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
-			(at 144.78 64.77 0)
+			(at 139.7 63.5 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3276,7 +3276,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 144.78 77.47 0)
+		(at 139.7 76.2 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -3285,7 +3285,7 @@
 		(fields_autoplaced yes)
 		(uuid "edd1925b-653b-418d-8b8a-a096204985e8")
 		(property "Reference" "#PWR0114"
-			(at 144.78 83.82 0)
+			(at 139.7 82.55 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3294,7 +3294,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 147.32 78.7399 0)
+			(at 142.24 77.4699 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3303,7 +3303,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 144.78 77.47 0)
+			(at 139.7 76.2 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3312,7 +3312,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 144.78 77.47 0)
+			(at 139.7 76.2 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3321,7 +3321,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 144.78 77.47 0)
+			(at 139.7 76.2 0)
 			(effects
 				(font
 					(size 1.27 1.27)
