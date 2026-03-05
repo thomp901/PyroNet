@@ -1,5 +1,5 @@
 
-(footprint XCVR_BDE-MB1352P71UA32 (layer F.Cu) (tedit 6991442A)
+(footprint XCVR_BDE-MB1352P71UA32 (layer F.Cu) (tedit 69A9D3C7)
   (descr "")
   (attr smd)
   (fp_text reference REF** (at -6.325 -14.135 0) (layer F.SilkS)

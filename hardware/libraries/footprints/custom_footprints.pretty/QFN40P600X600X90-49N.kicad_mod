@@ -1,5 +1,5 @@
 
-(footprint QFN40P600X600X90-49N (layer F.Cu) (tedit 6996B18F)
+(footprint QFN40P600X600X90-49N (layer F.Cu) (tedit 69A9D246)
   (descr "")
   (attr smd)
   (fp_text reference REF** (at -0.735 -5.25 0) (layer F.SilkS)
