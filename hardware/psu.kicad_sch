@@ -2401,6 +2401,131 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "power:+5V"
+			(power)
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(offset 0)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "#PWR"
+				(at 0 -3.81 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Value" "+5V"
+				(at 0 3.556 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" "Power symbol creates a global label with name \"+5V\""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_keywords" "global power"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "+5V_0_1"
+				(polyline
+					(pts
+						(xy -0.762 1.27) (xy 0 2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 2.54) (xy 0.762 1.27)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 0) (xy 0 2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "+5V_1_1"
+				(pin power_in line
+					(at 0 0 90)
+					(length 0)
+					(name "~"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "power:GND"
 			(power)
 			(pin_numbers
@@ -2598,6 +2723,131 @@
 					)
 					(fill
 						(type none)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+		(symbol "power:VBUS"
+			(power)
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(offset 0)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "#PWR"
+				(at 0 -3.81 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Value" "VBUS"
+				(at 0 3.556 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" "Power symbol creates a global label with name \"VBUS\""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_keywords" "global power"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "VBUS_0_1"
+				(polyline
+					(pts
+						(xy -0.762 1.27) (xy 0 2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 2.54) (xy 0.762 1.27)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 0) (xy 0 2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "VBUS_1_1"
+				(pin power_in line
+					(at 0 0 90)
+					(length 0)
+					(name "~"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
 					)
 				)
 			)
@@ -4162,25 +4412,23 @@
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
-			(property "Reference" "IC"
-				(at 8.89 15.24 0)
+			(property "Reference" "IC1"
+				(at 0 15.24 0)
 				(effects
 					(font
 						(size 1.27 1.27)
 					)
-					(justify left)
 				)
 			)
 			(property "Value" "TLV61220DBVT"
-				(at 11.43 12.7 0)
+				(at 0 12.7 0)
 				(effects
 					(font
 						(size 1.27 1.27)
 					)
-					(justify left)
 				)
 			)
-			(property "Footprint" ""
+			(property "Footprint" "pyronet_footprints:SOT95P280X110-6"
 				(at 0 0 0)
 				(effects
 					(font
@@ -4229,6 +4477,16 @@
 				)
 			)
 			(property "RS_PRICE-STOCK" "http://uk.rs-online.com/web/p/products/8253665P"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify bottom)
+					(hide yes)
+				)
+			)
+			(property "DESCRIPTION" "Texas Instruments TLV61220DBVT, Boost Converter, Boost Converter 200mA Adjustable, 1.8  5.5 V, 6-Pin SOT-23"
 				(at 0 0 0)
 				(effects
 					(font
@@ -4318,16 +4576,6 @@
 					(hide yes)
 				)
 			)
-			(property "Purchase-URL" "https://www.snapeda.com/api/url_track_click_mouser/?unipart_id=50780&manufacturer=Texas Instruments&part_name=TLV61220DBVT&search_term=  tlv61220dbvt"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify bottom)
-					(hide yes)
-				)
-			)
 			(property "MOUSER_PRICE-STOCK" "https://www.mouser.com/Search/Refine.aspx?Keyword=595-TLV61220DBVT"
 				(at 0 0 0)
 				(effects
@@ -4359,6 +4607,16 @@
 				)
 			)
 			(property "MANUFACTURER_PART_NUMBER" "TLV61220DBVT"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify bottom)
+					(hide yes)
+				)
+			)
+			(property "Purchase-URL" "https://www.snapeda.com/api/url_track_click_mouser/?unipart_id=50780&manufacturer=Texas Instruments&part_name=TLV61220DBVT&search_term=  tlv61220dbvt"
 				(at 0 0 0)
 				(effects
 					(font
@@ -4452,7 +4710,7 @@
 						)
 					)
 				)
-				(pin bidirectional line
+				(pin power_out line
 					(at 15.24 2.54 180)
 					(length 5.08)
 					(name "VOUT"
@@ -4498,25 +4756,23 @@
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
-			(property "Reference" "U"
-				(at -12.7 19.05 0)
+			(property "Reference" "U4"
+				(at 0 22.86 0)
 				(effects
 					(font
 						(size 1.27 1.27)
 					)
-					(justify left bottom)
 				)
 			)
 			(property "Value" "TPS63020DSJR"
-				(at -12.7 -21.59 0)
+				(at 0 20.32 0)
 				(effects
 					(font
 						(size 1.27 1.27)
 					)
-					(justify left top)
 				)
 			)
-			(property "Footprint" "TPS63020DSJR:IC_TPS63020DSJR"
+			(property "Footprint" "pyronet_footprints:IC_TPS63020DSJR"
 				(at 0 0 0)
 				(effects
 					(font
@@ -4624,16 +4880,6 @@
 					(hide yes)
 				)
 			)
-			(property "Purchase-URL" "https://www.snapeda.com/api/url_track_click_mouser/?unipart_id=296571&manufacturer=Texas Instruments&part_name=TPS63020DSJR&search_term=tps63020dsjr"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify bottom)
-					(hide yes)
-				)
-			)
 			(property "DigiKey-Purchase-URL" "https://snapeda.com/shop?store=DigiKey&id=296571"
 				(at 0 0 0)
 				(effects
@@ -4664,10 +4910,20 @@
 					(hide yes)
 				)
 			)
+			(property "Purchase-URL" "https://www.snapeda.com/api/url_track_click_mouser/?unipart_id=296571&manufacturer=Texas Instruments&part_name=TPS63020DSJR&search_term=tps63020dsjr"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify bottom)
+					(hide yes)
+				)
+			)
 			(symbol "TPS63020DSJR_0_0"
 				(rectangle
-					(start -12.7 -20.32)
-					(end 12.7 17.78)
+					(start -12.7 17.78)
+					(end 12.7 -20.32)
 					(stroke
 						(width 0.254)
 						(type default)
@@ -4766,7 +5022,7 @@
 						)
 					)
 				)
-				(pin output line
+				(pin power_out line
 					(at 17.78 15.24 180)
 					(length 5.08)
 					(name "VOUT_4"
@@ -4784,7 +5040,7 @@
 						)
 					)
 				)
-				(pin output line
+				(pin power_out line
 					(at 17.78 12.7 180)
 					(length 5.08)
 					(name "VOUT_5"
@@ -6466,6 +6722,16 @@
 	)
 	(wire
 		(pts
+			(xy 119.38 48.26) (xy 130.81 48.26)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8be937d4-ef01-4ef0-af94-007e0a28ebe2")
+	)
+	(wire
+		(pts
 			(xy 109.22 107.95) (xy 116.84 107.95)
 		)
 		(stroke
@@ -6533,6 +6799,16 @@
 			(type default)
 		)
 		(uuid "945e06ad-36f1-4eb0-8775-73dfc86ff02e")
+	)
+	(wire
+		(pts
+			(xy 119.38 46.99) (xy 119.38 48.26)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "94c199aa-e56a-4d6c-85a3-334aa6e15d56")
 	)
 	(wire
 		(pts
@@ -7434,17 +7710,6 @@
 		)
 		(uuid "fc2da5cd-56c1-484d-9e2e-493e5855ec72")
 	)
-	(hierarchical_label "BUCK_5V"
-		(shape input)
-		(at 229.87 134.62 90)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "0552afef-db92-41a0-852e-3c47e4ab4000")
-	)
 	(hierarchical_label "INT0"
 		(shape output)
 		(at 116.84 88.9 180)
@@ -7467,17 +7732,6 @@
 		)
 		(uuid "1d668c7a-fcfa-4a38-8a48-8875de8f15d2")
 	)
-	(hierarchical_label "5V_VBUS"
-		(shape input)
-		(at 25.4 52.07 180)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "26207b48-9737-4ace-98fc-cf029dce0549")
-	)
 	(hierarchical_label "SCL"
 		(shape input)
 		(at 105.41 86.36 180)
@@ -7499,17 +7753,6 @@
 			(justify right)
 		)
 		(uuid "4b026cfe-5d02-4b9f-bd3c-1de6c10675b4")
-	)
-	(hierarchical_label "5V_VBUS"
-		(shape input)
-		(at 130.81 48.26 180)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "e4d8cc88-7f1c-4d15-a51f-1bab933330d3")
 	)
 	(symbol
 		(lib_id "Device:C")
@@ -9193,6 +9436,71 @@
 		)
 	)
 	(symbol
+		(lib_id "power:VBUS")
+		(at 119.38 46.99 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "3c187298-ae04-4c5f-be0d-321a0ef48d3c")
+		(property "Reference" "#PWR090"
+			(at 119.38 50.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "USB_VBUS"
+			(at 122.174 50.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 119.38 46.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 119.38 46.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"VBUS\""
+			(at 119.38 46.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "8fb8c955-ab0c-4e38-9ad2-c4b39dae040b")
+		)
+		(instances
+			(project "Senior_Design"
+				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
+					(reference "#PWR090")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:PWR_FLAG")
 		(at 176.53 27.94 0)
 		(unit 1)
@@ -10042,6 +10350,71 @@
 		)
 	)
 	(symbol
+		(lib_id "power:VBUS")
+		(at 25.4 52.07 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "5d7a5a55-cadd-42fd-b94b-8be66b3615fc")
+		(property "Reference" "#PWR089"
+			(at 25.4 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "USB_VBUS"
+			(at 25.654 48.006 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 25.4 52.07 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 25.4 52.07 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"VBUS\""
+			(at 25.4 52.07 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "8c516223-6f09-492a-ad57-e4a33212eacd")
+		)
+		(instances
+			(project "Senior_Design"
+				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
+					(reference "#PWR089")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:GND")
 		(at 33.02 147.32 0)
 		(unit 1)
@@ -10685,6 +11058,72 @@
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
 					(reference "Q4")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+5V")
+		(at 229.87 134.62 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "7e65e818-ed06-4fc2-8f16-fa852e2cb40f")
+		(property "Reference" "#PWR091"
+			(at 229.87 138.43 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+5V"
+			(at 229.87 129.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 229.87 134.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 229.87 134.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+5V\""
+			(at 229.87 134.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "195ca54c-913a-4047-8bbf-4d067627aaef")
+		)
+		(instances
+			(project ""
+				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
+					(reference "#PWR091")
 					(unit 1)
 				)
 			)
