@@ -3550,7 +3550,7 @@
 		(dnp no)
 		(uuid "428d0158-2b25-4ff6-a99a-9d84c0b230a4")
 		(property "Reference" "U402"
-			(at 136.906 138.684 0)
+			(at 135.89 138.684 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3863,7 +3863,7 @@
 		(dnp no)
 		(uuid "7af4f0c9-505b-452e-a66b-53095dab46ba")
 		(property "Reference" "U401"
-			(at 99.822 138.938 0)
+			(at 99.06 139.192 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5226,7 +5226,7 @@
 		(dnp no)
 		(uuid "f78c5c90-ee1b-4fa7-96a3-4c57a29535ec")
 		(property "Reference" "R402"
-			(at 147.32 77.47 0)
+			(at 145.796 77.216 0)
 			(effects
 				(font
 					(size 1.27 1.27)

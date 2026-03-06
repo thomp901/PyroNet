@@ -8961,7 +8961,7 @@
 		(dnp no)
 		(uuid "2e5dc7d0-43d8-45d4-b346-5352a78750a7")
 		(property "Reference" "U703"
-			(at 225.298 49.53 0)
+			(at 223.52 49.276 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9723,10 +9723,9 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "484f2ceb-7783-4298-921d-2989022530cf")
 		(property "Reference" "J701"
-			(at 234.696 145.288 0)
+			(at 249.174 142.24 0)
 			(effects
 				(font
 					(size 1.524 1.524)
@@ -9735,7 +9734,7 @@
 			)
 		)
 		(property "Value" "J0011D21BNL"
-			(at 234.696 147.828 0)
+			(at 249.174 146.05 0)
 			(effects
 				(font
 					(size 1.524 1.524)
