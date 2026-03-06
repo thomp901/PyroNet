@@ -2416,7 +2416,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Diode:CSD01060A"
+		(symbol "Diode:SMAJ12A"
 			(pin_numbers
 				(hide yes)
 			)
@@ -2435,7 +2435,7 @@
 					)
 				)
 			)
-			(property "Value" "CSD01060A"
+			(property "Value" "SMAJ12A"
 				(at 0 -2.54 0)
 				(effects
 					(font
@@ -2443,8 +2443,8 @@
 					)
 				)
 			)
-			(property "Footprint" "Package_TO_SOT_THT:TO-220-2_Vertical"
-				(at 0 -4.445 0)
+			(property "Footprint" "Diode_SMD:D_SMA"
+				(at 0 -5.08 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -2452,7 +2452,16 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "https://www.wolfspeed.com/media/downloads/87/CSD01060.pdf"
+			(property "Datasheet" "https://www.littelfuse.com/media?resourcetype=datasheets&itemid=75e32973-b177-4ee3-a0ff-cedaf1abdb93&filename=smaj-datasheet"
+				(at -1.27 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" "400W unidirectional Transient Voltage Suppressor, 12.0Vr, SMA(DO-214AC)"
 				(at 0 0 0)
 				(effects
 					(font
@@ -2461,7 +2470,7 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "600V, 1A, SiC Schottky Diode, TO-220"
+			(property "ki_keywords" "unidirectional diode TVS voltage suppressor"
 				(at 0 0 0)
 				(effects
 					(font
@@ -2470,7 +2479,7 @@
 					(hide yes)
 				)
 			)
-			(property "ki_keywords" "sic diode"
+			(property "ki_fp_filters" "D*SMA*"
 				(at 0 0 0)
 				(effects
 					(font
@@ -2479,19 +2488,10 @@
 					(hide yes)
 				)
 			)
-			(property "ki_fp_filters" "TO?220*"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "CSD01060A_0_1"
+			(symbol "SMAJ12A_0_1"
 				(polyline
 					(pts
-						(xy -1.905 0.635) (xy -1.905 1.27) (xy -1.27 1.27) (xy -1.27 -1.27) (xy -0.635 -1.27) (xy -0.635 -0.635)
+						(xy -0.762 1.27) (xy -1.27 1.27) (xy -1.27 -1.27)
 					)
 					(stroke
 						(width 0.254)
@@ -2513,24 +2513,12 @@
 						(type none)
 					)
 				)
-				(polyline
-					(pts
-						(xy 1.27 0) (xy -1.27 0)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
 			)
-			(symbol "CSD01060A_1_1"
+			(symbol "SMAJ12A_1_1"
 				(pin passive line
 					(at -3.81 0 0)
 					(length 2.54)
-					(name "K"
+					(name "A1"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -2548,7 +2536,7 @@
 				(pin passive line
 					(at 3.81 0 180)
 					(length 2.54)
-					(name "A"
+					(name "A2"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -9063,6 +9051,76 @@
 		)
 	)
 	(symbol
+		(lib_id "Diode:SMAJ12A")
+		(at 40.64 30.48 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "23d1b714-87ec-457b-9267-597ddaf38187")
+		(property "Reference" "D305"
+			(at 43.18 29.2099 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Value" "SMAJ12A"
+			(at 43.18 31.7499 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" "Diode_SMD:D_SMA"
+			(at 45.72 30.48 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://www.littelfuse.com/media?resourcetype=datasheets&itemid=75e32973-b177-4ee3-a0ff-cedaf1abdb93&filename=smaj-datasheet"
+			(at 40.64 31.75 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "400W unidirectional Transient Voltage Suppressor, 12.0Vr, SMA(DO-214AC)"
+			(at 40.64 30.48 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "5ea85ada-b6fa-4223-bda9-c2ae9851ed41")
+		)
+		(pin "2"
+			(uuid "34ec7d7f-8b25-443a-803e-7a83da6c6f2c")
+		)
+		(instances
+			(project ""
+				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
+					(reference "D305")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:GND")
 		(at 226.06 111.76 0)
 		(unit 1)
@@ -11575,7 +11633,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Inductor_SMD:L_0805_2012Metric"
+		(property "Footprint" "Inductor_SMD:L_1210_3225Metric"
 			(at 208.28 133.35 0)
 			(effects
 				(font
@@ -12820,7 +12878,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" "Inductor_SMD:L_0805_2012Metric"
+		(property "Footprint" "Inductor_SMD:L_Bourns_SRP7028A_7.3x6.6mm"
 			(at 119.38 68.58 0)
 			(effects
 				(font
@@ -13020,7 +13078,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Inductor_SMD:L_0805_2012Metric"
+		(property "Footprint" "Inductor_SMD:L_Wuerth_MAPI-4020"
 			(at 113.03 158.75 0)
 			(effects
 				(font
@@ -13690,75 +13748,6 @@
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
 					(reference "#PWR0331")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Diode:CSD01060A")
-		(at 40.64 30.48 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "d2864db5-773c-4a70-b073-d5588628fcbb")
-		(property "Reference" "D301"
-			(at 35.814 27.432 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
-		(property "Value" "CSD01060A"
-			(at 35.814 37.084 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
-		(property "Footprint" "Diode_SMD:D_SOD-123"
-			(at 45.085 30.48 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "https://www.wolfspeed.com/media/downloads/87/CSD01060.pdf"
-			(at 40.64 30.48 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "600V, 1A, SiC Schottky Diode, TO-220"
-			(at 40.64 30.48 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "51bdff60-de57-4fec-8064-6a4cdcb8cdc2")
-		)
-		(pin "1"
-			(uuid "abee730e-821d-467d-97bd-dc8703cfafa6")
-		)
-		(instances
-			(project "Senior_Design"
-				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
-					(reference "D301")
 					(unit 1)
 				)
 			)

@@ -1767,29 +1767,6 @@
 			(embedded_fonts no)
 		)
 	)
-	(rectangle
-		(start 125.73 49.784)
-		(end 176.784 83.058)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(fill
-			(type none)
-		)
-		(uuid 7ff76969-a151-4ed3-8acb-fbd5202b929a)
-	)
-	(text "Do we need this?"
-		(exclude_from_sim no)
-		(at 160.02 78.232 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-				(color 255 0 0 1)
-			)
-		)
-		(uuid "4dbdda80-bf89-428f-9c2c-3ed10603c5f0")
-	)
 	(junction
 		(at 135.89 104.14)
 		(diameter 0)
@@ -1828,16 +1805,6 @@
 	)
 	(wire
 		(pts
-			(xy 189.23 111.76) (xy 193.04 111.76)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "11c4e334-7131-4aeb-a2ed-aa9ff6b12c92")
-	)
-	(wire
-		(pts
 			(xy 198.12 101.6) (xy 200.66 101.6)
 		)
 		(stroke
@@ -1845,6 +1812,16 @@
 			(type default)
 		)
 		(uuid "1fe76f2a-1ab7-4353-a03c-c90775ebdc60")
+	)
+	(wire
+		(pts
+			(xy 175.26 114.3) (xy 193.04 114.3)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "259943f3-5c77-40b9-ab65-48605469d179")
 	)
 	(wire
 		(pts
@@ -1898,16 +1875,6 @@
 	)
 	(wire
 		(pts
-			(xy 189.23 114.3) (xy 193.04 114.3)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "66bb5d06-2572-47df-b75b-4ecc55466d8a")
-	)
-	(wire
-		(pts
 			(xy 130.81 106.68) (xy 130.81 109.22)
 		)
 		(stroke
@@ -1915,6 +1882,16 @@
 			(type default)
 		)
 		(uuid "6add43d8-7d7a-4e2d-9e04-609312c82b89")
+	)
+	(wire
+		(pts
+			(xy 175.26 111.76) (xy 193.04 111.76)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6f5ebec9-5ac6-4490-bb49-467b6b884961")
 	)
 	(wire
 		(pts
@@ -2058,7 +2035,7 @@
 	)
 	(hierarchical_label "SDA"
 		(shape bidirectional)
-		(at 134.62 68.58 180)
+		(at 165.1 111.76 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -2102,7 +2079,7 @@
 	)
 	(hierarchical_label "SCL"
 		(shape input)
-		(at 134.62 71.12 180)
+		(at 165.1 114.3 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -2110,50 +2087,6 @@
 			(justify right)
 		)
 		(uuid "aa909ef7-c345-401e-b1b1-0e08d60fdfbe")
-	)
-	(hierarchical_label "SDA"
-		(shape bidirectional)
-		(at 189.23 111.76 180)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "aaa8c24f-5b76-4965-ac87-98101fa62608")
-	)
-	(hierarchical_label "SCL"
-		(shape input)
-		(at 189.23 114.3 180)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "b1300a1f-b4b0-4355-b84b-9c331aea03ae")
-	)
-	(hierarchical_label "SDA"
-		(shape bidirectional)
-		(at 144.78 68.58 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "bf730323-d5d0-4872-bfc0-bdb7bce8899e")
-	)
-	(hierarchical_label "SCL"
-		(shape input)
-		(at 144.78 71.12 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "de3f660a-d0fd-43bb-8d7a-0345ad339392")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -2359,7 +2292,7 @@
 	)
 	(symbol
 		(lib_id "Power_Protection:USBLC6-2P6")
-		(at 139.7 68.58 0)
+		(at 170.18 111.76 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -2368,7 +2301,7 @@
 		(fields_autoplaced yes)
 		(uuid "514f0d22-5270-4410-b96f-af4e3c428744")
 		(property "Reference" "U502"
-			(at 141.3511 60.96 0)
+			(at 171.8311 104.14 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2377,7 +2310,7 @@
 			)
 		)
 		(property "Value" "USBLC6-2P6"
-			(at 141.3511 63.5 0)
+			(at 171.8311 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2386,7 +2319,7 @@
 			)
 		)
 		(property "Footprint" "Package_TO_SOT_SMD:SOT-666"
-			(at 140.716 75.311 0)
+			(at 171.196 118.491 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2397,7 +2330,7 @@
 			)
 		)
 		(property "Datasheet" "https://www.st.com/resource/en/datasheet/usblc6-2.pdf"
-			(at 140.716 77.216 0)
+			(at 171.196 120.396 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2407,7 +2340,7 @@
 			)
 		)
 		(property "Description" "Very low capacitance ESD protection diode, 2 data-line, SOT-666"
-			(at 139.7 68.58 0)
+			(at 170.18 111.76 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2444,7 +2377,7 @@
 	)
 	(symbol
 		(lib_id "power:+3.3V")
-		(at 139.7 63.5 0)
+		(at 170.18 106.68 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -2453,7 +2386,7 @@
 		(fields_autoplaced yes)
 		(uuid "58a6fc83-1c2c-46d1-abd4-b94cf0dd956d")
 		(property "Reference" "#PWR0503"
-			(at 139.7 67.31 0)
+			(at 170.18 110.49 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2462,7 +2395,7 @@
 			)
 		)
 		(property "Value" "+3.3V"
-			(at 139.7 58.42 0)
+			(at 170.18 101.6 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2470,7 +2403,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 139.7 63.5 0)
+			(at 170.18 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2479,7 +2412,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 139.7 63.5 0)
+			(at 170.18 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2488,7 +2421,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
-			(at 139.7 63.5 0)
+			(at 170.18 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3276,7 +3209,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 139.7 76.2 0)
+		(at 170.18 119.38 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -3285,7 +3218,7 @@
 		(fields_autoplaced yes)
 		(uuid "edd1925b-653b-418d-8b8a-a096204985e8")
 		(property "Reference" "#PWR0504"
-			(at 139.7 82.55 0)
+			(at 170.18 125.73 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3294,7 +3227,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 142.24 77.4699 0)
+			(at 172.72 120.6499 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3303,7 +3236,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 139.7 76.2 0)
+			(at 170.18 119.38 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3312,7 +3245,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 139.7 76.2 0)
+			(at 170.18 119.38 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3321,7 +3254,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 139.7 76.2 0)
+			(at 170.18 119.38 0)
 			(effects
 				(font
 					(size 1.27 1.27)
