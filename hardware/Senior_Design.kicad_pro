@@ -241,60 +241,7 @@
     "equivalence_files": []
   },
   "erc": {
-    "erc_exclusions": [
-      [
-        "footprint_link_issues|571500|1524000|cda8c467-411e-47bb-9adc-70802de86567|00000000-0000-0000-0000-000000000000|||",
-        "Changed VOUT to Power output"
-      ],
-      [
-        "lib_symbol_mismatch|1943100|825500|fc7b6051-58ee-43cc-8c26-d94f4e34b32f|00000000-0000-0000-0000-000000000000|||",
-        "Changed pins to passive"
-      ],
-      [
-        "lib_symbol_mismatch|1993900|1409700|357a744a-de04-47b4-b495-40c258f410b9|00000000-0000-0000-0000-000000000000|||",
-        "Changed VOUT to Power output"
-      ],
-      [
-        "lib_symbol_mismatch|2120900|1371600|484f2ceb-7783-4298-921d-2989022530cf|00000000-0000-0000-0000-000000000000|||",
-        "Changed pins to passive"
-      ],
-      [
-        "lib_symbol_mismatch|2235200|901700|9bd1c219-67ec-47d6-ad9d-58a8a71fff45|00000000-0000-0000-0000-000000000000|||",
-        "Changed VBUS pin to Input"
-      ],
-      [
-        "lib_symbol_mismatch|558800|800100|085a8c72-5260-4388-a2fd-0ad525d2a4b1|00000000-0000-0000-0000-000000000000|||",
-        "Changed VBUS to Power output"
-      ],
-      [
-        "lib_symbol_mismatch|571500|1524000|cda8c467-411e-47bb-9adc-70802de86567|00000000-0000-0000-0000-000000000000|||",
-        "Changed VOUT pins to power output "
-      ],
-      [
-        "multiple_net_names|1193800|368300|0e19ae8b-7086-4e00-a6e8-f4a350ef0343|62b700a2-c695-4ca8-8a84-dadfd594c51c|/8f5928e8-0fc1-4443-a20f-3bfeb956761e/eaf224bf-a12f-4d12-aa0a-28551b47d007|/8f5928e8-0fc1-4443-a20f-3bfeb956761e/eaf224bf-a12f-4d12-aa0a-28551b47d007|/8f5928e8-0fc1-4443-a20f-3bfeb956761e/eaf224bf-a12f-4d12-aa0a-28551b47d007",
-        ""
-      ],
-      [
-        "multiple_net_names|1193800|419100|f97a9c8a-bafc-4f38-b141-ff360d151d65|0d81794c-184e-41bf-91e7-92231e525474|/8f5928e8-0fc1-4443-a20f-3bfeb956761e/eaf224bf-a12f-4d12-aa0a-28551b47d007|/8f5928e8-0fc1-4443-a20f-3bfeb956761e/eaf224bf-a12f-4d12-aa0a-28551b47d007|/8f5928e8-0fc1-4443-a20f-3bfeb956761e/eaf224bf-a12f-4d12-aa0a-28551b47d007",
-        ""
-      ],
-      [
-        "multiple_net_names|1397000|431800|5d3aedab-4ab1-482b-b1e3-7dd11737b5c1|62b700a2-c695-4ca8-8a84-dadfd594c51c|/8f5928e8-0fc1-4443-a20f-3bfeb956761e/eaf224bf-a12f-4d12-aa0a-28551b47d007|/8f5928e8-0fc1-4443-a20f-3bfeb956761e/eaf224bf-a12f-4d12-aa0a-28551b47d007|/8f5928e8-0fc1-4443-a20f-3bfeb956761e/eaf224bf-a12f-4d12-aa0a-28551b47d007",
-        ""
-      ],
-      [
-        "no_connect_connected|1663700|1054100|4bf37e04-4348-43a8-a4fb-774b461c094e|5842aa80-a714-42bd-954f-ebb6c444c41a|/8f5928e8-0fc1-4443-a20f-3bfeb956761e/dd2813e4-a810-44d7-8b7e-d46ce1c3fa30||",
-        ""
-      ],
-      [
-        "pin_to_pin|749300|1371600|3c77c9e3-0597-423e-88fe-b7de8d30c406|4d8259f0-0555-4810-8a78-c3810ae3f542|/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f|/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f|/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f",
-        ""
-      ],
-      [
-        "power_pin_not_driven|1054100|1524000|55a7147d-77d4-46f2-8bc6-1e6a01babc7e|00000000-0000-0000-0000-000000000000|/8f5928e8-0fc1-4443-a20f-3bfeb956761e/dd2813e4-a810-44d7-8b7e-d46ce1c3fa30|/8f5928e8-0fc1-4443-a20f-3bfeb956761e/dd2813e4-a810-44d7-8b7e-d46ce1c3fa30|",
-        ""
-      ]
-    ],
+    "erc_exclusions": [],
     "meta": {
       "version": 0
     },
@@ -473,7 +420,6 @@
       "bus_entry_needed": "error",
       "bus_to_bus_conflict": "error",
       "bus_to_net_conflict": "error",
-      "conflicting_netclasses": "error",
       "different_unit_footprint": "error",
       "different_unit_net": "error",
       "duplicate_reference": "error",
@@ -549,7 +495,12 @@
     },
     "net_colors": null,
     "netclass_assignments": null,
-    "netclass_patterns": []
+    "netclass_patterns": [
+      {
+        "netclass": "Default",
+        "pattern": ""
+      }
+    ]
   },
   "pcbnew": {
     "last_paths": {
@@ -800,28 +751,28 @@
       "Root"
     ],
     [
-      "eaf224bf-a12f-4d12-aa0a-28551b47d007",
-      "MCU"
-    ],
-    [
       "09dae378-4d12-4dca-bc21-c216f94ec21f",
-      "BMS"
+      "PSU"
     ],
     [
-      "dd2813e4-a810-44d7-8b7e-d46ce1c3fa30",
-      "Wi-SUN Module"
+      "d4b85e6c-5f5c-4400-806e-353edbeb9b74",
+      "ethernet"
     ],
     [
       "140ad835-eaa4-4a8c-a4e7-0525bbf22a2e",
       "BME 688 and SPS30"
     ],
     [
-      "53a20cc4-87c9-41e2-9c0c-c30bc75df497",
-      "USB-C"
+      "dd2813e4-a810-44d7-8b7e-d46ce1c3fa30",
+      "Antenna Module"
     ],
     [
-      "d4b85e6c-5f5c-4400-806e-353edbeb9b74",
-      "Ethernet"
+      "eaf224bf-a12f-4d12-aa0a-28551b47d007",
+      "MCU"
+    ],
+    [
+      "53a20cc4-87c9-41e2-9c0c-c30bc75df497",
+      "USBC"
     ]
   ],
   "text_variables": {}
