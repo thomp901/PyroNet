@@ -751,28 +751,28 @@
       "Root"
     ],
     [
-      "09dae378-4d12-4dca-bc21-c216f94ec21f",
-      "PSU"
+      "eaf224bf-a12f-4d12-aa0a-28551b47d007",
+      "MCU"
     ],
     [
-      "d4b85e6c-5f5c-4400-806e-353edbeb9b74",
-      "ethernet"
+      "09dae378-4d12-4dca-bc21-c216f94ec21f",
+      "BMS"
+    ],
+    [
+      "dd2813e4-a810-44d7-8b7e-d46ce1c3fa30",
+      "Wi-SUN Module"
     ],
     [
       "140ad835-eaa4-4a8c-a4e7-0525bbf22a2e",
       "BME 688 and SPS30"
     ],
     [
-      "dd2813e4-a810-44d7-8b7e-d46ce1c3fa30",
-      "Antenna Module"
-    ],
-    [
-      "eaf224bf-a12f-4d12-aa0a-28551b47d007",
-      "MCU"
-    ],
-    [
       "53a20cc4-87c9-41e2-9c0c-c30bc75df497",
-      "USBC"
+      "USB-C"
+    ],
+    [
+      "d4b85e6c-5f5c-4400-806e-353edbeb9b74",
+      "Ethernet"
     ]
   ],
   "text_variables": {}
