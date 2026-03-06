@@ -3101,7 +3101,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" "Package_TO_SOT_THT:TO-220-2_Vertical"
+		(property "Footprint" "Diode_SMD:D_SOD-123"
 			(at 194.31 106.045 0)
 			(effects
 				(font
