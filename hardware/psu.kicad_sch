@@ -8576,7 +8576,8 @@
 	)
 	(symbol
 		(lib_id "Device:R")
-		(at 214.63 36.83 180)
+		(at 214.63 36.83 0)
+		(mirror x)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -8584,7 +8585,7 @@
 		(dnp no)
 		(uuid "15269892-9bc6-4d47-849b-59039b67d922")
 		(property "Reference" "R311"
-			(at 220.218 33.274 0)
+			(at 209.042 33.274 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8593,7 +8594,7 @@
 			)
 		)
 		(property "Value" "100"
-			(at 219.202 40.64 0)
+			(at 210.058 40.64 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8602,7 +8603,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
-			(at 216.408 36.83 90)
+			(at 212.852 36.83 90)
 			(effects
 				(font
 					(size 1.27 1.27)
