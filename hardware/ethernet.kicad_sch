@@ -285,271 +285,6 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Device:Crystal_GND24"
-			(pin_names
-				(offset 1.016)
-				(hide yes)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" "Y"
-				(at 3.175 5.08 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left)
-				)
-			)
-			(property "Value" "Crystal_GND24"
-				(at 3.175 3.175 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left)
-				)
-			)
-			(property "Footprint" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" "~"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Description" "Four pin crystal, GND on pins 2 and 4"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property private "KLC_S3.3" "The rectangle is not a symbol body but a graphical element"
-				(at 0 -12.7 0)
-				(show_name)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property private "KLC_S4.1" "Some pins are on 50mil grid to make the symbol small"
-				(at 0 -15.24 0)
-				(show_name)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_keywords" "quartz ceramic resonator oscillator"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_fp_filters" "Crystal*"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "Crystal_GND24_0_1"
-				(polyline
-					(pts
-						(xy -2.54 2.286) (xy -2.54 3.556) (xy 2.54 3.556) (xy 2.54 2.286)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -2.54 0) (xy -2.032 0)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -2.54 -2.286) (xy -2.54 -3.556) (xy 2.54 -3.556) (xy 2.54 -2.286)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -2.032 -1.27) (xy -2.032 1.27)
-					)
-					(stroke
-						(width 0.508)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(rectangle
-					(start -1.143 2.54)
-					(end 1.143 -2.54)
-					(stroke
-						(width 0.3048)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 -3.81) (xy 0 -3.556)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 2.032 0) (xy 2.54 0)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 2.032 -1.27) (xy 2.032 1.27)
-					)
-					(stroke
-						(width 0.508)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "Crystal_GND24_1_1"
-				(pin passive line
-					(at -3.81 0 0)
-					(length 1.27)
-					(name "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 0 -5.08 90)
-					(length 1.27)
-					(name "G"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 0 -5.08 90)
-					(length 1.27)
-					(hide yes)
-					(name "G"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "4"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 3.81 0 180)
-					(length 1.27)
-					(name "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-			(embedded_fonts no)
-		)
 		(symbol "Device:FerriteBead"
 			(pin_numbers
 				(hide yes)
@@ -4155,6 +3890,295 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "pyronet_symbols:ECS-250-18-5PX-F-TR"
+			(pin_names
+				(offset 1.016)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "Y"
+				(at -5.0869 3.8152 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left bottom)
+				)
+			)
+			(property "Value" "ECS-250-18-5PX-F-TR"
+				(at -5.0903 -5.0903 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left bottom)
+				)
+			)
+			(property "Footprint" "ECS-250-18-5PX-F-TR:XTAL_ECS-250-18-5PX-F-TR"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify bottom)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "DigiKey_Part_Number" "XC1305CT-ND"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify bottom)
+					(hide yes)
+				)
+			)
+			(property "SnapEDA_Link" "https://www.snapeda.com/parts/ECS-250-18-5PX-F-TR/ECS/view-part/?ref=snap"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify bottom)
+					(hide yes)
+				)
+			)
+			(property "Description_1" "25 MHz ±30ppm Crystal 18pF 30 Ohms HC-49/US"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify bottom)
+					(hide yes)
+				)
+			)
+			(property "Package" "CSM-7X-3L-5G3X-2 ECS"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify bottom)
+					(hide yes)
+				)
+			)
+			(property "Check_prices" "https://www.snapeda.com/parts/ECS-250-18-5PX-F-TR/ECS/view-part/?ref=eda"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify bottom)
+					(hide yes)
+				)
+			)
+			(property "STANDARD" "Manufacturer recommendations"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify bottom)
+					(hide yes)
+				)
+			)
+			(property "PARTREV" "2017"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify bottom)
+					(hide yes)
+				)
+			)
+			(property "MF" "ECS Inc."
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify bottom)
+					(hide yes)
+				)
+			)
+			(property "MP" "ECS-250-18-5PX-F-TR"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify bottom)
+					(hide yes)
+				)
+			)
+			(property "MANUFACTURER" "ECS INC."
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify bottom)
+					(hide yes)
+				)
+			)
+			(symbol "ECS-250-18-5PX-F-TR_0_0"
+				(polyline
+					(pts
+						(xy -2.54 0) (xy -1.016 0)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.016 1.778) (xy -1.016 -1.778)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -0.381 1.524) (xy -0.381 -1.524)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -0.381 -1.524) (xy 0.381 -1.524)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.381 1.524) (xy -0.381 1.524)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.381 -1.524) (xy 0.381 1.524)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 1.016 1.778) (xy 1.016 -1.778)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 1.016 0) (xy 2.54 0)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(pin passive line
+					(at -5.08 0 0)
+					(length 2.54)
+					(name "~"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 5.08 0 180)
+					(length 2.54)
+					(name "~"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "pyronet_symbols:J0011D21BNL"
 			(pin_names
 				(offset 0.254)
@@ -6141,6 +6165,12 @@
 		(uuid "5e0df67c-db77-48a3-b57b-5c87aeb867b7")
 	)
 	(junction
+		(at 76.2 132.08)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "5f2d2205-558b-4ab1-a56c-40df35b6e4c4")
+	)
+	(junction
 		(at 158.75 85.09)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -6157,18 +6187,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "8a28a52a-6084-4992-adfb-5e03be101603")
-	)
-	(junction
-		(at 67.31 140.97)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "8aabc3f6-4236-4a83-aa36-5653ab99c183")
-	)
-	(junction
-		(at 57.15 132.08)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "92ce51e2-e4e8-4397-b033-9b963825380d")
 	)
 	(junction
 		(at 176.53 90.17)
@@ -6231,10 +6249,10 @@
 		(uuid "c4328fcb-51f6-4ae9-8910-aad79a755f59")
 	)
 	(junction
-		(at 76.2 132.08)
+		(at 57.15 132.08)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "d1e24a75-2441-4a5e-8319-d65b98f07a60")
+		(uuid "ccd7aaa5-2e20-42c2-b4a9-d46296595ae6")
 	)
 	(junction
 		(at 151.13 57.15)
@@ -6311,6 +6329,16 @@
 	(no_connect
 		(at 116.84 120.65)
 		(uuid "9b5d7414-8360-4ec6-b6ea-3b87488c5337")
+	)
+	(wire
+		(pts
+			(xy 57.15 132.08) (xy 57.15 134.62)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "007ce56e-ef07-4a64-906f-e2d53168c01b")
 	)
 	(wire
 		(pts
@@ -6514,16 +6542,6 @@
 	)
 	(wire
 		(pts
-			(xy 57.15 140.97) (xy 67.31 140.97)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "30eac240-0487-4421-adaa-fcb6df969435")
-	)
-	(wire
-		(pts
 			(xy 116.84 118.11) (xy 121.92 118.11)
 		)
 		(stroke
@@ -6564,7 +6582,7 @@
 	)
 	(wire
 		(pts
-			(xy 57.15 132.08) (xy 57.15 134.62)
+			(xy 57.15 125.73) (xy 57.15 132.08)
 		)
 		(stroke
 			(width 0)
@@ -6604,7 +6622,7 @@
 	)
 	(wire
 		(pts
-			(xy 76.2 134.62) (xy 76.2 132.08)
+			(xy 76.2 115.57) (xy 76.2 132.08)
 		)
 		(stroke
 			(width 0)
@@ -6661,6 +6679,16 @@
 			(type default)
 		)
 		(uuid "40a19738-7580-4d1f-ab66-e7273d70193c")
+	)
+	(wire
+		(pts
+			(xy 76.2 132.08) (xy 76.2 134.62)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "41292be8-7c12-45c8-8f78-96250a7a1693")
 	)
 	(wire
 		(pts
@@ -6764,7 +6792,7 @@
 	)
 	(wire
 		(pts
-			(xy 67.31 140.97) (xy 76.2 140.97)
+			(xy 57.15 140.97) (xy 76.2 140.97)
 		)
 		(stroke
 			(width 0)
@@ -6994,16 +7022,6 @@
 	)
 	(wire
 		(pts
-			(xy 76.2 132.08) (xy 76.2 115.57)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "775d1581-8e82-454e-a5ca-4bad6b9f0c9b")
-	)
-	(wire
-		(pts
 			(xy 147.32 104.14) (xy 147.32 113.03)
 		)
 		(stroke
@@ -7121,16 +7139,6 @@
 			(type default)
 		)
 		(uuid "844818cb-30a0-4e35-bcbd-4944ba29c1df")
-	)
-	(wire
-		(pts
-			(xy 57.15 125.73) (xy 57.15 132.08)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "853e88c6-a76f-4b4c-accf-b965dd94a475")
 	)
 	(wire
 		(pts
@@ -7454,16 +7462,6 @@
 	)
 	(wire
 		(pts
-			(xy 71.12 132.08) (xy 76.2 132.08)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "c5a5469a-fdda-4fa4-9066-4d85a1e71235")
-	)
-	(wire
-		(pts
 			(xy 142.24 147.32) (xy 132.08 147.32)
 		)
 		(stroke
@@ -7524,6 +7522,16 @@
 	)
 	(wire
 		(pts
+			(xy 57.15 132.08) (xy 62.23 132.08)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d059ec3c-2ebf-48d0-9e37-9838ad86d92d")
+	)
+	(wire
+		(pts
 			(xy 167.64 73.66) (xy 158.75 73.66)
 		)
 		(stroke
@@ -7531,16 +7539,6 @@
 			(type default)
 		)
 		(uuid "d0e58142-9ec9-4c1c-96bd-7e0b76f2746f")
-	)
-	(wire
-		(pts
-			(xy 57.15 132.08) (xy 63.5 132.08)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "d7293dea-ae43-4a18-9ebb-7122df4c31d7")
 	)
 	(wire
 		(pts
@@ -7634,6 +7632,16 @@
 	)
 	(wire
 		(pts
+			(xy 72.39 132.08) (xy 76.2 132.08)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ee85cbf3-3a40-49f7-8076-1871f610dae5")
+	)
+	(wire
+		(pts
 			(xy 99.06 140.97) (xy 99.06 147.32)
 		)
 		(stroke
@@ -7681,16 +7689,6 @@
 			(type default)
 		)
 		(uuid "f43f5f0a-2fbf-4d72-9d00-081b7df46f3b")
-	)
-	(wire
-		(pts
-			(xy 67.31 137.16) (xy 67.31 140.97)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "f5ec23a3-31c7-4101-b471-b05031571937")
 	)
 	(wire
 		(pts
@@ -8023,7 +8021,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "0daaabd4-ff35-4f8d-93a6-3774a7eff5d8")
-		(property "Reference" "R709"
+		(property "Reference" "R710"
 			(at 159.258 114.808 0)
 			(effects
 				(font
@@ -8075,7 +8073,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
-					(reference "R709")
+					(reference "R710")
 					(unit 1)
 				)
 			)
@@ -8090,7 +8088,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "0edc2bc1-8c97-48e4-bbee-8ae3ce7612ba")
-		(property "Reference" "R707"
+		(property "Reference" "R708"
 			(at 144.78 139.446 0)
 			(effects
 				(font
@@ -8144,7 +8142,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
-					(reference "R707")
+					(reference "R708")
 					(unit 1)
 				)
 			)
@@ -8505,7 +8503,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "34f97907-f59c-468f-9232-8b43988e5a7e")
-		(property "Reference" "R714"
+		(property "Reference" "R715"
 			(at 200.406 151.892 90)
 			(effects
 				(font
@@ -8557,7 +8555,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
-					(reference "R714")
+					(reference "R715")
 					(unit 1)
 				)
 			)
@@ -8705,7 +8703,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "3aad1835-89d5-4c49-a8e1-850dff45fe2b")
-		(property "Reference" "R705"
+		(property "Reference" "R706"
 			(at 127 99.568 90)
 			(effects
 				(font
@@ -8757,7 +8755,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
-					(reference "R705")
+					(reference "R706")
 					(unit 1)
 				)
 			)
@@ -8983,7 +8981,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "400cb425-dbbe-4550-9812-442016fc336b")
-		(property "Reference" "R715"
+		(property "Reference" "R703"
 			(at 104.14 38.1 90)
 			(effects
 				(font
@@ -9035,7 +9033,7 @@
 		(instances
 			(project ""
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
-					(reference "R715")
+					(reference "R703")
 					(unit 1)
 				)
 			)
@@ -9424,7 +9422,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "5437e62f-c5e6-4c97-a8d1-63db44831678")
-		(property "Reference" "R712"
+		(property "Reference" "R713"
 			(at 179.578 76.708 0)
 			(effects
 				(font
@@ -9476,7 +9474,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
-					(reference "R712")
+					(reference "R713")
 					(unit 1)
 				)
 			)
@@ -9965,7 +9963,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "9408fd14-669e-48ec-b7bc-faf2900d05c8")
-		(property "Reference" "R706"
+		(property "Reference" "R707"
 			(at 127 105.918 90)
 			(effects
 				(font
@@ -10017,7 +10015,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
-					(reference "R706")
+					(reference "R707")
 					(unit 1)
 				)
 			)
@@ -10098,7 +10096,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "a3e48b45-c905-49e6-8c1d-bf5fddd26555")
-		(property "Reference" "R710"
+		(property "Reference" "R711"
 			(at 161.798 76.708 0)
 			(effects
 				(font
@@ -10150,7 +10148,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
-					(reference "R710")
+					(reference "R711")
 					(unit 1)
 				)
 			)
@@ -10231,7 +10229,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "ab94459a-f078-431a-a03f-0d01cd4e2a17")
-		(property "Reference" "R708"
+		(property "Reference" "R709"
 			(at 150.368 114.808 0)
 			(effects
 				(font
@@ -10283,7 +10281,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
-					(reference "R708")
+					(reference "R709")
 					(unit 1)
 				)
 			)
@@ -10367,7 +10365,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "c60e0778-209c-4cd9-9712-2e8542baaabb")
-		(property "Reference" "R711"
+		(property "Reference" "R712"
 			(at 170.688 76.708 0)
 			(effects
 				(font
@@ -10419,7 +10417,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
-					(reference "R711")
+					(reference "R712")
 					(unit 1)
 				)
 			)
@@ -10640,7 +10638,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "d7fa2372-c4c7-4574-b48d-2f0566219128")
-		(property "Reference" "R703"
+		(property "Reference" "R704"
 			(at 127 86.868 90)
 			(effects
 				(font
@@ -10692,7 +10690,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
-					(reference "R703")
+					(reference "R704")
 					(unit 1)
 				)
 			)
@@ -10979,7 +10977,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "e838dcba-0f79-4c49-a426-edcd56702357")
-		(property "Reference" "R713"
+		(property "Reference" "R714"
 			(at 200.66 143.51 90)
 			(effects
 				(font
@@ -11031,39 +11029,48 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
-					(reference "R713")
+					(reference "R714")
 					(unit 1)
 				)
 			)
 		)
 	)
 	(symbol
-		(lib_id "Device:Crystal_GND24")
+		(lib_id "pyronet_symbols:ECS-250-18-5PX-F-TR")
 		(at 67.31 132.08 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "e982c8b3-bb5a-4fe9-801d-ba0be064e865")
+		(uuid "e8a6aa51-c7c3-4099-a805-0fae9e2ec340")
 		(property "Reference" "Y701"
-			(at 67.31 123.19 0)
+			(at 67.056 127.762 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
-		(property "Value" "25MHz"
-			(at 67.31 125.73 0)
+		(property "Value" "ECS-250-18-5PX-F-TR"
+			(at 41.656 132.08 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
-		(property "Footprint" "Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm"
+		(property "Footprint" "pyronet_footprints:XTAL_ECS-250-18-5PX-F-TR"
+			(at 67.31 132.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify bottom)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
 			(at 67.31 132.08 0)
 			(effects
 				(font
@@ -11072,7 +11079,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "Description" ""
 			(at 67.31 132.08 0)
 			(effects
 				(font
@@ -11081,49 +11088,114 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Four pin crystal, GND on pins 2 and 4"
+		(property "DigiKey_Part_Number" "XC1305CT-ND"
 			(at 67.31 132.08 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
+				(justify bottom)
 				(hide yes)
 			)
 		)
-		(property private "KLC_S3.3" "The rectangle is not a symbol body but a graphical element"
-			(at 67.31 144.78 0)
-			(show_name yes)
+		(property "SnapEDA_Link" "https://www.snapeda.com/parts/ECS-250-18-5PX-F-TR/ECS/view-part/?ref=snap"
+			(at 67.31 132.08 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
+				(justify bottom)
 				(hide yes)
 			)
 		)
-		(property private "KLC_S4.1" "Some pins are on 50mil grid to make the symbol small"
-			(at 67.31 147.32 0)
-			(show_name yes)
+		(property "Description_1" "25 MHz ±30ppm Crystal 18pF 30 Ohms HC-49/US"
+			(at 67.31 132.08 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
+				(justify bottom)
 				(hide yes)
 			)
 		)
-		(pin "3"
-			(uuid "b7188db3-0926-4d27-b690-6b1981c31fe0")
+		(property "Package" "CSM-7X-3L-5G3X-2 ECS"
+			(at 67.31 132.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify bottom)
+				(hide yes)
+			)
 		)
-		(pin "4"
-			(uuid "212897d9-43de-40b2-86a3-fe70eb3c7d11")
+		(property "Check_prices" "https://www.snapeda.com/parts/ECS-250-18-5PX-F-TR/ECS/view-part/?ref=eda"
+			(at 67.31 132.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify bottom)
+				(hide yes)
+			)
 		)
-		(pin "2"
-			(uuid "aaefa7aa-d6a3-4e40-94d1-2afc430704cf")
+		(property "STANDARD" "Manufacturer recommendations"
+			(at 67.31 132.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify bottom)
+				(hide yes)
+			)
+		)
+		(property "PARTREV" "2017"
+			(at 67.31 132.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify bottom)
+				(hide yes)
+			)
+		)
+		(property "MF" "ECS Inc."
+			(at 67.31 132.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify bottom)
+				(hide yes)
+			)
+		)
+		(property "MP" "ECS-250-18-5PX-F-TR"
+			(at 67.31 132.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify bottom)
+				(hide yes)
+			)
+		)
+		(property "MANUFACTURER" "ECS INC."
+			(at 67.31 132.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify bottom)
+				(hide yes)
+			)
 		)
 		(pin "1"
-			(uuid "46ebff9e-e0e4-403e-8a78-179b2b75ad81")
+			(uuid "e43ae9dd-8085-4351-a0a6-726308a77117")
+		)
+		(pin "2"
+			(uuid "fb3bb7ca-9a52-44fa-80ae-f8305b8c12a5")
 		)
 		(instances
-			(project "Senior_Design"
+			(project ""
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
 					(reference "Y701")
 					(unit 1)
@@ -11206,7 +11278,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "ede0318c-9bcb-415a-84fc-9ff683bbea04")
-		(property "Reference" "R704"
+		(property "Reference" "R705"
 			(at 127 93.218 90)
 			(effects
 				(font
@@ -11258,7 +11330,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/d4b85e6c-5f5c-4400-806e-353edbeb9b74"
-					(reference "R704")
+					(reference "R705")
 					(unit 1)
 				)
 			)
