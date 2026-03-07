@@ -3798,7 +3798,7 @@
 				)
 			)
 		)
-		(property "Footprint" "pyronet_footprints:XCVR_BDE-MB1352P71UA32"
+		(property "Footprint" "pyronet_footprints:XCVR_BDE-MB1352P71UA32_1.03"
 			(at 189.23 85.09 0)
 			(effects
 				(font
