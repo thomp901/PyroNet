@@ -1815,7 +1815,7 @@
 	)
 	(wire
 		(pts
-			(xy 175.26 114.3) (xy 193.04 114.3)
+			(xy 176.53 114.3) (xy 193.04 114.3)
 		)
 		(stroke
 			(width 0)
@@ -1885,7 +1885,7 @@
 	)
 	(wire
 		(pts
-			(xy 175.26 111.76) (xy 193.04 111.76)
+			(xy 176.53 111.76) (xy 193.04 111.76)
 		)
 		(stroke
 			(width 0)
@@ -2035,7 +2035,7 @@
 	)
 	(hierarchical_label "SDA"
 		(shape bidirectional)
-		(at 165.1 111.76 180)
+		(at 166.37 111.76 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -2079,7 +2079,7 @@
 	)
 	(hierarchical_label "SCL"
 		(shape input)
-		(at 165.1 114.3 180)
+		(at 166.37 114.3 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -2292,7 +2292,7 @@
 	)
 	(symbol
 		(lib_id "Power_Protection:USBLC6-2P6")
-		(at 170.18 111.76 0)
+		(at 171.45 111.76 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -2301,7 +2301,7 @@
 		(fields_autoplaced yes)
 		(uuid "514f0d22-5270-4410-b96f-af4e3c428744")
 		(property "Reference" "U402"
-			(at 171.8311 104.14 0)
+			(at 173.1011 104.14 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2310,7 +2310,7 @@
 			)
 		)
 		(property "Value" "USBLC6-2P6"
-			(at 171.8311 106.68 0)
+			(at 173.1011 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2319,7 +2319,7 @@
 			)
 		)
 		(property "Footprint" "Package_TO_SOT_SMD:SOT-666"
-			(at 171.196 118.491 0)
+			(at 172.466 118.491 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2330,7 +2330,7 @@
 			)
 		)
 		(property "Datasheet" "https://www.st.com/resource/en/datasheet/usblc6-2.pdf"
-			(at 171.196 120.396 0)
+			(at 172.466 120.396 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2340,7 +2340,7 @@
 			)
 		)
 		(property "Description" "Very low capacitance ESD protection diode, 2 data-line, SOT-666"
-			(at 170.18 111.76 0)
+			(at 171.45 111.76 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2377,7 +2377,7 @@
 	)
 	(symbol
 		(lib_id "power:+3.3V")
-		(at 170.18 106.68 0)
+		(at 171.45 106.68 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -2386,7 +2386,7 @@
 		(fields_autoplaced yes)
 		(uuid "58a6fc83-1c2c-46d1-abd4-b94cf0dd956d")
 		(property "Reference" "#PWR0403"
-			(at 170.18 110.49 0)
+			(at 171.45 110.49 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2395,7 +2395,7 @@
 			)
 		)
 		(property "Value" "+3.3V"
-			(at 170.18 101.6 0)
+			(at 171.45 101.6 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2403,7 +2403,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 170.18 106.68 0)
+			(at 171.45 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2412,7 +2412,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 170.18 106.68 0)
+			(at 171.45 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2421,7 +2421,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
-			(at 170.18 106.68 0)
+			(at 171.45 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3017,7 +3017,7 @@
 		(dnp no)
 		(uuid "c3466c38-4650-42f7-83b8-e136cbe143f4")
 		(property "Reference" "D401"
-			(at 196.596 98.044 0)
+			(at 198.12 98.044 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3209,7 +3209,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 170.18 119.38 0)
+		(at 171.45 119.38 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -3218,7 +3218,7 @@
 		(fields_autoplaced yes)
 		(uuid "edd1925b-653b-418d-8b8a-a096204985e8")
 		(property "Reference" "#PWR0405"
-			(at 170.18 125.73 0)
+			(at 171.45 125.73 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3227,7 +3227,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 172.72 120.6499 0)
+			(at 173.99 120.6499 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3236,7 +3236,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 170.18 119.38 0)
+			(at 171.45 119.38 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3245,7 +3245,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 170.18 119.38 0)
+			(at 171.45 119.38 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3254,7 +3254,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 170.18 119.38 0)
+			(at 171.45 119.38 0)
 			(effects
 				(font
 					(size 1.27 1.27)
