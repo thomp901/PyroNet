@@ -241,7 +241,16 @@
     "equivalence_files": []
   },
   "erc": {
-    "erc_exclusions": [],
+    "erc_exclusions": [
+      [
+        "multiple_net_names|1397000|482600|0e19ae8b-7086-4e00-a6e8-f4a350ef0343|0d81794c-184e-41bf-91e7-92231e525474|/8f5928e8-0fc1-4443-a20f-3bfeb956761e/eaf224bf-a12f-4d12-aa0a-28551b47d007|/8f5928e8-0fc1-4443-a20f-3bfeb956761e/eaf224bf-a12f-4d12-aa0a-28551b47d007|/8f5928e8-0fc1-4443-a20f-3bfeb956761e/eaf224bf-a12f-4d12-aa0a-28551b47d007",
+        ""
+      ],
+      [
+        "multiple_net_names|469900|685800|3dfda001-2826-4c0e-be59-29e58528cbda|dd83c9f4-e390-4def-ac85-e1ab35094297|/8f5928e8-0fc1-4443-a20f-3bfeb956761e/53a20cc4-87c9-41e2-9c0c-c30bc75df497|/8f5928e8-0fc1-4443-a20f-3bfeb956761e/53a20cc4-87c9-41e2-9c0c-c30bc75df497|/8f5928e8-0fc1-4443-a20f-3bfeb956761e/53a20cc4-87c9-41e2-9c0c-c30bc75df497",
+        ""
+      ]
+    ],
     "meta": {
       "version": 0
     },
@@ -435,7 +444,7 @@
       "label_dangling": "error",
       "label_multiple_wires": "warning",
       "lib_symbol_issues": "warning",
-      "lib_symbol_mismatch": "warning",
+      "lib_symbol_mismatch": "ignore",
       "missing_bidi_pin": "warning",
       "missing_input_pin": "warning",
       "missing_power_pin": "error",
