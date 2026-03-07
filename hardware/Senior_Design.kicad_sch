@@ -6,20 +6,20 @@
 	(paper "A4")
 	(lib_symbols)
 	(junction
-		(at 171.45 77.47)
+		(at 171.45 68.58)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "3e15d3b4-6df7-408d-b3fb-b8e7300c18ad")
 	)
 	(junction
-		(at 168.91 80.01)
+		(at 168.91 71.12)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "ab966986-759f-45f5-91f8-1ef16c64388a")
+		(uuid "6371f506-89fc-4488-b06e-e0cf06e7aa88")
 	)
 	(wire
 		(pts
-			(xy 124.46 83.82) (xy 137.16 83.82)
+			(xy 124.46 81.28) (xy 137.16 81.28)
 		)
 		(stroke
 			(width 0)
@@ -29,7 +29,17 @@
 	)
 	(wire
 		(pts
-			(xy 171.45 77.47) (xy 171.45 93.98)
+			(xy 124.46 100.33) (xy 137.16 100.33)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0b3b0742-83f5-4513-ba71-2413f05e246e")
+	)
+	(wire
+		(pts
+			(xy 171.45 68.58) (xy 171.45 85.09)
 		)
 		(stroke
 			(width 0)
@@ -39,47 +49,17 @@
 	)
 	(wire
 		(pts
-			(xy 172.72 120.65) (xy 179.07 120.65)
+			(xy 165.1 92.71) (xy 179.07 92.71)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "26e358b7-f351-4fc7-bc30-a59b45371c87")
+		(uuid "27b5badf-0879-45bb-bab3-3886f76954b7")
 	)
 	(wire
 		(pts
-			(xy 165.1 99.06) (xy 179.07 99.06)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "28467570-ed14-4381-85ba-4adc555942cb")
-	)
-	(wire
-		(pts
-			(xy 165.1 106.68) (xy 172.72 106.68)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "31ab8cde-aaef-4dba-99b2-c0b59fbd2a0e")
-	)
-	(wire
-		(pts
-			(xy 165.1 101.6) (xy 179.07 101.6)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "34e1d59b-7c5f-45e5-8013-a45f5fd06471")
-	)
-	(wire
-		(pts
-			(xy 168.91 80.01) (xy 179.07 80.01)
+			(xy 168.91 71.12) (xy 179.07 71.12)
 		)
 		(stroke
 			(width 0)
@@ -89,7 +69,7 @@
 	)
 	(wire
 		(pts
-			(xy 124.46 100.33) (xy 137.16 100.33)
+			(xy 124.46 116.84) (xy 137.16 116.84)
 		)
 		(stroke
 			(width 0)
@@ -99,17 +79,7 @@
 	)
 	(wire
 		(pts
-			(xy 170.18 109.22) (xy 170.18 123.19)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "4da3a644-3f65-400b-bcf6-9f1b824b1da3")
-	)
-	(wire
-		(pts
-			(xy 124.46 73.66) (xy 137.16 73.66)
+			(xy 124.46 71.12) (xy 137.16 71.12)
 		)
 		(stroke
 			(width 0)
@@ -119,7 +89,7 @@
 	)
 	(wire
 		(pts
-			(xy 171.45 77.47) (xy 179.07 77.47)
+			(xy 171.45 68.58) (xy 179.07 68.58)
 		)
 		(stroke
 			(width 0)
@@ -129,43 +99,23 @@
 	)
 	(wire
 		(pts
-			(xy 124.46 80.01) (xy 137.16 80.01)
+			(xy 165.1 68.58) (xy 171.45 68.58)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "63b2d3ce-91cd-42a7-9652-a2e40601da19")
+		(uuid "60b1bbce-27a7-4680-bc9a-2c4867fa8908")
 	)
 	(wire
 		(pts
-			(xy 124.46 111.76) (xy 137.16 111.76)
+			(xy 165.1 111.76) (xy 179.07 111.76)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "64707c55-055a-4d16-baf9-db96aea5f479")
-	)
-	(wire
-		(pts
-			(xy 172.72 106.68) (xy 172.72 120.65)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "70cca5cc-0438-4eba-b429-01953f11e1de")
-	)
-	(wire
-		(pts
-			(xy 179.07 123.19) (xy 170.18 123.19)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "7fe1cd34-d51f-4c09-8abb-ac72014aae0e")
+		(uuid "62cfbc65-586e-4694-99ef-b2bfddbd91db")
 	)
 	(wire
 		(pts
@@ -175,31 +125,51 @@
 			(width 0)
 			(type default)
 		)
+		(uuid "63b2d3ce-91cd-42a7-9652-a2e40601da19")
+	)
+	(wire
+		(pts
+			(xy 165.1 95.25) (xy 179.07 95.25)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "890f79ea-1f56-47f8-8768-377785a542e3")
+	)
+	(wire
+		(pts
+			(xy 124.46 105.41) (xy 137.16 105.41)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "979c2043-5c88-4e32-9ea3-09ed17dd566a")
+	)
+	(wire
+		(pts
+			(xy 124.46 74.93) (xy 137.16 74.93)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
 		(uuid "9a2ad260-53ea-4e44-9795-f66533d7d809")
 	)
 	(wire
 		(pts
-			(xy 165.1 109.22) (xy 170.18 109.22)
+			(xy 124.46 110.49) (xy 137.16 110.49)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "9ee04ed6-2a2f-4a9a-ace1-00164c53146b")
+		(uuid "a45e5a8a-6fb7-4d43-8839-6af225a75e4b")
 	)
 	(wire
 		(pts
-			(xy 165.1 77.47) (xy 171.45 77.47)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "a3b98197-f755-482b-9b19-ba3bdd6d09c9")
-	)
-	(wire
-		(pts
-			(xy 165.1 80.01) (xy 168.91 80.01)
+			(xy 165.1 71.12) (xy 168.91 71.12)
 		)
 		(stroke
 			(width 0)
@@ -209,7 +179,7 @@
 	)
 	(wire
 		(pts
-			(xy 124.46 88.9) (xy 137.16 88.9)
+			(xy 124.46 87.63) (xy 137.16 87.63)
 		)
 		(stroke
 			(width 0)
@@ -219,7 +189,7 @@
 	)
 	(wire
 		(pts
-			(xy 124.46 86.36) (xy 137.16 86.36)
+			(xy 124.46 83.82) (xy 137.16 83.82)
 		)
 		(stroke
 			(width 0)
@@ -229,27 +199,17 @@
 	)
 	(wire
 		(pts
-			(xy 124.46 114.3) (xy 137.16 114.3)
+			(xy 124.46 102.87) (xy 137.16 102.87)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "c59f3095-83eb-4600-bbe1-45f59e535871")
+		(uuid "babe390d-b613-41b4-9cdc-862fd1cb966b")
 	)
 	(wire
 		(pts
-			(xy 124.46 109.22) (xy 137.16 109.22)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "c650da10-b2ca-41d2-a0fd-99a2d4c704d6")
-	)
-	(wire
-		(pts
-			(xy 168.91 96.52) (xy 179.07 96.52)
+			(xy 168.91 87.63) (xy 179.07 87.63)
 		)
 		(stroke
 			(width 0)
@@ -259,17 +219,27 @@
 	)
 	(wire
 		(pts
-			(xy 124.46 106.68) (xy 137.16 106.68)
+			(xy 124.46 107.95) (xy 137.16 107.95)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "d73820aa-fcbc-4749-b9e6-bf009648a0b1")
+		(uuid "db4b2ba5-e79b-4ff8-9df8-2c0d5a9bd84d")
 	)
 	(wire
 		(pts
-			(xy 124.46 71.12) (xy 137.16 71.12)
+			(xy 165.1 114.3) (xy 179.07 114.3)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e0854841-8b89-42cb-be73-4e9ccf986642")
+	)
+	(wire
+		(pts
+			(xy 124.46 68.58) (xy 137.16 68.58)
 		)
 		(stroke
 			(width 0)
@@ -279,7 +249,7 @@
 	)
 	(wire
 		(pts
-			(xy 168.91 80.01) (xy 168.91 96.52)
+			(xy 168.91 71.12) (xy 168.91 87.63)
 		)
 		(stroke
 			(width 0)
@@ -289,7 +259,7 @@
 	)
 	(wire
 		(pts
-			(xy 171.45 93.98) (xy 179.07 93.98)
+			(xy 171.45 85.09) (xy 179.07 85.09)
 		)
 		(stroke
 			(width 0)
@@ -297,18 +267,8 @@
 		)
 		(uuid "e8e8ca76-c516-4a29-96dd-03f9d1d5ba48")
 	)
-	(wire
-		(pts
-			(xy 124.46 116.84) (xy 137.16 116.84)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "f5c6ac9d-5fc2-4f45-9095-04e91616922c")
-	)
 	(sheet
-		(at 179.07 91.948)
+		(at 179.07 83.058)
 		(size 25.4 19.304)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -324,7 +284,7 @@
 		)
 		(uuid "09dae378-4d12-4dca-bc21-c216f94ec21f")
 		(property "Sheetname" "BMS"
-			(at 179.07 91.2364 0)
+			(at 179.07 82.3464 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -333,7 +293,7 @@
 			)
 		)
 		(property "Sheetfile" "psu.kicad_sch"
-			(at 179.07 111.8366 0)
+			(at 179.07 102.9466 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -341,8 +301,8 @@
 				(justify left top)
 			)
 		)
-		(pin "INT0" output
-			(at 179.07 99.06 180)
+		(pin "BQ_INT" output
+			(at 179.07 92.71 180)
 			(uuid "7f38db52-31aa-4c5b-9d00-de3d9b8b0ad4")
 			(effects
 				(font
@@ -351,8 +311,8 @@
 				(justify left)
 			)
 		)
-		(pin "QON" output
-			(at 179.07 101.6 180)
+		(pin "QON" input
+			(at 179.07 95.25 180)
 			(uuid "37b62177-d798-491a-b20e-67774b29f08d")
 			(effects
 				(font
@@ -362,7 +322,7 @@
 			)
 		)
 		(pin "SCL" input
-			(at 179.07 93.98 180)
+			(at 179.07 85.09 180)
 			(uuid "4e7e81f1-35b8-4ce1-8dd4-e46abcd56696")
 			(effects
 				(font
@@ -372,7 +332,7 @@
 			)
 		)
 		(pin "SDA" bidirectional
-			(at 179.07 96.52 180)
+			(at 179.07 87.63 180)
 			(uuid "e7fb4b37-a381-4646-818a-b02a94b6542d")
 			(effects
 				(font
@@ -390,8 +350,8 @@
 		)
 	)
 	(sheet
-		(at 179.07 73.66)
-		(size 19.05 12.065)
+		(at 179.07 66.294)
+		(size 19.05 10.541)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
@@ -406,7 +366,7 @@
 		)
 		(uuid "140ad835-eaa4-4a8c-a4e7-0525bbf22a2e")
 		(property "Sheetname" "BME 688 and SPS30"
-			(at 179.07 72.9484 0)
+			(at 179.07 65.5824 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -415,7 +375,7 @@
 			)
 		)
 		(property "Sheetfile" "BME688_SPS3-.kicad_sch"
-			(at 179.07 86.3096 0)
+			(at 179.07 77.4196 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -424,7 +384,7 @@
 			)
 		)
 		(pin "SCL" input
-			(at 179.07 77.47 180)
+			(at 179.07 68.58 180)
 			(uuid "8b32571b-9718-476b-83f9-61698ea27fcd")
 			(effects
 				(font
@@ -434,7 +394,7 @@
 			)
 		)
 		(pin "SDA" bidirectional
-			(at 179.07 80.01 180)
+			(at 179.07 71.12 180)
 			(uuid "c0e7419a-a9cd-483e-a1a1-42c4ae6006d8")
 			(effects
 				(font
@@ -452,7 +412,7 @@
 		)
 	)
 	(sheet
-		(at 179.07 117.348)
+		(at 179.07 108.458)
 		(size 24.13 18.542)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -468,7 +428,7 @@
 		)
 		(uuid "53a20cc4-87c9-41e2-9c0c-c30bc75df497")
 		(property "Sheetname" "USB-C"
-			(at 179.07 116.6364 0)
+			(at 179.07 107.7464 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -477,7 +437,7 @@
 			)
 		)
 		(property "Sheetfile" "USBC.kicad_sch"
-			(at 179.07 136.4746 0)
+			(at 179.07 127.5846 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -485,8 +445,8 @@
 				(justify left top)
 			)
 		)
-		(pin "DEBUG_UART_RX" input
-			(at 179.07 123.19 180)
+		(pin "MCU_TX_CP_RX" output
+			(at 179.07 114.3 180)
 			(uuid "0fdccbf6-982d-4af9-a7e3-434b7bab6141")
 			(effects
 				(font
@@ -495,8 +455,8 @@
 				(justify left)
 			)
 		)
-		(pin "DEBUG_UART_TX" output
-			(at 179.07 120.65 180)
+		(pin "MCU_RX_CP_TX" input
+			(at 179.07 111.76 180)
 			(uuid "4aca5e17-7aec-4c2d-b8bc-7115f61f42bc")
 			(effects
 				(font
@@ -546,8 +506,8 @@
 				(justify left top)
 			)
 		)
-		(pin "CS" input
-			(at 124.46 116.84 0)
+		(pin "SPI_CS" input
+			(at 124.46 110.49 0)
 			(uuid "2b53cfdd-9069-4ec2-b672-e9ef69afb24f")
 			(effects
 				(font
@@ -556,8 +516,8 @@
 				(justify right)
 			)
 		)
-		(pin "SPI_MISO" input
-			(at 124.46 111.76 0)
+		(pin "SPI_MISO" output
+			(at 124.46 105.41 0)
 			(uuid "30f3156d-8be3-44e0-a651-e22d0fd60f07")
 			(effects
 				(font
@@ -566,8 +526,8 @@
 				(justify right)
 			)
 		)
-		(pin "SPI_MOSI" output
-			(at 124.46 114.3 0)
+		(pin "SPI_MOSI" input
+			(at 124.46 107.95 0)
 			(uuid "7626ac31-1213-4639-b9c6-7c56fba8a773")
 			(effects
 				(font
@@ -577,7 +537,7 @@
 			)
 		)
 		(pin "SPI_SCK" input
-			(at 124.46 109.22 0)
+			(at 124.46 102.87 0)
 			(uuid "2ee57439-879b-4816-a383-33f7d596199b")
 			(effects
 				(font
@@ -586,8 +546,8 @@
 				(justify right)
 			)
 		)
-		(pin "INT1" output
-			(at 124.46 106.68 0)
+		(pin "W5500_INT" output
+			(at 124.46 100.33 0)
 			(uuid "ed23f10c-ee4e-482e-875f-10b106d61e5c")
 			(effects
 				(font
@@ -596,8 +556,8 @@
 				(justify right)
 			)
 		)
-		(pin "nRST" input
-			(at 124.46 100.33 0)
+		(pin "W5500_RST" input
+			(at 124.46 116.84 0)
 			(uuid "b21e3ad6-68f2-4788-9a80-f4355f8d8742")
 			(effects
 				(font
@@ -615,8 +575,8 @@
 		)
 	)
 	(sheet
-		(at 85.09 68.58)
-		(size 39.37 21.59)
+		(at 85.09 66.294)
+		(size 39.37 23.876)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
@@ -631,7 +591,7 @@
 		)
 		(uuid "dd2813e4-a810-44d7-8b7e-d46ce1c3fa30")
 		(property "Sheetname" "Wi-SUN Module"
-			(at 85.09 67.8684 0)
+			(at 85.09 65.5824 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -640,7 +600,7 @@
 			)
 		)
 		(property "Sheetfile" "BDE-MB1352P71UA32.kicad_sch"
-			(at 85.09 90.5006 0)
+			(at 85.09 90.7546 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -648,8 +608,8 @@
 				(justify left top)
 			)
 		)
-		(pin "MCU_CTS_BDE_RTS" bidirectional
-			(at 124.46 77.47 0)
+		(pin "MCU_CTS_BDE_RTS" output
+			(at 124.46 74.93 0)
 			(uuid "555e0753-44c7-485f-94d4-80ef8cdddcb3")
 			(effects
 				(font
@@ -658,8 +618,8 @@
 				(justify right)
 			)
 		)
-		(pin "MCU_RTS_BDE_CTS" bidirectional
-			(at 124.46 80.01 0)
+		(pin "MCU_RTS_BDE_CTS" input
+			(at 124.46 77.47 0)
 			(uuid "cb60d183-c886-4c24-887d-e8979c51f263")
 			(effects
 				(font
@@ -669,7 +629,7 @@
 			)
 		)
 		(pin "BDE_DEBUG0" bidirectional
-			(at 124.46 71.12 0)
+			(at 124.46 68.58 0)
 			(uuid "8c8646a0-4bec-4f1d-a73f-b899d838400b")
 			(effects
 				(font
@@ -678,8 +638,8 @@
 				(justify right)
 			)
 		)
-		(pin "MCU_RX_BDE_TX" output
-			(at 124.46 86.36 0)
+		(pin "MCU_RX_BDE_TX" input
+			(at 124.46 83.82 0)
 			(uuid "51f57b28-9be3-4b1d-9d01-b0fcbe8667ed")
 			(effects
 				(font
@@ -688,8 +648,8 @@
 				(justify right)
 			)
 		)
-		(pin "MCU_TX_BDE_RX" input
-			(at 124.46 83.82 0)
+		(pin "MCU_TX_BDE_RX" output
+			(at 124.46 81.28 0)
 			(uuid "7311b282-855c-4e97-ab55-9ff1de56bb18")
 			(effects
 				(font
@@ -699,7 +659,7 @@
 			)
 		)
 		(pin "BDE_DEBUG1" bidirectional
-			(at 124.46 73.66 0)
+			(at 124.46 71.12 0)
 			(uuid "22f7bd1e-ff31-4a6e-809d-c4451c99759e")
 			(effects
 				(font
@@ -708,8 +668,8 @@
 				(justify right)
 			)
 		)
-		(pin "BDE_RESET" output
-			(at 124.46 88.9 0)
+		(pin "BDE_RST" input
+			(at 124.46 87.63 0)
 			(uuid "d926deaa-ff83-42f1-8f1a-3c7c809341db")
 			(effects
 				(font
@@ -760,8 +720,8 @@
 				(justify left top)
 			)
 		)
-		(pin "BDE_RESET" input
-			(at 137.16 88.9 180)
+		(pin "BDE_RST" output
+			(at 137.16 87.63 180)
 			(uuid "33506e91-fd58-4684-b6be-4e0fa56f4ea8")
 			(effects
 				(font
@@ -770,8 +730,8 @@
 				(justify left)
 			)
 		)
-		(pin "CS" output
-			(at 137.16 116.84 180)
+		(pin "SPI_CS" output
+			(at 137.16 110.49 180)
 			(uuid "795060cf-eee2-4f0b-b950-4f64cb913ae0")
 			(effects
 				(font
@@ -780,8 +740,8 @@
 				(justify left)
 			)
 		)
-		(pin "MCU_RX_BDE_TX" output
-			(at 137.16 83.82 180)
+		(pin "MCU_RX_BDE_TX" input
+			(at 137.16 81.28 180)
 			(uuid "f3e76e4a-b48a-4545-929e-c8ecf83cb16f")
 			(effects
 				(font
@@ -790,8 +750,8 @@
 				(justify left)
 			)
 		)
-		(pin "MCU_TX_BDE_RX" input
-			(at 137.16 86.36 180)
+		(pin "MCU_TX_BDE_RX" output
+			(at 137.16 83.82 180)
 			(uuid "0179e73c-e6bd-44d6-8537-2474d71070d4")
 			(effects
 				(font
@@ -801,7 +761,7 @@
 			)
 		)
 		(pin "SCL" output
-			(at 165.1 77.47 0)
+			(at 165.1 68.58 0)
 			(uuid "6adbd671-31b6-42d7-a61d-e0828fd7f86f")
 			(effects
 				(font
@@ -811,7 +771,7 @@
 			)
 		)
 		(pin "SDA" bidirectional
-			(at 165.1 80.01 0)
+			(at 165.1 71.12 0)
 			(uuid "4ffc8f83-ce18-4c37-be38-6bdd04d15c48")
 			(effects
 				(font
@@ -820,8 +780,8 @@
 				(justify right)
 			)
 		)
-		(pin "SPI_MISO" output
-			(at 137.16 111.76 180)
+		(pin "SPI_MISO" input
+			(at 137.16 105.41 180)
 			(uuid "bdf69d3a-9cd5-4663-bb64-a863a4329c4d")
 			(effects
 				(font
@@ -830,8 +790,8 @@
 				(justify left)
 			)
 		)
-		(pin "SPI_MOSI" input
-			(at 137.16 114.3 180)
+		(pin "SPI_MOSI" output
+			(at 137.16 107.95 180)
 			(uuid "62be12fc-4602-4eb6-af40-3a707cab26c2")
 			(effects
 				(font
@@ -841,7 +801,7 @@
 			)
 		)
 		(pin "SPI_SCK" output
-			(at 137.16 109.22 180)
+			(at 137.16 102.87 180)
 			(uuid "ae8f9a15-061f-4612-b22a-17759303b8ef")
 			(effects
 				(font
@@ -850,8 +810,8 @@
 				(justify left)
 			)
 		)
-		(pin "INT0" input
-			(at 165.1 99.06 0)
+		(pin "BQ_INT" input
+			(at 165.1 92.71 0)
 			(uuid "c0dab130-0146-41ad-9ac9-93bde5c2472b")
 			(effects
 				(font
@@ -860,8 +820,8 @@
 				(justify right)
 			)
 		)
-		(pin "INT1" input
-			(at 137.16 106.68 180)
+		(pin "W5500_INT" input
+			(at 137.16 100.33 180)
 			(uuid "332b6ca1-3362-4cbd-a783-1813d6db69a0")
 			(effects
 				(font
@@ -870,8 +830,8 @@
 				(justify left)
 			)
 		)
-		(pin "QON" input
-			(at 165.1 101.6 0)
+		(pin "QON" output
+			(at 165.1 95.25 0)
 			(uuid "3ad66328-525b-489c-8431-cd2175b523fc")
 			(effects
 				(font
@@ -881,7 +841,7 @@
 			)
 		)
 		(pin "BDE_DEBUG0" bidirectional
-			(at 137.16 71.12 180)
+			(at 137.16 68.58 180)
 			(uuid "b1d99bcd-d2fc-45af-b2b8-9cd84b561a90")
 			(effects
 				(font
@@ -891,7 +851,7 @@
 			)
 		)
 		(pin "BDE_DEBUG1" bidirectional
-			(at 137.16 73.66 180)
+			(at 137.16 71.12 180)
 			(uuid "d7cf3289-f85a-4c52-8efd-020cc7524ad7")
 			(effects
 				(font
@@ -900,8 +860,8 @@
 				(justify left)
 			)
 		)
-		(pin "MCU_CTS_BDE_RTS" bidirectional
-			(at 137.16 77.47 180)
+		(pin "MCU_CTS_BDE_RTS" input
+			(at 137.16 74.93 180)
 			(uuid "0e08786d-48fb-4f36-9026-6a12e37ab605")
 			(effects
 				(font
@@ -910,8 +870,8 @@
 				(justify left)
 			)
 		)
-		(pin "MCU_RTS_BDE_CTS" bidirectional
-			(at 137.16 80.01 180)
+		(pin "MCU_RTS_BDE_CTS" output
+			(at 137.16 77.47 180)
 			(uuid "64c3387a-c540-4c52-b292-d3072f793763")
 			(effects
 				(font
@@ -920,8 +880,8 @@
 				(justify left)
 			)
 		)
-		(pin "DEBUG_UART_RX" input
-			(at 165.1 106.68 0)
+		(pin "MCU_RX_CP_TX" output
+			(at 165.1 111.76 0)
 			(uuid "406fd5d3-4c66-48aa-8ac6-2e2b19ce50c9")
 			(effects
 				(font
@@ -930,8 +890,8 @@
 				(justify right)
 			)
 		)
-		(pin "DEBUG_UART_TX" output
-			(at 165.1 109.22 0)
+		(pin "MCU_TX_CP_RX" input
+			(at 165.1 114.3 0)
 			(uuid "0801eb3b-f381-4da8-9195-8873b88461c5")
 			(effects
 				(font
@@ -940,8 +900,8 @@
 				(justify right)
 			)
 		)
-		(pin "nRST" output
-			(at 137.16 100.33 180)
+		(pin "W5500_RST" output
+			(at 137.16 116.84 180)
 			(uuid "756a1fc2-a0eb-438f-8a51-f6d394a9e9b3")
 			(effects
 				(font
