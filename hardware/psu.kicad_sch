@@ -13924,7 +13924,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Button_Switch_SMD:SW_SPST_TL3305A"
 			(at 62.23 95.25 0)
 			(effects
 				(font
