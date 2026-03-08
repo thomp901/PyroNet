@@ -2439,6 +2439,10 @@
 		(uuid "f8c967eb-50b8-413e-b51c-1cd8fd694ac3")
 	)
 	(no_connect
+		(at 166.37 92.71)
+		(uuid "135efdc1-74dc-4a11-a61f-7155946be8ce")
+	)
+	(no_connect
 		(at 130.81 121.92)
 		(uuid "1c84f66e-308b-4c12-b77a-55587958d82c")
 	)
@@ -2467,14 +2471,6 @@
 		(uuid "32ad5cc5-23c8-4bd3-8967-69a814e6085b")
 	)
 	(no_connect
-		(at 212.09 97.79)
-		(uuid "354f4b97-a254-4625-88d7-15d44163d4b5")
-	)
-	(no_connect
-		(at 212.09 95.25)
-		(uuid "3aeef45b-f303-473e-b5d1-5e8a0b3d8b70")
-	)
-	(no_connect
 		(at 166.37 87.63)
 		(uuid "3c9dc01b-6262-4f01-a82e-21d713cd43e6")
 	)
@@ -2497,6 +2493,10 @@
 	(no_connect
 		(at 166.37 90.17)
 		(uuid "64c328fa-2968-424f-afe7-79792049e749")
+	)
+	(no_connect
+		(at 166.37 95.25)
+		(uuid "7039a751-bdfd-4b02-91e9-7b0daf19b532")
 	)
 	(no_connect
 		(at 212.09 90.17)
@@ -3069,12 +3069,12 @@
 	)
 	(hierarchical_label "BDE_DEBUG1"
 		(shape bidirectional)
-		(at 166.37 95.25 180)
+		(at 212.09 97.79 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "346595a4-299a-42dd-885d-43e2950563df")
 	)
@@ -3113,12 +3113,12 @@
 	)
 	(hierarchical_label "BDE_DEBUG0"
 		(shape bidirectional)
-		(at 166.37 92.71 180)
+		(at 212.09 95.25 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "5d7ccd67-befe-4da9-933a-7b9d8bc44f59")
 	)
