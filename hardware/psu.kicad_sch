@@ -2609,131 +2609,6 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "power:+5V"
-			(power)
-			(pin_numbers
-				(hide yes)
-			)
-			(pin_names
-				(offset 0)
-				(hide yes)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" "#PWR"
-				(at 0 -3.81 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Value" "+5V"
-				(at 0 3.556 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Description" "Power symbol creates a global label with name \"+5V\""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_keywords" "global power"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "+5V_0_1"
-				(polyline
-					(pts
-						(xy -0.762 1.27) (xy 0 2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 2.54) (xy 0.762 1.27)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 0) (xy 0 2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "+5V_1_1"
-				(pin power_in line
-					(at 0 0 90)
-					(length 0)
-					(name "~"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-			(embedded_fonts no)
-		)
 		(symbol "power:GND"
 			(power)
 			(pin_numbers
@@ -5022,196 +4897,6 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "pyronet_symbols:TPS613222ADBVR"
-			(pin_names
-				(offset 1.016)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" "U203"
-				(at 0 10.16 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" "TPS613222ADBVR"
-				(at 0 7.62 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" "pyronet_footprints:SOT95P280X145-5N"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify bottom)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Description" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "DigiKey_Part_Number" "296-50503-1-ND"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify bottom)
-					(hide yes)
-				)
-			)
-			(property "SnapEDA_Link" "https://www.snapeda.com/parts/TPS613222ADBVR/Texas+Instruments/view-part/?ref=snap"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify bottom)
-					(hide yes)
-				)
-			)
-			(property "Description_1" "6-uA Quiescent Current, 1.8-A Switch Current Boost Converter"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify bottom)
-					(hide yes)
-				)
-			)
-			(property "MF" "Texas Instruments"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify bottom)
-					(hide yes)
-				)
-			)
-			(property "Package" "SOT-23-5 Texas Instruments"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify bottom)
-					(hide yes)
-				)
-			)
-			(property "Check_prices" "https://www.snapeda.com/parts/TPS613222ADBVR/Texas+Instruments/view-part/?ref=eda"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify bottom)
-					(hide yes)
-				)
-			)
-			(property "MP" "TPS613222ADBVR"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify bottom)
-					(hide yes)
-				)
-			)
-			(symbol "TPS613222ADBVR_0_0"
-				(rectangle
-					(start -12.7 -5.08)
-					(end 12.7 5.08)
-					(stroke
-						(width 0.41)
-						(type default)
-					)
-					(fill
-						(type background)
-					)
-				)
-				(pin input line
-					(at -17.78 2.54 0)
-					(length 5.08)
-					(name "SW"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-				)
-				(pin power_out line
-					(at 17.78 2.54 180)
-					(length 5.08)
-					(name "VOUT"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-					(number "4"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-				)
-				(pin power_in line
-					(at 17.78 -2.54 180)
-					(length 5.08)
-					(name "GND"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-				)
-			)
-			(embedded_fonts no)
-		)
 		(symbol "pyronet_symbols:TPS63020DSJR"
 			(pin_names
 				(offset 1.016)
@@ -5719,32 +5404,6 @@
 		)
 		(uuid "88d3bc12-8675-4104-bb6e-ec77aeb58fad")
 	)
-	(text_box "Boost Converter 3.3V in to 5V\n"
-		(exclude_from_sim no)
-		(at 176.784 121.92 0)
-		(size 99.568 40.894)
-		(margins 0.9525 0.9525 0.9525 0.9525)
-		(stroke
-			(width 0)
-			(type solid)
-		)
-		(fill
-			(type none)
-		)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left top)
-		)
-		(uuid "a61f2d6d-b976-4008-bd47-5b27580d13cc")
-	)
-	(junction
-		(at 248.92 138.43)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "049ef587-15cd-4590-b527-ebc06b256b25")
-	)
 	(junction
 		(at 142.24 137.16)
 		(diameter 0)
@@ -5816,12 +5475,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "434c0e00-ffa9-441e-9f66-82d2ce560b37")
-	)
-	(junction
-		(at 248.92 146.05)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "4a861b63-e815-404b-9d80-44222d159c0c")
 	)
 	(junction
 		(at 36.83 52.07)
@@ -6191,16 +5844,6 @@
 	)
 	(wire
 		(pts
-			(xy 251.46 146.05) (xy 248.92 146.05)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "07fe40ba-41ff-422f-bd17-acf2ebdc645f")
-	)
-	(wire
-		(pts
 			(xy 99.06 46.99) (xy 99.06 45.72)
 		)
 		(stroke
@@ -6368,16 +6011,6 @@
 			(type default)
 		)
 		(uuid "20a8565d-5fd0-482c-a3b5-8f7533f28f96")
-	)
-	(wire
-		(pts
-			(xy 196.85 139.7) (xy 200.66 139.7)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "22c1d946-2f00-4525-bd44-9fb8277985b0")
 	)
 	(wire
 		(pts
@@ -6581,16 +6214,6 @@
 	)
 	(wire
 		(pts
-			(xy 208.28 139.7) (xy 210.82 139.7)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "43cf0b1f-c841-48d9-a214-302168f98d6c")
-	)
-	(wire
-		(pts
 			(xy 226.06 92.71) (xy 226.06 93.98)
 		)
 		(stroke
@@ -6721,16 +6344,6 @@
 	)
 	(wire
 		(pts
-			(xy 251.46 138.43) (xy 248.92 138.43)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "590cbb4e-504c-4e32-a910-8be3799e8b69")
-	)
-	(wire
-		(pts
 			(xy 134.62 80.01) (xy 134.62 76.2)
 		)
 		(stroke
@@ -6821,16 +6434,6 @@
 	)
 	(wire
 		(pts
-			(xy 246.38 139.7) (xy 248.92 139.7)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "691d0b49-ece5-4695-9c31-ac53ed001d06")
-	)
-	(wire
-		(pts
 			(xy 113.03 104.14) (xy 113.03 107.95)
 		)
 		(stroke
@@ -6838,16 +6441,6 @@
 			(type default)
 		)
 		(uuid "69dc97ab-bc43-415f-8b0a-efd38ee7d800")
-	)
-	(wire
-		(pts
-			(xy 248.92 137.16) (xy 248.92 138.43)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "6baa7ca5-6966-44cd-a6f2-aec18fdc4f5a")
 	)
 	(wire
 		(pts
@@ -6998,16 +6591,6 @@
 			(type default)
 		)
 		(uuid "7bfb33ca-f0df-4c0f-9957-b54c0b8ccb57")
-	)
-	(wire
-		(pts
-			(xy 248.92 144.78) (xy 248.92 146.05)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "7c4d4de7-ce58-471c-8550-d464d40fa194")
 	)
 	(wire
 		(pts
@@ -7581,16 +7164,6 @@
 	)
 	(wire
 		(pts
-			(xy 248.92 138.43) (xy 248.92 139.7)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "c9be2d15-790b-4154-80a4-cd8da75ebf7e")
-	)
-	(wire
-		(pts
 			(xy 226.06 110.49) (xy 226.06 111.76)
 		)
 		(stroke
@@ -7741,16 +7314,6 @@
 	)
 	(wire
 		(pts
-			(xy 196.85 138.43) (xy 196.85 139.7)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "dd0e84c2-a55c-4692-bca9-8e1a0ab2db9f")
-	)
-	(wire
-		(pts
 			(xy 209.55 83.82) (xy 209.55 85.09)
 		)
 		(stroke
@@ -7818,16 +7381,6 @@
 			(type default)
 		)
 		(uuid "e5dba132-1a45-4898-9395-baff21f42619")
-	)
-	(wire
-		(pts
-			(xy 246.38 144.78) (xy 248.92 144.78)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "e60e29ed-e31a-478c-8dbb-3aa790b8f739")
 	)
 	(wire
 		(pts
@@ -8498,7 +8051,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "0dc05f33-19da-4756-b5c8-56db06287b58")
-		(property "Reference" "#PWR0228"
+		(property "Reference" "#PWR0225"
 			(at 72.39 168.91 0)
 			(effects
 				(font
@@ -8548,7 +8101,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
-					(reference "#PWR0228")
+					(reference "#PWR0225")
 					(unit 1)
 				)
 			)
@@ -9385,7 +8938,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "295bc5f8-2aa2-4c63-8513-edd5afc8b3b3")
-		(property "Reference" "C226"
+		(property "Reference" "C225"
 			(at 52.07 141.224 0)
 			(effects
 				(font
@@ -9439,7 +8992,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
-					(reference "C226")
+					(reference "C225")
 					(unit 1)
 				)
 			)
@@ -9783,148 +9336,6 @@
 		)
 	)
 	(symbol
-		(lib_id "pyronet_symbols:TPS613222ADBVR")
-		(at 228.6 142.24 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "422f7161-7d45-4ff2-8989-1d421601457e")
-		(property "Reference" "U202"
-			(at 228.6 132.08 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "TPS613222ADBVR"
-			(at 228.6 134.62 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "pyronet_footprints:SOT95P280X145-5N"
-			(at 228.6 142.24 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 228.6 142.24 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" ""
-			(at 228.6 142.24 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "DigiKey_Part_Number" "296-50503-1-ND"
-			(at 228.6 142.24 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
-				(hide yes)
-			)
-		)
-		(property "SnapEDA_Link" "https://www.snapeda.com/parts/TPS613222ADBVR/Texas+Instruments/view-part/?ref=snap"
-			(at 228.6 142.24 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
-				(hide yes)
-			)
-		)
-		(property "Description_1" "6-uA Quiescent Current, 1.8-A Switch Current Boost Converter"
-			(at 228.6 142.24 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
-				(hide yes)
-			)
-		)
-		(property "MF" "Texas Instruments"
-			(at 228.6 142.24 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
-				(hide yes)
-			)
-		)
-		(property "Package" "SOT-23-5 Texas Instruments"
-			(at 228.6 142.24 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
-				(hide yes)
-			)
-		)
-		(property "Check_prices" "https://www.snapeda.com/parts/TPS613222ADBVR/Texas+Instruments/view-part/?ref=eda"
-			(at 228.6 142.24 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
-				(hide yes)
-			)
-		)
-		(property "MP" "TPS613222ADBVR"
-			(at 228.6 142.24 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "aa3592dd-c568-4d09-961f-0253603b32d6")
-		)
-		(pin "4"
-			(uuid "b90dfc66-1671-4c2b-a32c-4d2aff0f853f")
-		)
-		(pin "1"
-			(uuid "e89c79d3-4df7-4b2c-9866-e70dec2d192f")
-		)
-		(instances
-			(project ""
-				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
-					(reference "U202")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_name "CSD87503Q3ET_1")
 		(lib_id "pyronet_symbols:CSD87503Q3ET")
 		(at 74.93 33.02 0)
@@ -10169,7 +9580,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "44318e61-cfd6-4fba-a92e-6e145b8b71c5")
-		(property "Reference" "#PWR0223"
+		(property "Reference" "#PWR0221"
 			(at 142.24 151.13 0)
 			(effects
 				(font
@@ -10219,7 +9630,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
-					(reference "#PWR0223")
+					(reference "#PWR0221")
 					(unit 1)
 				)
 			)
@@ -10565,72 +9976,6 @@
 		)
 	)
 	(symbol
-		(lib_id "power:+3.3V")
-		(at 196.85 138.43 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "561858ee-849e-4e34-af48-653300318a27")
-		(property "Reference" "#PWR0222"
-			(at 196.85 142.24 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "+3.3V"
-			(at 196.85 133.35 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 196.85 138.43 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 196.85 138.43 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
-			(at 196.85 138.43 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "c7a66ec0-0640-4e39-b58d-7d59f8c390ea")
-		)
-		(instances
-			(project "Senior_Design"
-				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
-					(reference "#PWR0222")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Connector_Generic:Conn_01x03")
 		(at 224.79 54.61 0)
 		(unit 1)
@@ -10778,7 +10123,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "64c89f18-9b37-4752-81e1-efae50cdb786")
-		(property "Reference" "#PWR0226"
+		(property "Reference" "#PWR0223"
 			(at 66.04 153.67 0)
 			(effects
 				(font
@@ -10828,7 +10173,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
-					(reference "#PWR0226")
+					(reference "#PWR0223")
 					(unit 1)
 				)
 			)
@@ -10913,7 +10258,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "6e4d400b-608e-40ee-acae-c6e0e7d61813")
-		(property "Reference" "C228"
+		(property "Reference" "C227"
 			(at 66.802 157.988 0)
 			(effects
 				(font
@@ -10967,7 +10312,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
-					(reference "C228")
+					(reference "C227")
 					(unit 1)
 				)
 			)
@@ -11418,72 +10763,6 @@
 		)
 	)
 	(symbol
-		(lib_id "power:+5V")
-		(at 248.92 137.16 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "7e65e818-ed06-4fc2-8f16-fa852e2cb40f")
-		(property "Reference" "#PWR0221"
-			(at 248.92 140.97 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "+5V"
-			(at 248.92 132.08 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 248.92 137.16 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 248.92 137.16 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"+5V\""
-			(at 248.92 137.16 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "195ca54c-913a-4047-8bbf-4d067627aaef")
-		)
-		(instances
-			(project ""
-				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
-					(reference "#PWR0221")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "pyronet_symbols:54-00125")
 		(at 29.21 38.1 0)
 		(unit 1)
@@ -11670,143 +10949,6 @@
 			(project ""
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
 					(reference "J201")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:C")
-		(at 251.46 142.24 180)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "8044101c-823c-41d9-a86c-48babe820e9a")
-		(property "Reference" "C225"
-			(at 256.794 144.272 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "22uF"
-			(at 257.81 139.7 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
-			(at 250.4948 138.43 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 251.46 142.24 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Unpolarized capacitor"
-			(at 251.46 142.24 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "120289b1-e388-48f5-a2cc-f11c037b7752")
-		)
-		(pin "1"
-			(uuid "37beb177-aa0c-42c3-be7b-7bdeeeedc2bc")
-		)
-		(instances
-			(project "Senior_Design"
-				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
-					(reference "C225")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:L")
-		(at 204.47 139.7 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "83ed42fa-b4dd-4abd-9450-fb39a943e829")
-		(property "Reference" "L202"
-			(at 204.47 134.62 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "4.7uH"
-			(at 204.47 137.16 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Inductor_SMD:L_1210_3225Metric"
-			(at 204.47 139.7 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 204.47 139.7 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Inductor"
-			(at 204.47 139.7 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "a6c3fb36-c225-4fb0-8045-0364d3fd2e6e")
-		)
-		(pin "1"
-			(uuid "c86c76e9-ba84-4b4c-b595-ff336e40471b")
-		)
-		(instances
-			(project "Senior_Design"
-				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
-					(reference "L202")
 					(unit 1)
 				)
 			)
@@ -12783,7 +11925,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "a4c62f42-5cde-4aa3-8946-45af41d8d3cf")
-		(property "Reference" "C227"
+		(property "Reference" "C226"
 			(at 60.96 140.97 0)
 			(effects
 				(font
@@ -12837,7 +11979,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
-					(reference "C227")
+					(reference "C226")
 					(unit 1)
 				)
 			)
@@ -13197,7 +12339,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "b5792512-72c3-4ec7-bdef-1de130c10227")
-		(property "Reference" "#PWR0229"
+		(property "Reference" "#PWR0226"
 			(at 110.49 175.26 0)
 			(effects
 				(font
@@ -13247,7 +12389,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
-					(reference "#PWR0229")
+					(reference "#PWR0226")
 					(unit 1)
 				)
 			)
@@ -13262,7 +12404,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "b78b8b69-f4a1-4384-a195-fc20df9f6aeb")
-		(property "Reference" "L203"
+		(property "Reference" "L202"
 			(at 115.57 158.75 0)
 			(effects
 				(font
@@ -13316,7 +12458,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
-					(reference "L203")
+					(reference "L202")
 					(unit 1)
 				)
 			)
@@ -13668,7 +12810,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "cda8c467-411e-47bb-9adc-70802de86567")
-		(property "Reference" "U203"
+		(property "Reference" "U202"
 			(at 90.17 129.54 0)
 			(effects
 				(font
@@ -13880,73 +13022,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
-					(reference "U203")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 248.92 146.05 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "d249f0e0-89dd-49b2-9af1-34c71b727115")
-		(property "Reference" "#PWR0224"
-			(at 248.92 152.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "GND"
-			(at 248.92 151.13 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 248.92 146.05 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 248.92 146.05 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 248.92 146.05 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "1ae59b89-ad27-4f7a-8234-748a91e581ff")
-		)
-		(instances
-			(project "Senior_Design"
-				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
-					(reference "#PWR0224")
+					(reference "U202")
 					(unit 1)
 				)
 			)
@@ -14101,7 +13177,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "d70382fc-f062-4ff0-94b6-9a0977567690")
-		(property "Reference" "#PWR0225"
+		(property "Reference" "#PWR0222"
 			(at 57.15 153.67 0)
 			(effects
 				(font
@@ -14151,7 +13227,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
-					(reference "#PWR0225")
+					(reference "#PWR0222")
 					(unit 1)
 				)
 			)
@@ -14372,7 +13448,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "ee12d301-8ad1-4f23-ad8a-b32939f2b545")
-		(property "Reference" "#PWR0227"
+		(property "Reference" "#PWR0224"
 			(at 116.84 158.75 0)
 			(effects
 				(font
@@ -14422,7 +13498,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/09dae378-4d12-4dca-bc21-c216f94ec21f"
-					(reference "#PWR0227")
+					(reference "#PWR0224")
 					(unit 1)
 				)
 			)
