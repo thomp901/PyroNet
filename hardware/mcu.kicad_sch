@@ -4593,17 +4593,6 @@
 		)
 		(uuid "12806615-b485-4438-b4b4-6001c64844e2")
 	)
-	(hierarchical_label "PS_SYNC"
-		(shape input)
-		(at 62.23 101.6 180)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "198f3479-a50c-48b0-9787-e831378ff645")
-	)
 	(hierarchical_label "MCU_RX_CP_TX"
 		(shape input)
 		(at 80.01 91.44 180)
