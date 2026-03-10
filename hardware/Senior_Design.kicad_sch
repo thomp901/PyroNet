@@ -59,6 +59,16 @@
 	)
 	(wire
 		(pts
+			(xy 165.1 99.06) (xy 179.07 99.06)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2d80b1da-0ec9-4b32-929d-2f0901252bbc")
+	)
+	(wire
+		(pts
 			(xy 168.91 71.12) (xy 179.07 71.12)
 		)
 		(stroke
@@ -266,6 +276,28 @@
 			(type default)
 		)
 		(uuid "e8e8ca76-c516-4a29-96dd-03f9d1d5ba48")
+	)
+	(hierarchical_label "PS_SYNC"
+		(shape output)
+		(at 165.1 99.06 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "125db447-2c03-4430-9cd8-7b029dd86d9c")
+	)
+	(hierarchical_label "PS_SYNC"
+		(shape input)
+		(at 179.07 99.06 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "a24596b7-0b23-4446-b264-ab7139b0b3b4")
 	)
 	(sheet
 		(at 179.07 83.058)

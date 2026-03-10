@@ -9281,7 +9281,6 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "49fce644-0ac0-4e50-864c-f36203a65d4a")
 		(property "Reference" "C611"
 			(at 196.85 106.6862 0)
