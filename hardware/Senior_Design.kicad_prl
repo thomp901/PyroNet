@@ -33,6 +33,7 @@
     "visible_items": [
       "vias",
       "footprint_text",
+      "ratsnest",
       "grid",
       "footprints_front",
       "footprints_back",
@@ -44,7 +45,7 @@
       "zones",
       "shapes"
     ],
-    "visible_layers": "ffffffff_ffffffff_ffffd575_f7557d57",
+    "visible_layers": "ffffffff_ffffffff_ffffd575_f7557d43",
     "zone_display_mode": 0
   },
   "git": {
@@ -97,7 +98,7 @@
       91,
       91,
       91,
-      0
+      10
     ],
     "custom_group_rules": [],
     "expanded_rows": [],
