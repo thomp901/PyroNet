@@ -2581,6 +2581,12 @@
 		(uuid "5d2810c7-9830-4e6b-860a-21bc187622e0")
 	)
 	(junction
+		(at 201.93 119.38)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "6828d437-1a2e-46e3-8773-f77bd7fd587f")
+	)
+	(junction
 		(at 72.39 119.38)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -2599,16 +2605,16 @@
 		(uuid "861dcea9-82b2-4ff1-b63e-362b15ad245d")
 	)
 	(junction
+		(at 201.93 106.68)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "9156217e-ad21-4318-8b97-f78078abf54f")
+	)
+	(junction
 		(at 132.08 99.06)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "94d83d6f-2550-42a4-a5fd-db336119a194")
-	)
-	(junction
-		(at 200.66 119.38)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "9bf7f1f1-b8da-4c0f-9938-c2f7defbf95e")
 	)
 	(junction
 		(at 72.39 106.68)
@@ -2623,18 +2629,6 @@
 		(uuid "b0501453-a1e9-44e4-966f-2e02b885026a")
 	)
 	(junction
-		(at 200.66 106.68)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "b716fc34-2476-4d95-811c-7d2a2857df61")
-	)
-	(junction
-		(at 182.88 119.38)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "b8923a0a-ebab-4ba5-b2b1-4c386f081440")
-	)
-	(junction
 		(at 252.73 118.11)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -2645,6 +2639,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "bedf0f5d-09ff-4327-83fb-679f3da01fb5")
+	)
+	(junction
+		(at 182.88 119.38)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "f9164a42-89d0-41f4-93c7-fc8b26178c7d")
 	)
 	(wire
 		(pts
@@ -2698,16 +2698,6 @@
 	)
 	(wire
 		(pts
-			(xy 194.31 119.38) (xy 200.66 119.38)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "2874b423-4482-4390-a52c-7cbdc54f84bb")
-	)
-	(wire
-		(pts
 			(xy 77.47 118.11) (xy 77.47 119.38)
 		)
 		(stroke
@@ -2755,16 +2745,6 @@
 			(type default)
 		)
 		(uuid "39ed49ca-10a0-431f-8c3f-d0dd7ae1b2c0")
-	)
-	(wire
-		(pts
-			(xy 200.66 119.38) (xy 200.66 128.27)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "39f63fba-a8b4-44f4-8974-f7bcd8673680")
 	)
 	(wire
 		(pts
@@ -2858,16 +2838,6 @@
 	)
 	(wire
 		(pts
-			(xy 182.88 119.38) (xy 182.88 128.27)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "76af0adb-72ea-474b-a982-d64d675c76af")
-	)
-	(wire
-		(pts
 			(xy 243.84 125.73) (xy 252.73 125.73)
 		)
 		(stroke
@@ -2898,6 +2868,16 @@
 	)
 	(wire
 		(pts
+			(xy 201.93 106.68) (xy 219.71 106.68)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8696c49f-bcb4-4271-ba2e-3e557ddbd7f3")
+	)
+	(wire
+		(pts
 			(xy 29.21 105.41) (xy 29.21 109.22)
 		)
 		(stroke
@@ -2905,6 +2885,16 @@
 			(type default)
 		)
 		(uuid "8a605801-e499-4850-8e86-9468cf3011db")
+	)
+	(wire
+		(pts
+			(xy 201.93 106.68) (xy 200.66 106.68)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8e066fcb-cc0c-4bd5-ba25-9209250753b7")
 	)
 	(wire
 		(pts
@@ -2928,16 +2918,6 @@
 	)
 	(wire
 		(pts
-			(xy 182.88 128.27) (xy 186.69 128.27)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "944e8f8e-3287-4220-a11f-1e0339999471")
-	)
-	(wire
-		(pts
 			(xy 59.69 101.6) (xy 77.47 101.6)
 		)
 		(stroke
@@ -2955,16 +2935,6 @@
 			(type default)
 		)
 		(uuid "a9d7a210-1a07-4a75-80a1-8da42ace0f71")
-	)
-	(wire
-		(pts
-			(xy 194.31 128.27) (xy 200.66 128.27)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "b0b64aee-d669-44f9-a307-bf7700dc12a1")
 	)
 	(wire
 		(pts
@@ -3018,16 +2988,6 @@
 	)
 	(wire
 		(pts
-			(xy 200.66 119.38) (xy 201.93 119.38)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "ca47a2c1-6ee2-4b81-9f53-8f3f00dec876")
-	)
-	(wire
-		(pts
 			(xy 72.39 118.11) (xy 72.39 119.38)
 		)
 		(stroke
@@ -3068,7 +3028,7 @@
 	)
 	(wire
 		(pts
-			(xy 200.66 119.38) (xy 200.66 106.68)
+			(xy 201.93 119.38) (xy 201.93 106.68)
 		)
 		(stroke
 			(width 0)
@@ -3078,13 +3038,13 @@
 	)
 	(wire
 		(pts
-			(xy 200.66 106.68) (xy 219.71 106.68)
+			(xy 194.31 119.38) (xy 201.93 119.38)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "df2ccdcd-a624-43c6-ae98-1dd5d5fefca3")
+		(uuid "de6ac509-8301-4641-bc09-c63c8bc66d7e")
 	)
 	(wire
 		(pts
@@ -3279,7 +3239,7 @@
 	)
 	(symbol
 		(lib_id "Device:C")
-		(at 190.5 128.27 270)
+		(at 182.88 123.19 180)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -3287,7 +3247,7 @@
 		(dnp no)
 		(uuid "20a51041-9b8f-4f57-9fa0-1e1ceeee4301")
 		(property "Reference" "C405"
-			(at 188.468 121.92 90)
+			(at 189.738 125.476 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3296,7 +3256,7 @@
 			)
 		)
 		(property "Value" "2.2uF"
-			(at 188.214 123.952 90)
+			(at 190.754 122.682 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3305,7 +3265,7 @@
 			)
 		)
 		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
-			(at 186.69 129.2352 0)
+			(at 181.9148 119.38 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3314,7 +3274,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 190.5 128.27 0)
+			(at 182.88 123.19 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3323,7 +3283,7 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
-			(at 190.5 128.27 0)
+			(at 182.88 123.19 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3687,6 +3647,72 @@
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/140ad835-eaa4-4a8c-a4e7-0525bbf22a2e"
 					(reference "C404")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 182.88 127 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "493324fc-a492-4c1e-a3db-1b5e6d81704e")
+		(property "Reference" "#PWR0411"
+			(at 182.88 133.35 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 182.88 132.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 182.88 127 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 182.88 127 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 182.88 127 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "64667c43-8897-44e7-8361-087338fba076")
+		)
+		(instances
+			(project "Senior_Design"
+				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/140ad835-eaa4-4a8c-a4e7-0525bbf22a2e"
+					(reference "#PWR0411")
 					(unit 1)
 				)
 			)
