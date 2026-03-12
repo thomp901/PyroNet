@@ -12475,7 +12475,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "Datasheet" "https://www.we-online.com/components/products/datasheet/74438356015.pdf"
 			(at 113.03 158.75 0)
 			(effects
 				(font
