@@ -7229,7 +7229,7 @@
 		(descr "JST ZH series connector, B5B-ZR (http://www.jst-mfg.com/product/pdf/eng/eZH.pdf), generated with kicad-footprint-generator")
 		(tags "connector JST ZH vertical")
 		(property "Reference" "J401"
-			(at 9.240508 1.016811 180)
+			(at 9.240508 1.016811 0)
 			(layer "F.SilkS")
 			(uuid "f67aaa08-8952-4995-834f-bdcbbf9008f1")
 			(effects
@@ -7671,20 +7671,9 @@
 			(uuid "e40211e8-e837-444b-8875-2c058c5a81cf")
 		)
 		(embedded_fonts no)
-		(model "${KICAD9_3DMODEL_DIR}/Connector_JST.3dshapes/JST_ZH_B5B-ZR_1x05_P1.50mm_Vertical.step"
-			(offset
-				(xyz 0 0 0)
-			)
-			(scale
-				(xyz 1 1 1)
-			)
-			(rotate
-				(xyz 0 0 0)
-			)
-		)
 		(model "${KIPRJMOD}/libraries/3dmodels/S5B-ZR.STEP"
 			(offset
-				(xyz -5.5 2.5 3.5)
+				(xyz -6 2.35 3.7)
 			)
 			(scale
 				(xyz 1 1 1)
