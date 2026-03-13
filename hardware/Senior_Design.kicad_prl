@@ -42,6 +42,7 @@
       "tracks",
       "bitmaps",
       "pads",
+      "zones",
       "shapes"
     ],
     "visible_layers": "ffffffff_ffffffff_ffffd575_fffffd7f",
