@@ -4221,7 +4221,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "7dcb7c5c-5e98-42c8-b78b-8c54abf94d8d")
-		(property "Reference" "SPS30_Connector401"
+		(property "Reference" "J401"
 			(at 142.24 110.4899 0)
 			(effects
 				(font
@@ -4284,7 +4284,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/140ad835-eaa4-4a8c-a4e7-0525bbf22a2e"
-					(reference "SPS30_Connector401")
+					(reference "J401")
 					(unit 1)
 				)
 			)
