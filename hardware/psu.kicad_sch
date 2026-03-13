@@ -4904,7 +4904,7 @@
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
-			(property "Reference" "U302"
+			(property "Reference" "U202"
 				(at 0 22.86 0)
 				(effects
 					(font
@@ -4920,7 +4920,7 @@
 					)
 				)
 			)
-			(property "Footprint" "TPS63020DSJR:IC_TPS63020DSJR"
+			(property "Footprint" "pyronet_footprints:IC_TPS63020DSJR"
 				(at 0 0 0)
 				(effects
 					(font
@@ -4930,7 +4930,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" ""
+			(property "Datasheet" "https://www.ti.com/lit/ds/symlink/tps63020.pdf?HQS=dis-dk-null-digikeymode-dsf-pf-null-wwe&ts=1772089640457&ref_url=https%253A%252F%252Fwww.ti.com%252Fgeneral%252Fdocs%252Fsuppproductinfo.tsp%253FdistId%253D10%2526gotoUrl%253Dhttps%253A%252F%252Fwww.ti.com%252Flit%252Fgpn%252Ftps63020"
 				(at 0 0 0)
 				(effects
 					(font
@@ -5342,7 +5342,292 @@
 							)
 						)
 					)
+					(number "16"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 17.78 -17.78 180)
+					(length 5.08)
+					(hide yes)
+					(name "GND"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "17"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 17.78 -17.78 180)
+					(length 5.08)
+					(hide yes)
+					(name "GND"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "18"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 17.78 -17.78 180)
+					(length 5.08)
+					(hide yes)
+					(name "GND"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "19"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 17.78 -17.78 180)
+					(length 5.08)
+					(hide yes)
+					(name "GND"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
 					(number "2"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 17.78 -17.78 180)
+					(length 5.08)
+					(hide yes)
+					(name "GND"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "20"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 17.78 -17.78 180)
+					(length 5.08)
+					(hide yes)
+					(name "GND"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "21"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 17.78 -17.78 180)
+					(length 5.08)
+					(hide yes)
+					(name "GND"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "22"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 17.78 -17.78 180)
+					(length 5.08)
+					(hide yes)
+					(name "GND"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "23"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 17.78 -17.78 180)
+					(length 5.08)
+					(hide yes)
+					(name "GND"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "24"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 17.78 -17.78 180)
+					(length 5.08)
+					(hide yes)
+					(name "GND"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "25"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 17.78 -17.78 180)
+					(length 5.08)
+					(hide yes)
+					(name "GND"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "26"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 17.78 -17.78 180)
+					(length 5.08)
+					(hide yes)
+					(name "GND"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "27"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 17.78 -17.78 180)
+					(length 5.08)
+					(hide yes)
+					(name "GND"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "28"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 17.78 -17.78 180)
+					(length 5.08)
+					(hide yes)
+					(name "GND"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "29"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 17.78 -17.78 180)
+					(length 5.08)
+					(hide yes)
+					(name "GND"
+						(effects
+							(font
+								(size 1.016 1.016)
+							)
+						)
+					)
+					(number "30"
 						(effects
 							(font
 								(size 1.016 1.016)
@@ -13062,6 +13347,51 @@
 		)
 		(pin "6"
 			(uuid "1d493aed-ebe8-411b-b3ec-1bf840fe8188")
+		)
+		(pin "16"
+			(uuid "29c1e8c4-915b-4125-8745-93efa2548831")
+		)
+		(pin "17"
+			(uuid "c6f4bc82-f5ed-4c24-aebe-6bb27acd654a")
+		)
+		(pin "18"
+			(uuid "d428f45d-5c35-4243-9d11-648ce7132ae1")
+		)
+		(pin "19"
+			(uuid "5e0b33d9-22b6-403d-b0b4-28d7bb489d30")
+		)
+		(pin "20"
+			(uuid "912b17d9-dd28-4031-85c0-b2e870802828")
+		)
+		(pin "21"
+			(uuid "2433a521-d098-4aec-b941-0d5c9c7a63f8")
+		)
+		(pin "22"
+			(uuid "1f6b560e-4665-40c5-bdbc-f8f26ea3af02")
+		)
+		(pin "23"
+			(uuid "0737d4f9-ed53-4be0-bdaa-28dc9f708fce")
+		)
+		(pin "24"
+			(uuid "71c0fc08-fce0-460e-82dc-c9590d5d4bce")
+		)
+		(pin "25"
+			(uuid "5e0dc95f-8f22-480f-b4ed-180aa0d4ab6f")
+		)
+		(pin "26"
+			(uuid "76039853-faf8-48de-9976-bea59bf74123")
+		)
+		(pin "27"
+			(uuid "4e22fe11-2aa7-4b87-b16d-20991a0d3487")
+		)
+		(pin "28"
+			(uuid "7d2af634-fd0a-4273-827e-bf3e8570f388")
+		)
+		(pin "29"
+			(uuid "140569eb-e866-4e5d-8746-f13659817ebe")
+		)
+		(pin "30"
+			(uuid "a38664d2-e791-447a-9a30-3baef428a75a")
 		)
 		(instances
 			(project "Senior_Design"
