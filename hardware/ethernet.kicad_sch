@@ -9217,7 +9217,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "J0011D21BNL"
+		(property "Datasheet" "https://yageogroup.com/content/datasheet/asset/file/DATASHEET_J403"
 			(at 212.09 137.16 0)
 			(effects
 				(font
@@ -9586,7 +9586,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "http://wizwiki.net/wiki/lib/exe/fetch.php/products:w5500:w5500_ds_v109e.pdf"
+		(property "Datasheet" "https://docs.wiznet.io/img/products/w5500/W5500_ds_v110e.pdf"
 			(at 101.6 85.09 0)
 			(effects
 				(font
@@ -11008,7 +11008,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7180/3994_XTL72.pdf"
 			(at 67.31 132.08 0)
 			(effects
 				(font
@@ -11452,7 +11452,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "J0011D21BNL"
+		(property "Datasheet" "https://yageogroup.com/content/datasheet/asset/file/DATASHEET_J403"
 			(at 194.31 82.55 0)
 			(effects
 				(font
