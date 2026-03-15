@@ -2887,7 +2887,7 @@
 	)
 	(wire
 		(pts
-			(xy 212.09 82.55) (xy 214.63 82.55)
+			(xy 212.09 82.55) (xy 236.22 82.55)
 		)
 		(stroke
 			(width 0)
@@ -3468,7 +3468,7 @@
 	)
 	(hierarchical_label "BDE_DEBUG1"
 		(shape bidirectional)
-		(at 214.63 82.55 0)
+		(at 236.22 82.55 0)
 		(effects
 			(font
 				(size 1.27 1.27)
