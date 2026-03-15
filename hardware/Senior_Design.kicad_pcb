@@ -55276,11 +55276,11 @@
 		(net 11)
 		(uuid "666b6e24-ec19-429a-85e1-5a93868f9b8e")
 	)
-	(via blind
+	(via
 		(at 66.770257 -114.981798)
 		(size 0.6)
 		(drill 0.3)
-		(layers "F.Cu" "In2.Cu")
+		(layers "F.Cu" "B.Cu")
 		(net 11)
 		(uuid "6fbd34b9-8723-4bd5-80fa-881e27411fb8")
 	)
