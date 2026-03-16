@@ -4098,7 +4098,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "https://gct.co/files/specs/usb4105-spec.pdf"
 			(at 59.69 86.36 0)
 			(effects
 				(font
