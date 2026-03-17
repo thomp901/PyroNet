@@ -702,6 +702,48 @@
           "label": "DUPLICATE",
           "name": "DUPLICATE",
           "show": false
+        },
+        {
+          "group_by": false,
+          "label": "Sim.Pins",
+          "name": "Sim.Pins",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "DigiKey-Purchase-URL",
+          "name": "DigiKey-Purchase-URL",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "Texas_Instruments-Purchase-URL",
+          "name": "Texas_Instruments-Purchase-URL",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "MAXIMUM_PACKAGE_HIEGHT",
+          "name": "MAXIMUM_PACKAGE_HIEGHT",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "DigiKey_Part_Number",
+          "name": "DigiKey_Part_Number",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "Purchase-URL",
+          "name": "Purchase-URL",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "Mouser-Purchase-URL",
+          "name": "Mouser-Purchase-URL",
+          "show": false
         }
       ],
       "filter_string": "",
