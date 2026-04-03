@@ -3696,7 +3696,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "220"
+		(property "Value" "220R"
 			(at 196.85 132.0799 0)
 			(effects
 				(font
@@ -4372,7 +4372,7 @@
 				)
 			)
 		)
-		(property "Value" "5.1k"
+		(property "Value" "5.1K"
 			(at 25.908 86.614 0)
 			(effects
 				(font
@@ -4805,7 +4805,7 @@
 		(dnp no)
 		(uuid "77e29696-bcdf-4513-bee7-21bedf2c3514")
 		(property "Reference" "D502"
-			(at 182.88 124.7776 90)
+			(at 182.88 121.158 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4814,7 +4814,7 @@
 			)
 		)
 		(property "Value" "LED"
-			(at 182.88 122.2376 90)
+			(at 182.626 123.444 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5106,7 +5106,7 @@
 				)
 			)
 		)
-		(property "Value" "5.1k"
+		(property "Value" "5.1K"
 			(at 91.694 81.026 90)
 			(effects
 				(font
@@ -5239,7 +5239,7 @@
 		(dnp no)
 		(uuid "951d8511-3b57-489c-b024-5834a47161f9")
 		(property "Reference" "R507"
-			(at 182.88 132.0801 0)
+			(at 183.134 129.54 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5247,8 +5247,8 @@
 				(justify left)
 			)
 		)
-		(property "Value" "220"
-			(at 182.88 129.5401 0)
+		(property "Value" "220R"
+			(at 182.88 132.08 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6022,8 +6022,8 @@
 				(justify left)
 			)
 		)
-		(property "Value" "0"
-			(at 84.328 116.078 0)
+		(property "Value" "0R"
+			(at 82.804 116.078 0)
 			(effects
 				(font
 					(size 1.27 1.27)

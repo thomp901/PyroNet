@@ -3499,7 +3499,7 @@
 		(dnp no)
 		(uuid "468ac589-62a0-4c6a-a4ad-1b9add6cedd2")
 		(property "Reference" "C403"
-			(at 77.978 112.268 0)
+			(at 78.74 113.03 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3507,8 +3507,8 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100nF"
-			(at 78.232 108.204 0)
+		(property "Value" "0.1uF"
+			(at 78.994 108.204 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3568,7 +3568,7 @@
 		(dnp no)
 		(uuid "487c6619-16ee-4cbf-bdfe-fd91af8e57b7")
 		(property "Reference" "C406"
-			(at 266.954 121.412 0)
+			(at 268.478 121.92 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3577,7 +3577,7 @@
 			)
 		)
 		(property "Value" "10uF"
-			(at 267.97 116.84 0)
+			(at 268.478 116.332 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4137,7 +4137,7 @@
 		(dnp no)
 		(uuid "7aeb7896-0106-4ff5-b62f-d14ee6e1d326")
 		(property "Reference" "C405"
-			(at 258.064 121.412 0)
+			(at 259.334 121.92 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4146,7 +4146,7 @@
 			)
 		)
 		(property "Value" "10uF"
-			(at 259.08 116.84 0)
+			(at 259.08 116.586 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4351,7 +4351,7 @@
 		(dnp no)
 		(uuid "8044101c-823c-41d9-a86c-48babe820e9a")
 		(property "Reference" "C404"
-			(at 249.174 121.412 0)
+			(at 250.19 122.174 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4360,7 +4360,7 @@
 			)
 		)
 		(property "Value" "10uF"
-			(at 250.19 116.84 0)
+			(at 250.19 116.332 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4420,7 +4420,7 @@
 		(dnp no)
 		(uuid "827b0df1-f929-45a2-8450-5470632d12e0")
 		(property "Reference" "C402"
-			(at 71.882 108.712 0)
+			(at 71.12 113.03 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4428,8 +4428,8 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100nF"
-			(at 71.628 112.776 0)
+		(property "Value" "0.1uF"
+			(at 71.628 108.458 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4564,7 +4564,7 @@
 				)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "5R"
 			(at 213.36 92.202 90)
 			(effects
 				(font
@@ -4965,7 +4965,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10uF"
+		(property "Value" "120pF"
 			(at 230.124 90.932 90)
 			(effects
 				(font

@@ -8714,8 +8714,8 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100"
-			(at 210.058 40.64 0)
+		(property "Value" "100R"
+			(at 208.534 40.894 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9964,7 +9964,7 @@
 				)
 			)
 		)
-		(property "Value" "294"
+		(property "Value" "294R"
 			(at 80.01 73.66 90)
 			(effects
 				(font
@@ -10234,8 +10234,8 @@
 				(justify left)
 			)
 		)
-		(property "Value" "2"
-			(at 33.782 57.404 0)
+		(property "Value" "2R"
+			(at 32.512 57.658 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10576,7 +10576,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100nF"
+		(property "Value" "0.1uF"
 			(at 49.276 167.894 0)
 			(effects
 				(font
@@ -10716,7 +10716,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "180k"
+		(property "Value" "180K"
 			(at 107.95 154.9399 0)
 			(effects
 				(font
@@ -11352,7 +11352,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "47 nF"
+		(property "Value" "47nF"
 			(at 117.856 75.184 0)
 			(effects
 				(font
@@ -12522,7 +12522,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "2.2 µH"
+		(property "Value" "2.2uH"
 			(at 111.252 69.596 0)
 			(effects
 				(font
@@ -13741,7 +13741,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100k"
+		(property "Value" "100K"
 			(at 134.112 102.362 0)
 			(effects
 				(font
@@ -14081,15 +14081,15 @@
 		(dnp no)
 		(uuid "f6c480c2-e80e-4327-8fb1-76d204dc4766")
 		(property "Reference" "R201"
-			(at 76.962 16.002 90)
+			(at 76.454 16.002 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
-		(property "Value" "294"
-			(at 83.82 16.002 90)
+		(property "Value" "294R"
+			(at 82.55 16.002 90)
 			(effects
 				(font
 					(size 1.27 1.27)

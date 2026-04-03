@@ -9144,7 +9144,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "0"
+		(property "Value" "0R"
 			(at 196.85 110.4899 0)
 			(effects
 				(font
