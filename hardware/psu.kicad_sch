@@ -9964,7 +9964,7 @@
 				)
 			)
 		)
-		(property "Value" "294R"
+		(property "Value" "300R"
 			(at 80.01 73.66 90)
 			(effects
 				(font
@@ -10234,7 +10234,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "2R"
+		(property "Value" "1R"
 			(at 32.512 57.658 0)
 			(effects
 				(font
@@ -13673,7 +13673,7 @@
 				)
 			)
 		)
-		(property "Value" "5.24K"
+		(property "Value" "5.1K"
 			(at 262.89 68.58 90)
 			(effects
 				(font
@@ -14088,7 +14088,7 @@
 				)
 			)
 		)
-		(property "Value" "294R"
+		(property "Value" "300R"
 			(at 82.55 16.002 90)
 			(effects
 				(font

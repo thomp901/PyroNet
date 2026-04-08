@@ -1,13 +1,13 @@
 {
   "board": {
-    "active_layer": 2,
+    "active_layer": 0,
     "active_layer_preset": "",
     "auto_track_width": true,
     "hidden_netclasses": [],
     "hidden_nets": [
       "/USB-C/CC1"
     ],
-    "high_contrast_mode": 0,
+    "high_contrast_mode": 1,
     "net_color_mode": 1,
     "opacity": {
       "images": 0.4000000059604645,
@@ -15,7 +15,7 @@
       "shapes": 1.0,
       "tracks": 1.0,
       "vias": 1.0,
-      "zones": 0.9300000071525574
+      "zones": 1.0
     },
     "selection_filter": {
       "dimensions": true,
@@ -45,7 +45,7 @@
       "pads",
       "shapes"
     ],
-    "visible_layers": "00000000_00000000_00000000_82000020",
+    "visible_layers": "00000000_00000000_00000002_2200888d",
     "zone_display_mode": 0
   },
   "git": {

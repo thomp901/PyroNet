@@ -8116,7 +8116,7 @@
 				)
 			)
 		)
-		(property "Value" "49.9R"
+		(property "Value" "51R"
 			(at 160.274 116.84 0)
 			(effects
 				(font
@@ -8184,7 +8184,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "12.4K"
+		(property "Value" "12K"
 			(at 144.78 141.986 0)
 			(effects
 				(font
@@ -9144,7 +9144,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "0R"
+		(property "Value" "0.05R"
 			(at 196.85 110.4899 0)
 			(effects
 				(font
@@ -10322,7 +10322,7 @@
 				)
 			)
 		)
-		(property "Value" "49.9R"
+		(property "Value" "51R"
 			(at 151.384 116.84 0)
 			(effects
 				(font
@@ -10390,8 +10390,8 @@
 				(justify left)
 			)
 		)
-		(property "Value" "0R"
-			(at 52.324 124.46 0)
+		(property "Value" "0.05R"
+			(at 50.038 124.206 0)
 			(effects
 				(font
 					(size 1.27 1.27)
