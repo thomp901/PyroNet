@@ -7,17 +7,19 @@ Kameron Jackson
 Diego Ramirez
 Garrison Thompson
 
-# Hardware
+## Download Specific Folders
 
-To download **only** the hardware folder that contains the KiCad files, run the following commands:
+To download **only** the a specific folder (e.g. hardware/, csp/) that contains the relevant files, run the following commands:
 
 ```bash
 git clone --filter=blob:none --no-checkout https://github.com/thomp901/PyroNet.git
 cd PyroNet
 git sparse-checkout init --cone
-git sparse-checkout set hardware/
+git sparse-checkout set FOLDER/
 git checkout main
 ```
+
+Replace `FOLDER` with the specfic folder.
 
 Then, you can `pull`, `add`, `commit`, and `push` like normal.
 
