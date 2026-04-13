@@ -12383,7 +12383,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "0.1uF"
+		(property "Value" "4.7uF"
 			(at 204.47 64.008 0)
 			(effects
 				(font
