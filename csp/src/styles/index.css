@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=League+Spartan:wght@500;600;700;800&display=swap");
+
 :root {
   font-family: "IBM Plex Sans", "Avenir Next", "Segoe UI", sans-serif;
   line-height: 1.5;
@@ -23,6 +25,7 @@
   --warning: #edb54a;
   --critical: #cb3a28;
   --shadow: 0 20px 45px rgba(0, 0, 0, 0.28);
+  --display-font: "League Spartan", "Avenir Next", "Segoe UI", sans-serif;
 }
 
 * {
@@ -95,18 +98,23 @@ table {
 }
 
 .sidebar-logo {
-  font-family: "Azeret Mono", "IBM Plex Mono", monospace;
-  font-size: 1.6rem;
+  font-family: var(--display-font);
+  font-size: 2rem;
   font-weight: 700;
   color: var(--sand);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
+  line-height: 0.95;
 }
 
 .sidebar-product {
+  font-family: var(--display-font);
   font-size: 0.88rem;
-  letter-spacing: 0.16em;
+  font-weight: 500;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgba(248, 243, 233, 0.8);
+  line-height: 1.35;
+  max-width: 160px;
 }
 
 .sidebar-nav {
@@ -141,6 +149,7 @@ table {
 }
 
 .header-kicker {
+  font-family: var(--display-font);
   color: var(--sand);
   text-transform: uppercase;
   letter-spacing: 0.12em;

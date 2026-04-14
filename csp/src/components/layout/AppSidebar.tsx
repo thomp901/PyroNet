@@ -14,7 +14,7 @@ export function AppSidebar() {
     <aside className="sidebar">
       <div className="sidebar-brand">
         <span className="sidebar-logo">PyroNet</span>
-        <strong className="sidebar-product">CSP</strong>
+        <strong className="sidebar-product">Centralized Software Platform</strong>
       </div>
       <nav className="sidebar-nav" aria-label="Primary">
         {navItems.map((item) => (

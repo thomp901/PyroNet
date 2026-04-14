@@ -34,12 +34,10 @@ export function DashboardPage() {
       title="Operations Dashboard"
       description="Fleet-wide status, mesh topology, active incidents, and downlink activity for the centralized software platform."
     >
-      <div className="stat-grid stat-grid-wide">
-        <StatCard label="Fleet size" value={String(data.summary.totalNodes)} helper={`${data.summary.onlineNodes} online`} />
-        <StatCard label="Degraded nodes" value={String(data.summary.degradedNodes)} helper="Seen but outside healthy freshness band" />
-        <StatCard label="Offline incidents" value={String(data.summary.offlineNodes)} helper="Silent for 24 hours or more" />
-        <StatCard label="Critical 0x03 alerts" value={String(data.summary.criticalAlerts)} helper="Open or acknowledged incidents" />
-        <StatCard label="Pending downlinks" value={String(data.summary.pendingDownlinks)} helper="0x04, 0x05, and 0x06 in flight" />
+      <div className="stat-grid">
+        <StatCard label="Deployed nodes" value={String(data.summary.totalNodes)} />
+        <StatCard label="Battery service needed" value={String(data.summary.degradedNodes)} />
+        <StatCard label="Offline nodes" value={String(data.summary.offlineNodes)} />
       </div>
 
       <div className="dashboard-grid dashboard-grid-stack">
