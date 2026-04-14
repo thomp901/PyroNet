@@ -1,27 +1,748 @@
-CREATE TABLE devices (
-  id TEXT PRIMARY KEY,
-  lat DOUBLE PRECISION,
-  lng DOUBLE PRECISION,
-  last_seen TIMESTAMP DEFAULT NOW()
+BEGIN;
+
+CREATE TYPE sensor_reading_source AS ENUM (
+    'periodic_report',
+    'critical_alert'
 );
 
-CREATE TABLE sensor_data (
-  id SERIAL PRIMARY KEY,
-  device_id TEXT REFERENCES devices(id),
-  temp REAL,
-  humidity REAL,
-  gas_level REAL,
-  particulates REAL,
-  risk_level INT,
-  battery INT,
-  timestamp TIMESTAMP DEFAULT NOW()
+CREATE TYPE alert_type AS ENUM (
+    'critical_risk',
+    'connectivity_loss',
+    'battery_degradation',
+    'system'
+);
+
+CREATE TYPE alert_status AS ENUM (
+    'open',
+    'acknowledged',
+    'cleared'
+);
+
+CREATE TYPE alert_severity AS ENUM (
+    'info',
+    'warning',
+    'critical'
+);
+
+CREATE TYPE alert_event_type AS ENUM (
+    'opened',
+    'acknowledged',
+    'cleared',
+    'reopened'
+);
+
+CREATE TYPE nn_revision_source AS ENUM (
+    'automatic',
+    'manual',
+    'imported'
+);
+
+CREATE TYPE nn_distribution_status AS ENUM (
+    'pending',
+    'sent',
+    'acknowledged',
+    'failed',
+    'timed_out'
+);
+
+CREATE TYPE time_sync_status AS ENUM (
+    'pending',
+    'sent',
+    'acknowledged',
+    'failed',
+    'timed_out'
+);
+
+CREATE TYPE config_deployment_status AS ENUM (
+    'pending',
+    'sent',
+    'acknowledged',
+    'failed',
+    'timed_out'
+);
+
+CREATE TYPE notification_event_type AS ENUM (
+    'critical_risk',
+    'connectivity_loss',
+    'battery_degradation',
+    'system',
+    'time_sync_failure',
+    'nn_update_failure',
+    'config_update_failure'
+);
+
+CREATE TYPE notification_delivery_status AS ENUM (
+    'queued',
+    'sent',
+    'failed',
+    'skipped'
+);
+
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$;
+
+CREATE TABLE config_revisions (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    config_id bigint NOT NULL,
+    l2_temp_thresh numeric(6,2) NOT NULL,
+    l2_humidity_thresh numeric(5,2) NOT NULL,
+    l2_voc_thresh integer NOT NULL,
+    l3_temp_thresh numeric(6,2) NOT NULL,
+    l3_humidity_thresh numeric(5,2) NOT NULL,
+    l3_voc_thresh integer NOT NULL,
+    l4_voc_thresh integer NOT NULL,
+    l5_voc_thresh integer NOT NULL,
+    l5_pm25_thresh numeric(8,1) NOT NULL,
+    activated_at timestamptz,
+    retired_at timestamptz,
+    created_at timestamptz NOT NULL DEFAULT NOW(),
+    updated_at timestamptz NOT NULL DEFAULT NOW(),
+    notes text,
+    metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+    CONSTRAINT uq_config_revisions_config_id UNIQUE (config_id),
+    CONSTRAINT chk_config_revisions_config_id_positive CHECK (config_id > 0),
+    CONSTRAINT chk_config_revisions_l2_humidity CHECK (l2_humidity_thresh >= 0 AND l2_humidity_thresh <= 100),
+    CONSTRAINT chk_config_revisions_l3_humidity CHECK (l3_humidity_thresh >= 0 AND l3_humidity_thresh <= 100),
+    CONSTRAINT chk_config_revisions_l2_voc CHECK (l2_voc_thresh >= 0),
+    CONSTRAINT chk_config_revisions_l3_voc CHECK (l3_voc_thresh >= 0),
+    CONSTRAINT chk_config_revisions_l4_voc CHECK (l4_voc_thresh >= 0),
+    CONSTRAINT chk_config_revisions_l5_voc CHECK (l5_voc_thresh >= 0),
+    CONSTRAINT chk_config_revisions_l5_pm25 CHECK (l5_pm25_thresh >= 0),
+    CONSTRAINT chk_config_revisions_retired_after_activated CHECK (retired_at IS NULL OR activated_at IS NULL OR retired_at > activated_at),
+    CONSTRAINT chk_config_revisions_metadata_object CHECK (jsonb_typeof(metadata) = 'object')
+);
+
+CREATE TABLE devices (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    node_id text NOT NULL,
+    current_ipv6 inet,
+    current_latitude numeric(9,6) NOT NULL,
+    current_longitude numeric(9,6) NOT NULL,
+    current_firmware_version text,
+    first_registered_at timestamptz NOT NULL DEFAULT NOW(),
+    last_registered_at timestamptz NOT NULL DEFAULT NOW(),
+    last_seen_at timestamptz,
+    latest_reported_at timestamptz,
+    latest_risk_level smallint,
+    latest_temperature_c numeric(6,2),
+    latest_humidity_pct numeric(5,2),
+    latest_voc_iaq integer,
+    latest_pm25_ug_m3 numeric(8,1),
+    latest_battery_pct smallint,
+    latest_pressure_hpa numeric(8,2),
+    latest_battery_health_score smallint,
+    current_config_revision_id bigint REFERENCES config_revisions(id) ON DELETE SET NULL,
+    created_at timestamptz NOT NULL DEFAULT NOW(),
+    updated_at timestamptz NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_devices_node_id UNIQUE (node_id),
+    CONSTRAINT uq_devices_current_ipv6 UNIQUE (current_ipv6),
+    CONSTRAINT chk_devices_node_id_not_blank CHECK (length(btrim(node_id)) > 0),
+    CONSTRAINT chk_devices_current_latitude CHECK (current_latitude >= -90 AND current_latitude <= 90),
+    CONSTRAINT chk_devices_current_longitude CHECK (current_longitude >= -180 AND current_longitude <= 180),
+    CONSTRAINT chk_devices_current_ipv6_global_unicast CHECK (
+        current_ipv6 IS NULL OR (
+            family(current_ipv6) = 6
+            AND NOT (current_ipv6 <<= inet '::/128')
+            AND NOT (current_ipv6 <<= inet '::1/128')
+            AND NOT (current_ipv6 <<= inet 'fe80::/10')
+            AND NOT (current_ipv6 <<= inet 'fc00::/7')
+            AND NOT (current_ipv6 <<= inet 'ff00::/8')
+        )
+    ),
+    CONSTRAINT chk_devices_latest_risk_level CHECK (latest_risk_level IS NULL OR latest_risk_level BETWEEN 1 AND 5),
+    CONSTRAINT chk_devices_latest_humidity CHECK (latest_humidity_pct IS NULL OR (latest_humidity_pct >= 0 AND latest_humidity_pct <= 100)),
+    CONSTRAINT chk_devices_latest_voc CHECK (latest_voc_iaq IS NULL OR latest_voc_iaq >= 0),
+    CONSTRAINT chk_devices_latest_pm25 CHECK (latest_pm25_ug_m3 IS NULL OR latest_pm25_ug_m3 >= 0),
+    CONSTRAINT chk_devices_latest_battery CHECK (latest_battery_pct IS NULL OR (latest_battery_pct >= 0 AND latest_battery_pct <= 100)),
+    CONSTRAINT chk_devices_latest_pressure CHECK (latest_pressure_hpa IS NULL OR latest_pressure_hpa > 0),
+    CONSTRAINT chk_devices_latest_battery_health CHECK (
+        latest_battery_health_score IS NULL OR (
+            latest_battery_health_score >= 0 AND latest_battery_health_score <= 100
+        )
+    ),
+    CONSTRAINT chk_devices_seen_after_registration CHECK (
+        last_seen_at IS NULL OR last_seen_at >= first_registered_at
+    )
+);
+
+CREATE TABLE device_registrations (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    device_id bigint NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+    observed_ipv6 inet NOT NULL,
+    latitude numeric(9,6) NOT NULL,
+    longitude numeric(9,6) NOT NULL,
+    firmware_version text,
+    battery_pct smallint,
+    observed_at timestamptz NOT NULL,
+    ingested_at timestamptz NOT NULL DEFAULT NOW(),
+    raw_payload_metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+    CONSTRAINT chk_device_registrations_ipv6_global_unicast CHECK (
+        family(observed_ipv6) = 6
+        AND NOT (observed_ipv6 <<= inet '::/128')
+        AND NOT (observed_ipv6 <<= inet '::1/128')
+        AND NOT (observed_ipv6 <<= inet 'fe80::/10')
+        AND NOT (observed_ipv6 <<= inet 'fc00::/7')
+        AND NOT (observed_ipv6 <<= inet 'ff00::/8')
+    ),
+    CONSTRAINT chk_device_registrations_latitude CHECK (latitude >= -90 AND latitude <= 90),
+    CONSTRAINT chk_device_registrations_longitude CHECK (longitude >= -180 AND longitude <= 180),
+    CONSTRAINT chk_device_registrations_battery CHECK (battery_pct IS NULL OR (battery_pct >= 0 AND battery_pct <= 100)),
+    CONSTRAINT chk_device_registrations_ingested_after_observed CHECK (ingested_at >= observed_at),
+    CONSTRAINT chk_device_registrations_metadata_object CHECK (jsonb_typeof(raw_payload_metadata) = 'object')
+);
+
+CREATE TABLE device_ipv6_history (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    device_id bigint NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+    ipv6_address inet NOT NULL,
+    registration_id bigint REFERENCES device_registrations(id) ON DELETE SET NULL,
+    valid_from timestamptz NOT NULL,
+    valid_to timestamptz,
+    created_at timestamptz NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_device_ipv6_history_ipv6_global_unicast CHECK (
+        family(ipv6_address) = 6
+        AND NOT (ipv6_address <<= inet '::/128')
+        AND NOT (ipv6_address <<= inet '::1/128')
+        AND NOT (ipv6_address <<= inet 'fe80::/10')
+        AND NOT (ipv6_address <<= inet 'fc00::/7')
+        AND NOT (ipv6_address <<= inet 'ff00::/8')
+    ),
+    CONSTRAINT chk_device_ipv6_history_valid_window CHECK (valid_to IS NULL OR valid_to > valid_from)
+);
+
+CREATE TABLE sensor_readings (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    device_id bigint NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+    source_type sensor_reading_source NOT NULL,
+    reported_at timestamptz NOT NULL,
+    ingested_at timestamptz NOT NULL DEFAULT NOW(),
+    risk_level smallint NOT NULL,
+    temperature_c numeric(6,2) NOT NULL,
+    humidity_pct numeric(5,2) NOT NULL,
+    voc_iaq integer NOT NULL,
+    pm25_ug_m3 numeric(8,1) NOT NULL,
+    battery_pct smallint,
+    pressure_hpa numeric(8,2),
+    battery_health_score smallint,
+    config_revision_id bigint REFERENCES config_revisions(id) ON DELETE SET NULL,
+    raw_payload_metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+    CONSTRAINT chk_sensor_readings_risk_level CHECK (risk_level BETWEEN 1 AND 5),
+    CONSTRAINT chk_sensor_readings_humidity CHECK (humidity_pct >= 0 AND humidity_pct <= 100),
+    CONSTRAINT chk_sensor_readings_voc CHECK (voc_iaq >= 0),
+    CONSTRAINT chk_sensor_readings_pm25 CHECK (pm25_ug_m3 >= 0),
+    CONSTRAINT chk_sensor_readings_battery CHECK (battery_pct IS NULL OR (battery_pct >= 0 AND battery_pct <= 100)),
+    CONSTRAINT chk_sensor_readings_pressure CHECK (pressure_hpa IS NULL OR pressure_hpa > 0),
+    CONSTRAINT chk_sensor_readings_battery_health CHECK (
+        battery_health_score IS NULL OR (
+            battery_health_score >= 0 AND battery_health_score <= 100
+        )
+    ),
+    CONSTRAINT chk_sensor_readings_metadata_object CHECK (jsonb_typeof(raw_payload_metadata) = 'object')
 );
 
 CREATE TABLE alerts (
-  id SERIAL PRIMARY KEY,
-  type TEXT,
-  title TEXT,
-  device_id TEXT,
-  timestamp TIMESTAMP DEFAULT NOW()
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    device_id bigint REFERENCES devices(id) ON DELETE CASCADE,
+    sensor_reading_id bigint REFERENCES sensor_readings(id) ON DELETE SET NULL,
+    config_revision_id bigint REFERENCES config_revisions(id) ON DELETE SET NULL,
+    alert_type alert_type NOT NULL,
+    status alert_status NOT NULL DEFAULT 'open',
+    severity alert_severity NOT NULL,
+    title text NOT NULL,
+    details jsonb NOT NULL DEFAULT '{}'::jsonb,
+    occurred_at timestamptz NOT NULL,
+    detected_at timestamptz NOT NULL DEFAULT NOW(),
+    acknowledged_at timestamptz,
+    acknowledged_by text,
+    cleared_at timestamptz,
+    cleared_by text,
+    latest_event_at timestamptz NOT NULL DEFAULT NOW(),
+    snapshot_reported_at timestamptz,
+    snapshot_risk_level smallint,
+    snapshot_temperature_c numeric(6,2),
+    snapshot_humidity_pct numeric(5,2),
+    snapshot_voc_iaq integer,
+    snapshot_pm25_ug_m3 numeric(8,1),
+    snapshot_battery_pct smallint,
+    created_at timestamptz NOT NULL DEFAULT NOW(),
+    updated_at timestamptz NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_alerts_title_not_blank CHECK (length(btrim(title)) > 0),
+    CONSTRAINT chk_alerts_details_object CHECK (jsonb_typeof(details) = 'object'),
+    CONSTRAINT chk_alerts_ack_timestamp CHECK (acknowledged_at IS NULL OR acknowledged_at >= detected_at),
+    CONSTRAINT chk_alerts_clear_timestamp CHECK (cleared_at IS NULL OR cleared_at >= detected_at),
+    CONSTRAINT chk_alerts_clear_after_ack CHECK (cleared_at IS NULL OR acknowledged_at IS NULL OR cleared_at >= acknowledged_at),
+    CONSTRAINT chk_alerts_ack_required_when_acknowledged CHECK (
+        status <> 'acknowledged' OR acknowledged_at IS NOT NULL
+    ),
+    CONSTRAINT chk_alerts_clear_required_when_cleared CHECK (
+        status <> 'cleared' OR cleared_at IS NOT NULL
+    ),
+    CONSTRAINT chk_alerts_latest_event_at CHECK (latest_event_at >= detected_at),
+    CONSTRAINT chk_alerts_snapshot_risk CHECK (
+        snapshot_risk_level IS NULL OR snapshot_risk_level BETWEEN 1 AND 5
+    ),
+    CONSTRAINT chk_alerts_snapshot_humidity CHECK (
+        snapshot_humidity_pct IS NULL OR (
+            snapshot_humidity_pct >= 0 AND snapshot_humidity_pct <= 100
+        )
+    ),
+    CONSTRAINT chk_alerts_snapshot_voc CHECK (snapshot_voc_iaq IS NULL OR snapshot_voc_iaq >= 0),
+    CONSTRAINT chk_alerts_snapshot_pm25 CHECK (snapshot_pm25_ug_m3 IS NULL OR snapshot_pm25_ug_m3 >= 0),
+    CONSTRAINT chk_alerts_snapshot_battery CHECK (
+        snapshot_battery_pct IS NULL OR (
+            snapshot_battery_pct >= 0 AND snapshot_battery_pct <= 100
+        )
+    )
 );
 
+CREATE TABLE alert_events (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    alert_id bigint NOT NULL REFERENCES alerts(id) ON DELETE CASCADE,
+    event_type alert_event_type NOT NULL,
+    previous_status alert_status,
+    new_status alert_status,
+    event_at timestamptz NOT NULL DEFAULT NOW(),
+    actor text,
+    note text,
+    details jsonb NOT NULL DEFAULT '{}'::jsonb,
+    CONSTRAINT chk_alert_events_details_object CHECK (jsonb_typeof(details) = 'object')
+);
+
+CREATE TABLE nn_revisions (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    device_id bigint NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+    revision_no integer NOT NULL,
+    radius_meters integer NOT NULL,
+    revision_source nn_revision_source NOT NULL DEFAULT 'automatic',
+    selection_basis_at timestamptz,
+    active_from timestamptz NOT NULL DEFAULT NOW(),
+    active_to timestamptz,
+    details jsonb NOT NULL DEFAULT '{}'::jsonb,
+    created_at timestamptz NOT NULL DEFAULT NOW(),
+    updated_at timestamptz NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_nn_revisions_device_revision UNIQUE (device_id, revision_no),
+    CONSTRAINT uq_nn_revisions_id_device UNIQUE (id, device_id),
+    CONSTRAINT chk_nn_revisions_revision_no_positive CHECK (revision_no > 0),
+    CONSTRAINT chk_nn_revisions_radius_positive CHECK (radius_meters > 0),
+    CONSTRAINT chk_nn_revisions_active_window CHECK (active_to IS NULL OR active_to > active_from),
+    CONSTRAINT chk_nn_revisions_details_object CHECK (jsonb_typeof(details) = 'object')
+);
+
+CREATE TABLE nn_revision_memberships (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    nn_revision_id bigint NOT NULL REFERENCES nn_revisions(id) ON DELETE CASCADE,
+    owner_device_id bigint NOT NULL,
+    neighbor_device_id bigint NOT NULL REFERENCES devices(id) ON DELETE RESTRICT,
+    neighbor_rank smallint NOT NULL,
+    distance_meters integer NOT NULL,
+    neighbor_latitude numeric(9,6) NOT NULL,
+    neighbor_longitude numeric(9,6) NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_nn_revision_memberships_neighbor UNIQUE (nn_revision_id, neighbor_device_id),
+    CONSTRAINT uq_nn_revision_memberships_rank UNIQUE (nn_revision_id, neighbor_rank),
+    CONSTRAINT fk_nn_revision_memberships_owner
+        FOREIGN KEY (nn_revision_id, owner_device_id)
+        REFERENCES nn_revisions(id, device_id)
+        ON DELETE CASCADE,
+    CONSTRAINT chk_nn_revision_memberships_rank_positive CHECK (neighbor_rank > 0),
+    CONSTRAINT chk_nn_revision_memberships_distance_non_negative CHECK (distance_meters >= 0),
+    CONSTRAINT chk_nn_revision_memberships_not_self CHECK (owner_device_id <> neighbor_device_id),
+    CONSTRAINT chk_nn_revision_memberships_neighbor_latitude CHECK (
+        neighbor_latitude >= -90 AND neighbor_latitude <= 90
+    ),
+    CONSTRAINT chk_nn_revision_memberships_neighbor_longitude CHECK (
+        neighbor_longitude >= -180 AND neighbor_longitude <= 180
+    )
+);
+
+CREATE TABLE nn_distribution_events (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    device_id bigint NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+    nn_revision_id bigint NOT NULL,
+    attempt_no integer NOT NULL DEFAULT 1,
+    status nn_distribution_status NOT NULL DEFAULT 'sent',
+    sent_at timestamptz NOT NULL DEFAULT NOW(),
+    acknowledged_at timestamptz,
+    payload_metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+    CONSTRAINT fk_nn_distribution_events_revision
+        FOREIGN KEY (nn_revision_id, device_id)
+        REFERENCES nn_revisions(id, device_id)
+        ON DELETE CASCADE,
+    CONSTRAINT chk_nn_distribution_events_attempt_positive CHECK (attempt_no > 0),
+    CONSTRAINT chk_nn_distribution_events_ack_timestamp CHECK (
+        acknowledged_at IS NULL OR acknowledged_at >= sent_at
+    ),
+    CONSTRAINT chk_nn_distribution_events_ack_required CHECK (
+        status <> 'acknowledged' OR acknowledged_at IS NOT NULL
+    ),
+    CONSTRAINT chk_nn_distribution_events_metadata_object CHECK (
+        jsonb_typeof(payload_metadata) = 'object'
+    )
+);
+
+CREATE TABLE time_sync_events (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    device_id bigint NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+    target_time timestamptz NOT NULL,
+    status time_sync_status NOT NULL DEFAULT 'sent',
+    sent_at timestamptz NOT NULL DEFAULT NOW(),
+    acknowledged_at timestamptz,
+    result_message text,
+    payload_metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+    CONSTRAINT chk_time_sync_events_ack_timestamp CHECK (
+        acknowledged_at IS NULL OR acknowledged_at >= sent_at
+    ),
+    CONSTRAINT chk_time_sync_events_ack_required CHECK (
+        status <> 'acknowledged' OR acknowledged_at IS NOT NULL
+    ),
+    CONSTRAINT chk_time_sync_events_metadata_object CHECK (
+        jsonb_typeof(payload_metadata) = 'object'
+    )
+);
+
+CREATE TABLE device_config_deployments (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    device_id bigint NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+    config_revision_id bigint NOT NULL REFERENCES config_revisions(id) ON DELETE RESTRICT,
+    attempt_no integer NOT NULL DEFAULT 1,
+    status config_deployment_status NOT NULL DEFAULT 'sent',
+    sent_at timestamptz NOT NULL DEFAULT NOW(),
+    acknowledged_at timestamptz,
+    applied_at timestamptz,
+    payload_metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+    created_at timestamptz NOT NULL DEFAULT NOW(),
+    updated_at timestamptz NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_device_config_deployments_attempt UNIQUE (device_id, config_revision_id, attempt_no),
+    CONSTRAINT chk_device_config_deployments_attempt_positive CHECK (attempt_no > 0),
+    CONSTRAINT chk_device_config_deployments_ack_timestamp CHECK (
+        acknowledged_at IS NULL OR acknowledged_at >= sent_at
+    ),
+    CONSTRAINT chk_device_config_deployments_applied_timestamp CHECK (
+        applied_at IS NULL OR applied_at >= sent_at
+    ),
+    CONSTRAINT chk_device_config_deployments_ack_required CHECK (
+        status <> 'acknowledged' OR acknowledged_at IS NOT NULL
+    ),
+    CONSTRAINT chk_device_config_deployments_metadata_object CHECK (
+        jsonb_typeof(payload_metadata) = 'object'
+    )
+);
+
+CREATE TABLE notification_recipients (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    display_name text,
+    email_address text NOT NULL,
+    is_enabled boolean NOT NULL DEFAULT true,
+    created_at timestamptz NOT NULL DEFAULT NOW(),
+    updated_at timestamptz NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_notification_recipients_email_shape CHECK (
+        position('@' IN email_address) > 1
+    )
+);
+
+CREATE TABLE notification_preferences (
+    recipient_id bigint NOT NULL REFERENCES notification_recipients(id) ON DELETE CASCADE,
+    event_type notification_event_type NOT NULL,
+    is_enabled boolean NOT NULL DEFAULT true,
+    created_at timestamptz NOT NULL DEFAULT NOW(),
+    updated_at timestamptz NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (recipient_id, event_type)
+);
+
+CREATE TABLE notification_deliveries (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    recipient_id bigint NOT NULL REFERENCES notification_recipients(id) ON DELETE CASCADE,
+    event_type notification_event_type NOT NULL,
+    alert_id bigint REFERENCES alerts(id) ON DELETE SET NULL,
+    device_id bigint REFERENCES devices(id) ON DELETE SET NULL,
+    event_occurred_at timestamptz NOT NULL,
+    subject text NOT NULL,
+    status notification_delivery_status NOT NULL DEFAULT 'queued',
+    queued_at timestamptz NOT NULL DEFAULT NOW(),
+    attempted_at timestamptz,
+    delivered_at timestamptz,
+    provider_message_id text,
+    failure_reason text,
+    payload_snapshot jsonb NOT NULL DEFAULT '{}'::jsonb,
+    CONSTRAINT chk_notification_deliveries_subject_not_blank CHECK (
+        length(btrim(subject)) > 0
+    ),
+    CONSTRAINT chk_notification_deliveries_attempt_timestamp CHECK (
+        attempted_at IS NULL OR attempted_at >= queued_at
+    ),
+    CONSTRAINT chk_notification_deliveries_delivery_timestamp CHECK (
+        delivered_at IS NULL OR delivered_at >= queued_at
+    ),
+    CONSTRAINT chk_notification_deliveries_sent_requires_delivered_at CHECK (
+        status <> 'sent' OR delivered_at IS NOT NULL
+    ),
+    CONSTRAINT chk_notification_deliveries_payload_object CHECK (
+        jsonb_typeof(payload_snapshot) = 'object'
+    )
+);
+
+CREATE TABLE sensor_reading_hourly_aggregates (
+    device_id bigint NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+    bucket_start timestamptz NOT NULL,
+    bucket_end timestamptz NOT NULL,
+    sample_count integer NOT NULL,
+    min_temperature_c numeric(6,2),
+    avg_temperature_c numeric(7,3),
+    max_temperature_c numeric(6,2),
+    min_humidity_pct numeric(5,2),
+    avg_humidity_pct numeric(6,3),
+    max_humidity_pct numeric(5,2),
+    min_voc_iaq integer,
+    avg_voc_iaq numeric(10,2),
+    max_voc_iaq integer,
+    min_pm25_ug_m3 numeric(8,1),
+    avg_pm25_ug_m3 numeric(9,2),
+    max_pm25_ug_m3 numeric(8,1),
+    max_risk_level smallint,
+    first_reported_at timestamptz NOT NULL,
+    last_reported_at timestamptz NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (device_id, bucket_start),
+    CONSTRAINT chk_sensor_reading_hourly_aggregates_bucket_start_hour CHECK (
+        bucket_start = date_trunc('hour', bucket_start)
+    ),
+    CONSTRAINT chk_sensor_reading_hourly_aggregates_bucket_end CHECK (
+        bucket_end = bucket_start + interval '1 hour'
+    ),
+    CONSTRAINT chk_sensor_reading_hourly_aggregates_sample_count CHECK (sample_count > 0),
+    CONSTRAINT chk_sensor_reading_hourly_aggregates_humidity_min CHECK (
+        min_humidity_pct IS NULL OR (min_humidity_pct >= 0 AND min_humidity_pct <= 100)
+    ),
+    CONSTRAINT chk_sensor_reading_hourly_aggregates_humidity_avg CHECK (
+        avg_humidity_pct IS NULL OR (avg_humidity_pct >= 0 AND avg_humidity_pct <= 100)
+    ),
+    CONSTRAINT chk_sensor_reading_hourly_aggregates_humidity_max CHECK (
+        max_humidity_pct IS NULL OR (max_humidity_pct >= 0 AND max_humidity_pct <= 100)
+    ),
+    CONSTRAINT chk_sensor_reading_hourly_aggregates_voc_min CHECK (
+        min_voc_iaq IS NULL OR min_voc_iaq >= 0
+    ),
+    CONSTRAINT chk_sensor_reading_hourly_aggregates_voc_avg CHECK (
+        avg_voc_iaq IS NULL OR avg_voc_iaq >= 0
+    ),
+    CONSTRAINT chk_sensor_reading_hourly_aggregates_voc_max CHECK (
+        max_voc_iaq IS NULL OR max_voc_iaq >= 0
+    ),
+    CONSTRAINT chk_sensor_reading_hourly_aggregates_pm25_min CHECK (
+        min_pm25_ug_m3 IS NULL OR min_pm25_ug_m3 >= 0
+    ),
+    CONSTRAINT chk_sensor_reading_hourly_aggregates_pm25_avg CHECK (
+        avg_pm25_ug_m3 IS NULL OR avg_pm25_ug_m3 >= 0
+    ),
+    CONSTRAINT chk_sensor_reading_hourly_aggregates_pm25_max CHECK (
+        max_pm25_ug_m3 IS NULL OR max_pm25_ug_m3 >= 0
+    ),
+    CONSTRAINT chk_sensor_reading_hourly_aggregates_risk CHECK (
+        max_risk_level IS NULL OR max_risk_level BETWEEN 1 AND 5
+    ),
+    CONSTRAINT chk_sensor_reading_hourly_aggregates_reported_window CHECK (
+        last_reported_at >= first_reported_at
+    )
+);
+
+ALTER TABLE devices
+    ADD COLUMN current_nn_revision_id bigint;
+
+ALTER TABLE devices
+    ADD CONSTRAINT fk_devices_current_nn_revision
+    FOREIGN KEY (current_nn_revision_id)
+    REFERENCES nn_revisions(id)
+    ON DELETE SET NULL;
+
+CREATE UNIQUE INDEX uq_device_ipv6_history_current_row
+    ON device_ipv6_history (device_id)
+    WHERE valid_to IS NULL;
+
+CREATE UNIQUE INDEX uq_device_ipv6_history_current_address
+    ON device_ipv6_history (ipv6_address)
+    WHERE valid_to IS NULL;
+
+CREATE UNIQUE INDEX uq_nn_revisions_current_per_device
+    ON nn_revisions (device_id)
+    WHERE active_to IS NULL;
+
+CREATE UNIQUE INDEX uq_notification_recipients_email_lower
+    ON notification_recipients (lower(email_address));
+
+CREATE INDEX idx_devices_last_seen_at
+    ON devices (last_seen_at DESC);
+
+CREATE INDEX idx_devices_latest_reported_at
+    ON devices (latest_reported_at DESC);
+
+CREATE INDEX idx_device_registrations_device_observed_at
+    ON device_registrations (device_id, observed_at DESC);
+
+CREATE INDEX idx_device_registrations_ipv6_observed_at
+    ON device_registrations (observed_ipv6, observed_at DESC);
+
+CREATE INDEX idx_device_ipv6_history_device_valid_from
+    ON device_ipv6_history (device_id, valid_from DESC);
+
+CREATE INDEX idx_sensor_readings_device_reported_at
+    ON sensor_readings (device_id, reported_at DESC);
+
+CREATE INDEX idx_sensor_readings_device_ingested_at
+    ON sensor_readings (device_id, ingested_at DESC);
+
+CREATE INDEX idx_sensor_readings_critical_alerts
+    ON sensor_readings (reported_at DESC)
+    WHERE source_type = 'critical_alert';
+
+CREATE INDEX idx_alerts_active_detected_at
+    ON alerts (detected_at DESC)
+    WHERE status <> 'cleared';
+
+CREATE INDEX idx_alerts_device_detected_at
+    ON alerts (device_id, detected_at DESC);
+
+CREATE INDEX idx_alert_events_alert_event_at
+    ON alert_events (alert_id, event_at DESC);
+
+CREATE INDEX idx_nn_revisions_device_active_from
+    ON nn_revisions (device_id, active_from DESC);
+
+CREATE INDEX idx_nn_revision_memberships_revision_rank
+    ON nn_revision_memberships (nn_revision_id, neighbor_rank);
+
+CREATE INDEX idx_nn_revision_memberships_neighbor_device
+    ON nn_revision_memberships (neighbor_device_id);
+
+CREATE INDEX idx_nn_distribution_events_device_sent_at
+    ON nn_distribution_events (device_id, sent_at DESC);
+
+CREATE INDEX idx_nn_distribution_events_revision_sent_at
+    ON nn_distribution_events (nn_revision_id, sent_at DESC);
+
+CREATE INDEX idx_time_sync_events_device_sent_at
+    ON time_sync_events (device_id, sent_at DESC);
+
+CREATE INDEX idx_time_sync_events_status_sent_at
+    ON time_sync_events (status, sent_at DESC);
+
+CREATE INDEX idx_config_revisions_activated_at
+    ON config_revisions (activated_at DESC NULLS LAST, config_id DESC);
+
+CREATE INDEX idx_device_config_deployments_device_sent_at
+    ON device_config_deployments (device_id, sent_at DESC);
+
+CREATE INDEX idx_device_config_deployments_config_status
+    ON device_config_deployments (config_revision_id, status, sent_at DESC);
+
+CREATE INDEX idx_notification_deliveries_recipient_queued_at
+    ON notification_deliveries (recipient_id, queued_at DESC);
+
+CREATE INDEX idx_notification_deliveries_event_queued_at
+    ON notification_deliveries (event_type, queued_at DESC);
+
+CREATE INDEX idx_notification_deliveries_status_queued_at
+    ON notification_deliveries (status, queued_at DESC);
+
+CREATE INDEX idx_sensor_reading_hourly_aggregates_bucket_start
+    ON sensor_reading_hourly_aggregates (bucket_start DESC);
+
+CREATE TRIGGER trg_set_updated_at_config_revisions
+BEFORE UPDATE ON config_revisions
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER trg_set_updated_at_devices
+BEFORE UPDATE ON devices
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER trg_set_updated_at_alerts
+BEFORE UPDATE ON alerts
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER trg_set_updated_at_nn_revisions
+BEFORE UPDATE ON nn_revisions
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER trg_set_updated_at_device_config_deployments
+BEFORE UPDATE ON device_config_deployments
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER trg_set_updated_at_notification_recipients
+BEFORE UPDATE ON notification_recipients
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER trg_set_updated_at_notification_preferences
+BEFORE UPDATE ON notification_preferences
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+COMMENT ON TABLE devices IS
+'Current per-device snapshot optimized for dashboard and map queries. Stores current network identity, location, registration window, and cached latest telemetry.';
+
+COMMENT ON TABLE device_registrations IS
+'Append-only audit log of device registration and rejoin events, including the observed IPv6 address and registration-time device metadata.';
+
+COMMENT ON TABLE device_ipv6_history IS
+'Tracks validity windows for each IPv6 address observed for a device. The row with NULL valid_to is the current address assignment.';
+
+COMMENT ON TABLE sensor_readings IS
+'Append-only telemetry history for sensor reports and sensor alerts. Raw rows should remain available for at least 24 hours even if longer-term aggregates are also maintained.';
+
+COMMENT ON TABLE alerts IS
+'Alert records with lifecycle state, timestamps, and metric snapshots captured at alert time.';
+
+COMMENT ON TABLE alert_events IS
+'Append-only lifecycle history for alerts, preserving acknowledgement and clearing audit events.';
+
+COMMENT ON TABLE nn_revisions IS
+'Versioned nearest-neighbor sets per device. The row with NULL active_to is the currently active neighbor set for that device.';
+
+COMMENT ON TABLE nn_revision_memberships IS
+'Neighbors belonging to a nearest-neighbor revision, including rank, distance, and coordinate snapshot at generation time.';
+
+COMMENT ON TABLE nn_distribution_events IS
+'Audit trail of nearest-neighbor table transmissions to devices.';
+
+COMMENT ON TABLE config_revisions IS
+'Versioned wildfire risk threshold definitions keyed by the monotonic config_id used in packet 0x06.';
+
+COMMENT ON TABLE device_config_deployments IS
+'Per-device audit log of configuration pushes and acknowledgements for config revisions.';
+
+COMMENT ON TABLE time_sync_events IS
+'Per-device log of daily time synchronization attempts, sent time values, and acknowledgement status.';
+
+COMMENT ON TABLE notification_recipients IS
+'Email recipients eligible to receive alert or system event notifications.';
+
+COMMENT ON TABLE notification_preferences IS
+'Per-recipient enable/disable settings for each notification event type.';
+
+COMMENT ON TABLE notification_deliveries IS
+'Delivery audit for attempted notification emails, including timestamps, status, and payload snapshot.';
+
+COMMENT ON TABLE sensor_reading_hourly_aggregates IS
+'Optional long-term hourly rollups derived from raw sensor_readings for reporting beyond the raw retention window.';
+
+COMMENT ON COLUMN devices.current_ipv6 IS
+'Authoritative current network address for the device. This value may change when a node rejoins.';
+
+COMMENT ON COLUMN sensor_readings.raw_payload_metadata IS
+'Supplemental packet metadata such as original epoch seconds, packet counters, or gateway ingestion details.';
+
+COMMENT ON COLUMN alerts.details IS
+'Machine-readable alert details that do not belong in fixed relational columns.';
+
+COMMIT;
