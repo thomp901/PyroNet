@@ -88,9 +88,17 @@ BEGIN
 END;
 $$;
 
+CREATE SEQUENCE config_revisions_config_id_seq
+    AS bigint
+    START WITH 1
+    INCREMENT BY 1
+    MINVALUE 1
+    NO MAXVALUE
+    CACHE 1;
+
 CREATE TABLE config_revisions (
     id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    config_id bigint NOT NULL,
+    config_id bigint NOT NULL DEFAULT nextval('config_revisions_config_id_seq'::regclass),
     l2_temp_thresh numeric(6,2) NOT NULL,
     l2_humidity_thresh numeric(5,2) NOT NULL,
     l2_voc_thresh integer NOT NULL,
@@ -118,6 +126,9 @@ CREATE TABLE config_revisions (
     CONSTRAINT chk_config_revisions_retired_after_activated CHECK (retired_at IS NULL OR activated_at IS NULL OR retired_at > activated_at),
     CONSTRAINT chk_config_revisions_metadata_object CHECK (jsonb_typeof(metadata) = 'object')
 );
+
+ALTER SEQUENCE config_revisions_config_id_seq
+    OWNED BY config_revisions.config_id;
 
 CREATE TABLE devices (
     id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -653,10 +664,130 @@ CREATE INDEX idx_notification_deliveries_status_queued_at
 CREATE INDEX idx_sensor_reading_hourly_aggregates_bucket_start
     ON sensor_reading_hourly_aggregates (bucket_start DESC);
 
+CREATE OR REPLACE FUNCTION enforce_config_revision_config_id_monotonicity()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    current_max_config_id bigint;
+    sequence_last_value bigint;
+    sequence_is_called boolean;
+    last_allocated_config_id bigint;
+BEGIN
+    SELECT COALESCE(MAX(config_id), 0)
+    INTO current_max_config_id
+    FROM config_revisions;
+
+    IF NEW.config_id <= current_max_config_id THEN
+        RAISE EXCEPTION
+            'config_id % must be greater than the current max config_id %',
+            NEW.config_id,
+            current_max_config_id
+            USING ERRCODE = '23514';
+    END IF;
+
+    SELECT last_value, is_called
+    INTO sequence_last_value, sequence_is_called
+    FROM config_revisions_config_id_seq;
+
+    last_allocated_config_id := CASE
+        WHEN sequence_is_called THEN sequence_last_value
+        ELSE sequence_last_value - 1
+    END;
+
+    IF NEW.config_id > last_allocated_config_id THEN
+        PERFORM setval('config_revisions_config_id_seq', NEW.config_id, true);
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION prevent_config_revision_config_id_update()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF NEW.config_id <> OLD.config_id THEN
+        RAISE EXCEPTION
+            'config_id is immutable once a config revision has been created'
+            USING ERRCODE = '23514';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION enforce_nn_revision_membership_radius()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    parent_radius_meters integer;
+BEGIN
+    SELECT radius_meters
+    INTO parent_radius_meters
+    FROM nn_revisions
+    WHERE id = NEW.nn_revision_id;
+
+    IF parent_radius_meters IS NULL THEN
+        RAISE EXCEPTION
+            'nn_revision % does not exist for membership validation',
+            NEW.nn_revision_id
+            USING ERRCODE = '23503';
+    END IF;
+
+    IF NEW.distance_meters > parent_radius_meters THEN
+        RAISE EXCEPTION
+            'distance_meters % exceeds nn revision radius_meters % for nn_revision_id %',
+            NEW.distance_meters,
+            parent_radius_meters,
+            NEW.nn_revision_id
+            USING ERRCODE = '23514';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION prevent_nn_revision_radius_shrink_below_memberships()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF NEW.radius_meters < OLD.radius_meters
+       AND EXISTS (
+           SELECT 1
+           FROM nn_revision_memberships
+           WHERE nn_revision_id = NEW.id
+             AND distance_meters > NEW.radius_meters
+       ) THEN
+        RAISE EXCEPTION
+            'radius_meters % is below one or more existing membership distances for nn_revision_id %',
+            NEW.radius_meters,
+            NEW.id
+            USING ERRCODE = '23514';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_enforce_config_revision_config_id_monotonicity
+BEFORE INSERT ON config_revisions
+FOR EACH ROW
+WHEN (NEW.config_id IS NOT NULL)
+EXECUTE FUNCTION enforce_config_revision_config_id_monotonicity();
+
 CREATE TRIGGER trg_set_updated_at_config_revisions
 BEFORE UPDATE ON config_revisions
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER trg_prevent_config_revision_config_id_update
+BEFORE UPDATE OF config_id ON config_revisions
+FOR EACH ROW
+EXECUTE FUNCTION prevent_config_revision_config_id_update();
 
 CREATE TRIGGER trg_set_updated_at_devices
 BEFORE UPDATE ON devices
@@ -672,6 +803,16 @@ CREATE TRIGGER trg_set_updated_at_nn_revisions
 BEFORE UPDATE ON nn_revisions
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER trg_prevent_nn_revision_radius_shrink_below_memberships
+BEFORE UPDATE OF radius_meters ON nn_revisions
+FOR EACH ROW
+EXECUTE FUNCTION prevent_nn_revision_radius_shrink_below_memberships();
+
+CREATE TRIGGER trg_enforce_nn_revision_membership_radius
+BEFORE INSERT OR UPDATE ON nn_revision_memberships
+FOR EACH ROW
+EXECUTE FUNCTION enforce_nn_revision_membership_radius();
 
 CREATE TRIGGER trg_set_updated_at_device_config_deployments
 BEFORE UPDATE ON device_config_deployments
