@@ -111,7 +111,7 @@ export function DashboardPage() {
               {data.alertQueue.slice(0, 6).map((alert) => (
                 <tr key={alert.id}>
                   <td>
-                    <Link to={`/nodes/${alert.nodeId}`}>
+                    <Link className="table-link" to={`/nodes/${alert.nodeId}`}>
                       {alert.nodeId}
                     </Link>
                   </td>

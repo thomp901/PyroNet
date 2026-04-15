@@ -19,7 +19,7 @@ export function NodesPage() {
   return (
     <PageContainer>
       <div className="card">
-        <NodeFleetTable nodes={data} sortable />
+        <NodeFleetTable nodes={data} sortable showNodeIdLink={false} />
       </div>
     </PageContainer>
   );
