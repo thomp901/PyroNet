@@ -5,15 +5,13 @@ import {
   triggerNeighborDistribution,
   triggerThresholdPush,
   triggerTimeSync,
-  updateNeighborRevision,
 } from "../api/configuration";
-import type { ConfigThresholds, NodeId } from "../api/types";
+import type { ConfigThresholds } from "../api/types";
 import { EmptyState } from "../components/common/EmptyState";
 import { LoadingState } from "../components/common/LoadingState";
 import { PageContainer } from "../components/common/PageContainer";
 import { TableShell } from "../components/common/TableShell";
 import { formatTimestamp } from "../lib/format";
-import { parseNodeId } from "../lib/nodeId";
 import { useAsyncData } from "../lib/useAsyncData";
 
 const emptyThresholds: ConfigThresholds = {
@@ -28,13 +26,65 @@ const emptyThresholds: ConfigThresholds = {
   l5Pm25Thresh: 0,
 };
 
+const thresholdGroups: Array<{
+  title: string;
+  fields: Array<{
+    key: keyof ConfigThresholds;
+    label: string;
+  }>;
+}> = [
+  {
+    title: "Level 2 thresholds",
+    fields: [
+      { key: "l2TempThresh", label: "Temperature threshold" },
+      { key: "l2HumidityThresh", label: "Humidity threshold" },
+      { key: "l2VocThresh", label: "VOC threshold" },
+    ],
+  },
+  {
+    title: "Level 3 thresholds",
+    fields: [
+      { key: "l3TempThresh", label: "Temperature threshold" },
+      { key: "l3HumidityThresh", label: "Humidity threshold" },
+      { key: "l3VocThresh", label: "VOC threshold" },
+    ],
+  },
+  {
+    title: "Level 4 thresholds",
+    fields: [{ key: "l4VocThresh", label: "VOC threshold" }],
+  },
+  {
+    title: "Level 5 thresholds",
+    fields: [
+      { key: "l5VocThresh", label: "VOC threshold" },
+      { key: "l5Pm25Thresh", label: "PM2.5 threshold" },
+    ],
+  },
+];
+
+type TemperatureUnit = "C" | "F";
+
+function isTemperatureThreshold(key: keyof ConfigThresholds) {
+  return key === "l2TempThresh" || key === "l3TempThresh";
+}
+
+function convertCelsiusToFahrenheit(value: number) {
+  return (value * 9) / 5 + 32;
+}
+
+function convertFahrenheitToCelsius(value: number) {
+  return ((value - 32) * 5) / 9;
+}
+
+function roundThresholdValue(value: number) {
+  return Math.round(value * 10) / 10;
+}
+
 export function ConfigurationPage() {
   const { data, error, loading, reload } = useAsyncData(getConfiguration, []);
   const [thresholds, setThresholds] = useState<ConfigThresholds>(emptyThresholds);
   const [notes, setNotes] = useState("");
-  const [selectedNodeId, setSelectedNodeId] = useState<NodeId | undefined>(undefined);
-  const [radiusMeters, setRadiusMeters] = useState(1500);
-  const [neighborNodeIds, setNeighborNodeIds] = useState<NodeId[]>([]);
+  const [temperatureUnit, setTemperatureUnit] = useState<TemperatureUnit>("C");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -44,18 +94,7 @@ export function ConfigurationPage() {
     }
     setThresholds(data.activeRevision.thresholds);
     setNotes(data.activeRevision.notes ?? "");
-    const defaultNode = data.neighborTables[0]?.nodeId;
-    setSelectedNodeId((current) => current ?? defaultNode);
   }, [data]);
-
-  useEffect(() => {
-    const selected = data?.neighborTables.find((table) => table.nodeId === selectedNodeId);
-    if (!selected) {
-      return;
-    }
-    setRadiusMeters(selected.radiusMeters ?? 1500);
-    setNeighborNodeIds(selected.neighbors.map((neighbor) => neighbor.neighborNodeId));
-  }, [data, selectedNodeId]);
 
   if (loading) {
     return <LoadingState label="Loading configuration..." />;
@@ -79,14 +118,77 @@ export function ConfigurationPage() {
     }
   }
 
+  function getThresholdInputValue(key: keyof ConfigThresholds) {
+    const value = thresholds[key];
+    if (!isTemperatureThreshold(key)) {
+      return value;
+    }
+    if (temperatureUnit === "F") {
+      return roundThresholdValue(convertCelsiusToFahrenheit(value));
+    }
+    return value;
+  }
+
+  function updateThresholdValue(key: keyof ConfigThresholds, nextValue: number) {
+    const normalizedValue =
+      isTemperatureThreshold(key) && temperatureUnit === "F"
+        ? roundThresholdValue(convertFahrenheitToCelsius(nextValue))
+        : nextValue;
+
+    setThresholds((current) => ({
+      ...current,
+      [key]: normalizedValue,
+    }));
+  }
+
   return (
     <PageContainer
       title="Configuration And Downlinks"
-      description="Manage threshold revisions, inspect the active config revision, edit neighbor relationships, and trigger CSP-originated 0x04, 0x05, and 0x06 commands."
+      description="Manage threshold revisions, inspect recent config revisions, and trigger CSP-originated downlink commands."
     >
       {statusMessage ? <div className="inline-status">{statusMessage}</div> : null}
 
-      <div className="split-grid">
+      <div className="card">
+        <div className="section-heading">
+          <div>
+            <h2>Downlink controls</h2>
+            <p>Trigger mesh-level distribution and synchronization workflows from the CSP.</p>
+          </div>
+        </div>
+        <div className="button-row">
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={submitting}
+            onClick={() => void runMutation(() => triggerNeighborDistribution({}), "NN Table Update queued.")}
+          >
+            Trigger NN Table Update
+          </button>
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={submitting}
+            onClick={() => void runMutation(() => triggerTimeSync({}), "Time Sync queued.")}
+          >
+            Trigger Time Sync
+          </button>
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={submitting}
+            onClick={() =>
+              void runMutation(
+                () => triggerThresholdPush({ configRevisionId: data.activeRevision?.id ?? undefined }),
+                "Threshold Push queued.",
+              )
+            }
+          >
+            Trigger Threshold Push
+          </button>
+        </div>
+      </div>
+
+      <div className="stack-grid">
         <form
           className="card form-card"
           onSubmit={(event) => {
@@ -106,24 +208,37 @@ export function ConfigurationPage() {
               <h2>Threshold revision</h2>
               <p>Edit the active thresholds and create a new revision.</p>
             </div>
+            <label className="field threshold-units-field">
+              <span>Temperature entry units</span>
+              <select value={temperatureUnit} onChange={(event) => setTemperatureUnit(event.target.value as TemperatureUnit)}>
+                <option value="C">Celsius (C)</option>
+                <option value="F">Fahrenheit (F)</option>
+              </select>
+            </label>
+          </div>
+          <div className="threshold-groups">
+            {thresholdGroups.map((group) => (
+              <section key={group.title} className="threshold-group">
+                <div className="threshold-group-heading">
+                  <h3>{group.title}</h3>
+                </div>
+                <div className="form-grid threshold-group-grid">
+                  {group.fields.map((field) => (
+                    <label key={field.key} className="field">
+                      <span>{isTemperatureThreshold(field.key) ? `${field.label} (${temperatureUnit})` : field.label}</span>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={getThresholdInputValue(field.key)}
+                        onChange={(event) => updateThresholdValue(field.key, Number(event.target.value))}
+                      />
+                    </label>
+                  ))}
+                </div>
+              </section>
+            ))}
           </div>
           <div className="form-grid">
-            {Object.entries(thresholds).map(([key, value]) => (
-              <label key={key} className="field">
-                <span>{key}</span>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={value}
-                  onChange={(event) =>
-                    setThresholds((current) => ({
-                      ...current,
-                      [key]: Number(event.target.value),
-                    }))
-                  }
-                />
-              </label>
-            ))}
             <label className="field field-full">
               <span>Revision notes</span>
               <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} />
@@ -134,121 +249,6 @@ export function ConfigurationPage() {
           </button>
         </form>
 
-        <form
-          className="card form-card"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (selectedNodeId === undefined) {
-              return;
-            }
-            void runMutation(
-              () =>
-                updateNeighborRevision(selectedNodeId, {
-                  radiusMeters,
-                  neighborNodeIds,
-                }),
-              `Neighbor revision updated for ${selectedNodeId}.`,
-            );
-          }}
-        >
-          <div className="section-heading">
-            <div>
-              <h2>Neighbor relationships</h2>
-              <p>Edit the current NN set for one node at a time.</p>
-            </div>
-          </div>
-          <div className="form-grid">
-            <label className="field">
-              <span>Node</span>
-              <select
-                value={selectedNodeId ?? ""}
-                onChange={(event) => {
-                  const nextNodeId = parseNodeId(event.target.value);
-                  setSelectedNodeId(nextNodeId ?? undefined);
-                }}
-              >
-                {data.neighborTables.map((table) => (
-                  <option key={table.nodeId} value={table.nodeId}>
-                    {table.nodeId}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="field">
-              <span>Radius meters</span>
-              <input type="number" value={radiusMeters} onChange={(event) => setRadiusMeters(Number(event.target.value))} />
-            </label>
-            <div className="field field-full">
-              <span>Neighbor members</span>
-              <div className="checkbox-grid">
-                {data.neighborTables
-                  .filter((table) => table.nodeId !== selectedNodeId)
-                  .map((table) => (
-                    <label key={table.nodeId} className="checkbox-option">
-                      <input
-                        type="checkbox"
-                        checked={neighborNodeIds.includes(table.nodeId)}
-                        onChange={(event) => {
-                          setNeighborNodeIds((current) =>
-                            event.target.checked
-                              ? [...current, table.nodeId]
-                              : current.filter((nodeId) => nodeId !== table.nodeId),
-                          );
-                        }}
-                      />
-                      <span>{table.nodeId}</span>
-                    </label>
-                  ))}
-              </div>
-            </div>
-          </div>
-          <button type="submit" className="primary-button" disabled={submitting || selectedNodeId === undefined}>
-            Save NN revision
-          </button>
-        </form>
-      </div>
-
-      <div className="card">
-        <div className="section-heading">
-          <div>
-            <h2>Downlink controls</h2>
-            <p>Trigger mesh-level distribution and synchronization workflows from the CSP.</p>
-          </div>
-        </div>
-        <div className="button-row">
-          <button
-            type="button"
-            className="secondary-button"
-            disabled={submitting}
-            onClick={() => void runMutation(() => triggerNeighborDistribution({}), "0x04 neighbor distribution queued.")}
-          >
-            Trigger 0x04 distribution
-          </button>
-          <button
-            type="button"
-            className="secondary-button"
-            disabled={submitting}
-            onClick={() => void runMutation(() => triggerTimeSync({}), "0x05 time sync queued.")}
-          >
-            Trigger 0x05 time sync
-          </button>
-          <button
-            type="button"
-            className="secondary-button"
-            disabled={submitting}
-            onClick={() =>
-              void runMutation(
-                () => triggerThresholdPush({ configRevisionId: data.activeRevision?.id ?? undefined }),
-                "0x06 threshold push queued.",
-              )
-            }
-          >
-            Trigger 0x06 threshold push
-          </button>
-        </div>
-      </div>
-
-      <div className="split-grid">
         <div className="card">
           <div className="section-heading">
             <div>
@@ -263,26 +263,6 @@ export function ConfigurationPage() {
                 <td>{formatTimestamp(revision.activatedAt)}</td>
                 <td>{formatTimestamp(revision.retiredAt)}</td>
                 <td>{revision.notes ?? "N/A"}</td>
-              </tr>
-            ))}
-          </TableShell>
-        </div>
-
-        <div className="card">
-          <div className="section-heading">
-            <div>
-              <h2>Downlink monitor</h2>
-              <p>Latest CSP-originated 0x04, 0x05, and 0x06 activity.</p>
-            </div>
-          </div>
-          <TableShell columns={["Command", "Node", "Status", "Revision", "Sent"]}>
-            {data.downlinks.map((downlink) => (
-              <tr key={downlink.id}>
-                <td>{downlink.commandCode}</td>
-                <td>{downlink.nodeId}</td>
-                <td>{downlink.status}</td>
-                <td>{downlink.revisionNo ?? "N/A"}</td>
-                <td>{formatTimestamp(downlink.sentAt)}</td>
               </tr>
             ))}
           </TableShell>

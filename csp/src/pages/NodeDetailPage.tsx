@@ -154,36 +154,58 @@ export function NodeDetailPage() {
         {!historyLoading && historyData ? <TelemetryTrendChart historyByWindow={historyData} measurementId={selectedMeasurement} /> : null}
       </article>
 
-      <div className="card node-detail-neighbor-card">
-        <div className="section-heading">
-          <div>
-            <h2>Current Neighbor Table</h2>
+      <div className="split-grid">
+        <div className="card">
+          <div className="section-heading">
+            <div>
+              <h2>Current Neighbor Table</h2>
+            </div>
           </div>
+          {data.currentNeighborRevision ? (
+            <TableShell className="neighbor-table" columns={["Neighbor ID", "Distance", "Risk", "Connectivity"]}>
+              {data.currentNeighborRevision.neighbors.map((neighbor) => (
+                <tr
+                  key={neighbor.neighborNodeId}
+                  className="neighbor-table-row"
+                  onClick={() => openNeighborDetail(neighbor.neighborNodeId)}
+                  onKeyDown={(event) => handleNeighborRowKeyDown(event, neighbor.neighborNodeId)}
+                  role="link"
+                  tabIndex={0}
+                  aria-label={`Open node ${neighbor.neighborNodeId} detail`}
+                >
+                  <td>{neighbor.neighborNodeId}</td>
+                  <td>{neighbor.distanceMeters} m</td>
+                  <td>{riskLabel(neighbor.riskLevel)}</td>
+                  <td>
+                    <span className={`badge status-${neighbor.connectivity}`}>{neighbor.connectivity}</span>
+                  </td>
+                </tr>
+              ))}
+            </TableShell>
+          ) : (
+            <EmptyState title="No neighbor revision" message="This node does not have an active NN table." />
+          )}
         </div>
-        {data.currentNeighborRevision ? (
-          <TableShell className="neighbor-table" columns={["Neighbor ID", "Distance", "Risk", "Connectivity"]}>
-            {data.currentNeighborRevision.neighbors.map((neighbor) => (
-              <tr
-                key={neighbor.neighborNodeId}
-                className="neighbor-table-row"
-                onClick={() => openNeighborDetail(neighbor.neighborNodeId)}
-                onKeyDown={(event) => handleNeighborRowKeyDown(event, neighbor.neighborNodeId)}
-                role="link"
-                tabIndex={0}
-                aria-label={`Open node ${neighbor.neighborNodeId} detail`}
-              >
-                <td>{neighbor.neighborNodeId}</td>
-                <td>{neighbor.distanceMeters} m</td>
-                <td>{riskLabel(neighbor.riskLevel)}</td>
-                <td>
-                  <span className={`badge status-${neighbor.connectivity}`}>{neighbor.connectivity}</span>
-                </td>
+
+        <div className="card">
+          <div className="section-heading">
+            <div>
+              <h2>Registration history</h2>
+              <p>Recent 0x01 register or re-register events.</p>
+            </div>
+          </div>
+          <TableShell columns={["Observed", "IPv6", "Coordinates", "Firmware", "Battery"]}>
+            {data.recentRegistrations.map((registration) => (
+              <tr key={`${registration.observedAt}-${registration.ipv6Address}`}>
+                <td>{formatTimestamp(registration.observedAt)}</td>
+                <td>{registration.ipv6Address}</td>
+                <td>{formatCoordinatePair(registration.latitude, registration.longitude)}</td>
+                <td>{registration.firmwareVersion ?? "N/A"}</td>
+                <td>{formatInteger(registration.batteryPct, "%")}</td>
               </tr>
             ))}
           </TableShell>
-        ) : (
-          <EmptyState title="No neighbor revision" message="This node does not have an active NN table." />
-        )}
+        </div>
       </div>
 
       <div className="split-grid">
@@ -232,45 +254,6 @@ export function NodeDetailPage() {
         </div>
       </div>
 
-      <div className="split-grid">
-        <div className="card">
-          <div className="section-heading">
-            <div>
-              <h2>Registration history</h2>
-              <p>Recent 0x01 register or re-register events.</p>
-            </div>
-          </div>
-          <TableShell columns={["Observed", "IPv6", "Coordinates", "Firmware", "Battery"]}>
-            {data.recentRegistrations.map((registration) => (
-              <tr key={`${registration.observedAt}-${registration.ipv6Address}`}>
-                <td>{formatTimestamp(registration.observedAt)}</td>
-                <td>{registration.ipv6Address}</td>
-                <td>{formatCoordinatePair(registration.latitude, registration.longitude)}</td>
-                <td>{registration.firmwareVersion ?? "N/A"}</td>
-                <td>{formatInteger(registration.batteryPct, "%")}</td>
-              </tr>
-            ))}
-          </TableShell>
-        </div>
-
-        <div className="card">
-          <div className="section-heading">
-            <div>
-              <h2>IPv6 history</h2>
-              <p>Current and historical address bindings for the node.</p>
-            </div>
-          </div>
-          <TableShell columns={["Address", "Valid from", "Valid to"]}>
-            {data.ipv6History.map((entry) => (
-              <tr key={`${entry.address}-${entry.validFrom}`}>
-                <td>{entry.address}</td>
-                <td>{formatTimestamp(entry.validFrom)}</td>
-                <td>{formatTimestamp(entry.validTo)}</td>
-              </tr>
-            ))}
-          </TableShell>
-        </div>
-      </div>
     </PageContainer>
   );
 }

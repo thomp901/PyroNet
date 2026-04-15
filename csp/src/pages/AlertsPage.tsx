@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+import type { KeyboardEvent, MouseEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { listAlerts } from "../api/alerts";
 import { EmptyState } from "../components/common/EmptyState";
 import { LoadingState } from "../components/common/LoadingState";
@@ -8,7 +9,42 @@ import { formatInteger, formatTimestamp, riskLabel } from "../lib/format";
 import { useAsyncData } from "../lib/useAsyncData";
 
 export function AlertsPage() {
+  const navigate = useNavigate();
   const { data, error, loading } = useAsyncData(listAlerts, []);
+
+  function openNodeDetail(nodeId: number) {
+    navigate(`/nodes/${nodeId}`);
+  }
+
+  function shouldIgnoreRowNavigation(target: EventTarget | null, currentTarget: HTMLElement) {
+    if (!(target instanceof Element)) {
+      return false;
+    }
+
+    const interactiveAncestor = target.closest("a, button, input, select, textarea, summary, [role='button'], [role='link']");
+    return interactiveAncestor !== null && interactiveAncestor !== currentTarget;
+  }
+
+  function handleRowClick(event: MouseEvent<HTMLTableRowElement>, nodeId: number) {
+    if (shouldIgnoreRowNavigation(event.target, event.currentTarget)) {
+      return;
+    }
+
+    openNodeDetail(nodeId);
+  }
+
+  function handleRowKeyDown(event: KeyboardEvent<HTMLTableRowElement>, nodeId: number) {
+    if (shouldIgnoreRowNavigation(event.target, event.currentTarget)) {
+      return;
+    }
+
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+
+    event.preventDefault();
+    openNodeDetail(nodeId);
+  }
 
   if (loading) {
     return <LoadingState label="Loading alert queue..." />;
@@ -23,11 +59,8 @@ export function AlertsPage() {
   const offlineAlerts = data.filter((alert) => alert.incidentType === "offline");
 
   return (
-    <PageContainer
-      title="Alerts And Incidents"
-      description="Critical alerts, battery health warnings, and offline incidents are surfaced here for operator response."
-    >
-      <div className="split-grid">
+    <PageContainer>
+      <div className="alerts-grid">
         <div className="card">
           <div className="section-heading">
             <div>
@@ -38,23 +71,18 @@ export function AlertsPage() {
           {criticalAlerts.length === 0 ? (
             <EmptyState title="No critical alerts" message="Critical node alerts will appear here." />
           ) : (
-            <TableShell columns={["Node", "Severity", "Status", "Snapshot", "Notifications", "Detected"]}>
+            <TableShell className="alerts-summary-table" columns={["Node", "Detected"]}>
               {criticalAlerts.map((alert) => (
-                <tr key={alert.id}>
-                  <td>
-                    <Link className="table-link" to={`/nodes/${alert.nodeId}`}>
-                      {alert.nodeId}
-                    </Link>
-                  </td>
-                  <td>
-                    <span className={`badge severity-${alert.severity}`}>{alert.severity}</span>
-                  </td>
-                  <td>{alert.status}</td>
-                  <td>
-                    {riskLabel(alert.latestSnapshot?.riskLevel)} / VOC {alert.latestSnapshot?.vocIaq ?? "N/A"} / PM2.5{" "}
-                    {alert.latestSnapshot?.pm25UgM3 ?? "N/A"}
-                  </td>
-                  <td>{alert.notificationStatus}</td>
+                <tr
+                  key={alert.id}
+                  className="alerts-summary-row"
+                  onClick={(event) => handleRowClick(event, alert.nodeId)}
+                  onKeyDown={(event) => handleRowKeyDown(event, alert.nodeId)}
+                  role="link"
+                  tabIndex={0}
+                  aria-label={`Open node ${alert.nodeId} detail`}
+                >
+                  <td>{alert.nodeId}</td>
                   <td>{formatTimestamp(alert.detectedAt)}</td>
                 </tr>
               ))}
@@ -105,21 +133,19 @@ export function AlertsPage() {
           {offlineAlerts.length === 0 ? (
             <EmptyState title="No offline incidents" message="All nodes are checking in within the required window." />
           ) : (
-            <TableShell columns={["Node", "Location", "Last snapshot", "Notification state", "Derived at"]}>
+            <TableShell className="alerts-summary-table" columns={["Node", "Last Seen"]}>
               {offlineAlerts.map((alert) => (
-                <tr key={alert.id}>
-                  <td>
-                    <Link className="table-link" to={`/nodes/${alert.nodeId}`}>
-                      {alert.nodeId}
-                    </Link>
-                  </td>
-                  <td>{alert.locationLabel}</td>
-                  <td>
-                    {riskLabel(alert.latestSnapshot?.riskLevel)} / Temp {alert.latestSnapshot?.temperatureC ?? "N/A"} / RH{" "}
-                    {alert.latestSnapshot?.humidityPct ?? "N/A"}
-                  </td>
-                  <td>{alert.notificationStatus}</td>
-                  <td>{formatTimestamp(alert.detectedAt)}</td>
+                <tr
+                  key={alert.id}
+                  className="alerts-summary-row"
+                  onClick={(event) => handleRowClick(event, alert.nodeId)}
+                  onKeyDown={(event) => handleRowKeyDown(event, alert.nodeId)}
+                  role="link"
+                  tabIndex={0}
+                  aria-label={`Open node ${alert.nodeId} detail`}
+                >
+                  <td>{alert.nodeId}</td>
+                  <td>{formatTimestamp(alert.lastSeenAt ?? null)}</td>
                 </tr>
               ))}
             </TableShell>

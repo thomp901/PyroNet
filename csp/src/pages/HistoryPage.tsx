@@ -1,110 +1,236 @@
 import { useEffect, useState } from "react";
-import { getHistory } from "../api/history";
-import type { HistoryWindow, NodeId } from "../api/types";
+import { getPacketHistory } from "../api/history";
+import type { PacketDirection, PacketEventType, PacketHistoryQuery, PacketHistoryResponse, PacketLogStatus } from "../api/types";
 import { EmptyState } from "../components/common/EmptyState";
 import { LoadingState } from "../components/common/LoadingState";
+import { PacketHistoryTable } from "../components/common/PacketHistoryTable";
 import { PageContainer } from "../components/common/PageContainer";
-import { StatCard } from "../components/common/StatCard";
-import { TableShell } from "../components/common/TableShell";
-import { formatInteger, formatNullableNumber, formatTimestamp } from "../lib/format";
 import { parseNodeId } from "../lib/nodeId";
-import { useAsyncData } from "../lib/useAsyncData";
 
-const windows: HistoryWindow[] = ["24h", "7d", "30d"];
+const PAGE_SIZE = 20;
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Packet history is unavailable.";
+}
+
+function humanizeLabel(value: string) {
+  return value
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
 
 export function HistoryPage() {
-  const [selectedNodeId, setSelectedNodeId] = useState<NodeId | undefined>(undefined);
-  const [window, setWindow] = useState<HistoryWindow>("24h");
-  const { data, error, loading } = useAsyncData(() => getHistory(selectedNodeId, window), [selectedNodeId, window]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filters, setFilters] = useState<PacketHistoryQuery>({});
+  const [data, setData] = useState<PacketHistoryResponse | null>(null);
+  const [entries, setEntries] = useState<PacketHistoryResponse["entries"]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (selectedNodeId === undefined && data?.selectedNodeId !== undefined) {
-      setSelectedNodeId(data.selectedNodeId);
-    }
-  }, [data, selectedNodeId]);
+    let cancelled = false;
 
-  if (loading) {
-    return <LoadingState label="Loading telemetry history..." />;
+    async function loadPacketHistory() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const result = await getPacketHistory({
+          ...filters,
+          limit: PAGE_SIZE,
+          offset: 0,
+        });
+
+        if (!cancelled) {
+          setData(result);
+          setEntries(result.entries);
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setData(null);
+          setEntries([]);
+          setError(getErrorMessage(loadError));
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadPacketHistory();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [filters.direction, filters.eventType, filters.nodeId, filters.packetCode, filters.status]);
+
+  async function handleLoadMore() {
+    if (!data?.hasMore) {
+      return;
+    }
+
+    setLoadingMore(true);
+    setError(null);
+
+    try {
+      const result = await getPacketHistory({
+        ...filters,
+        limit: PAGE_SIZE,
+        offset: entries.length,
+      });
+
+      setData(result);
+      setEntries((current) => [...current, ...result.entries]);
+    } catch (loadError) {
+      setError(getErrorMessage(loadError));
+    } finally {
+      setLoadingMore(false);
+    }
   }
 
-  if (error || !data) {
-    return <EmptyState title="Unable to load history" message={error ?? "Telemetry history is unavailable."} />;
+  function updateFilter<Key extends keyof PacketHistoryQuery>(key: Key, value: PacketHistoryQuery[Key]) {
+    setFilters((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  }
+
+  function clearFilters() {
+    setFilters({});
+  }
+
+  const activeFilterCount = [filters.nodeId, filters.direction, filters.eventType, filters.status].filter(Boolean).length;
+
+  if (loading && !data) {
+    return <LoadingState label="Loading packet history..." />;
+  }
+
+  if (error && !data) {
+    return <EmptyState title="Unable to load history" message={error} />;
+  }
+
+  if (!data) {
+    return <EmptyState title="Unable to load history" message="Packet history is unavailable." />;
   }
 
   return (
     <PageContainer
-      title="Telemetry History"
-      description="At least 24 hours of raw telemetry, with longer windows stretched into aggregate views for trend analysis."
+      title="Traffic Log"
+      description="Network traffic log for packets moving between field nodes and the CSP across the full retained history."
       actions={
-        <div className="toolbar">
-          <label className="field-inline">
-            <span>Node</span>
-            <select
-              value={selectedNodeId ?? data.selectedNodeId}
-              onChange={(event) => {
-                const nextNodeId = parseNodeId(event.target.value);
-                if (nextNodeId !== null) {
-                  setSelectedNodeId(nextNodeId);
-                }
-              }}
-            >
-              {data.availableNodes.map((node) => (
-                <option key={node.nodeId} value={node.nodeId}>
-                  {node.nodeId}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="field-inline">
-            <span>Window</span>
-            <select value={window} onChange={(event) => setWindow(event.target.value as HistoryWindow)}>
-              {windows.map((entry) => (
-                <option key={entry} value={entry}>
-                  {entry}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+        <button type="button" className="secondary-button" onClick={() => setFiltersOpen((current) => !current)}>
+          {activeFilterCount > 0 ? `Filters (${activeFilterCount})` : "Filters"}
+        </button>
       }
     >
-      <div className="stat-grid">
-        <StatCard label="Temperature delta" value={formatNullableNumber(data.trendSummary.temperatureDeltaC, "°C")} helper="Newest sample against oldest in view" />
-        <StatCard label="Humidity delta" value={formatNullableNumber(data.trendSummary.humidityDeltaPct, "%")} helper="Relative humidity drift" />
-        <StatCard label="VOC peak" value={formatInteger(data.trendSummary.vocPeak)} helper="Highest VOC IAQ in window" />
-        <StatCard label="PM2.5 peak" value={formatNullableNumber(data.trendSummary.pm25Peak, " ug/m3")} helper="Highest fine particulate value in window" />
-      </div>
+      {filtersOpen ? (
+        <article className="card history-filter-card">
+          <div className="section-heading history-filter-heading">
+            <div>
+              <h2>Filter traffic</h2>
+              <p>Narrow the packet log by node, direction, packet code, event type, or delivery status.</p>
+            </div>
+            <button type="button" className="secondary-button" onClick={clearFilters}>
+              Clear filters
+            </button>
+          </div>
 
-      <div className="card">
-        {data.mode === "raw" ? (
-          <TableShell columns={["Reported", "Source", "Risk", "Temp", "RH", "VOC", "PM2.5", "Battery"]}>
-            {data.rawReadings.map((reading) => (
-              <tr key={reading.id}>
-                <td>{formatTimestamp(reading.reportedAt)}</td>
-                <td>{reading.sourceType}</td>
-                <td>{reading.riskLevel}</td>
-                <td>{formatNullableNumber(reading.temperatureC, "°C")}</td>
-                <td>{formatNullableNumber(reading.humidityPct, "%")}</td>
-                <td>{formatInteger(reading.vocIaq)}</td>
-                <td>{formatNullableNumber(reading.pm25UgM3, " ug/m3")}</td>
-                <td>{formatInteger(reading.batteryPct, "%")}</td>
-              </tr>
-            ))}
-          </TableShell>
+          <div className="form-grid history-filter-grid">
+            <label className="field">
+              <span>Node</span>
+              <select
+                value={filters.nodeId ?? ""}
+                onChange={(event) => {
+                  const nextNodeId = parseNodeId(event.target.value);
+                  updateFilter("nodeId", nextNodeId ?? undefined);
+                }}
+              >
+                <option value="">All nodes</option>
+                {data.availableNodes.map((node) => (
+                  <option key={node.id} value={node.nodeId}>
+                    {node.displayName}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span>Direction</span>
+              <select
+                value={filters.direction ?? ""}
+                onChange={(event) => updateFilter("direction", (event.target.value || undefined) as PacketDirection | undefined)}
+              >
+                <option value="">All directions</option>
+                {data.availableDirections.map((direction) => (
+                  <option key={direction} value={direction}>
+                    {direction === "uplink" ? "Inbound" : "Outbound"}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span>Event Type</span>
+              <select
+                value={filters.eventType ?? ""}
+                onChange={(event) => updateFilter("eventType", (event.target.value || undefined) as PacketEventType | undefined)}
+              >
+                <option value="">All event types</option>
+                {data.availableEventTypes.map((eventType) => (
+                  <option key={eventType} value={eventType}>
+                    {humanizeLabel(eventType)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span>Status</span>
+              <select
+                value={filters.status ?? ""}
+                onChange={(event) => updateFilter("status", (event.target.value || undefined) as PacketLogStatus | undefined)}
+              >
+                <option value="">All statuses</option>
+                {data.availableStatuses.map((status) => (
+                  <option key={status} value={status}>
+                    {humanizeLabel(status)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </article>
+      ) : null}
+
+      <div className="card history-log-card">
+        <div className="section-heading history-log-heading">
+          <div>
+            <h2>Packet traffic</h2>
+            <p>
+              Showing {entries.length} of {data.totalCount} packets matching the current filter set.
+            </p>
+          </div>
+        </div>
+
+        {error ? <div className="history-log-feedback history-log-feedback-error">{error}</div> : null}
+
+        {entries.length > 0 ? (
+          <>
+            <PacketHistoryTable entries={entries} />
+
+            {data.hasMore ? (
+              <div className="history-log-actions">
+                <button type="button" className="secondary-button" onClick={() => void handleLoadMore()} disabled={loadingMore}>
+                  {loadingMore ? "Loading more..." : `Load ${PAGE_SIZE} more`}
+                </button>
+              </div>
+            ) : null}
+          </>
         ) : (
-          <TableShell columns={["Bucket start", "Samples", "Avg temp", "Avg RH", "Avg VOC", "Avg PM2.5", "Max risk"]}>
-            {data.aggregateBuckets.map((bucket) => (
-              <tr key={bucket.bucketStart}>
-                <td>{formatTimestamp(bucket.bucketStart)}</td>
-                <td>{bucket.sampleCount}</td>
-                <td>{formatNullableNumber(bucket.avgTemperatureC, "°C")}</td>
-                <td>{formatNullableNumber(bucket.avgHumidityPct, "%")}</td>
-                <td>{formatNullableNumber(bucket.avgVocIaq, "", 0)}</td>
-                <td>{formatNullableNumber(bucket.avgPm25UgM3, " ug/m3")}</td>
-                <td>{bucket.maxRiskLevel ?? "N/A"}</td>
-              </tr>
-            ))}
-          </TableShell>
+          <EmptyState title="No packets found" message="Try widening the filters to bring more CSP traffic into view." />
         )}
       </div>
     </PageContainer>

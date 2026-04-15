@@ -19,6 +19,13 @@ import type {
   NodeDetail,
   NodeId,
   NodeSummary,
+  PacketDirection,
+  PacketEventType,
+  PacketHistoryQuery,
+  PacketHistoryResponse,
+  PacketLogCode,
+  PacketLogEntry,
+  PacketLogStatus,
   NotificationDelivery,
   NotificationEventType,
   NotificationRecipient,
@@ -27,6 +34,7 @@ import type {
   ReadingHistoryPoint,
   TelemetrySnapshot,
 } from "../api/types";
+import { packetDirections, packetEventTypes, packetLogCodes } from "../api/types";
 
 interface DeviceRecord {
   id: string;
@@ -134,7 +142,7 @@ const devices: DeviceRecord[] = [
     displayName: "North Ridge Sensor",
     ipv6Address: "2001:db8:100::11",
     firmwareVersion: "2.4.1",
-    location: { lat: 34.2847, lng: -118.4392, label: "North Ridge" },
+    location: { lat: 40.43579440192811, lng: -86.93249721937255, label: "North Ridge" },
     firstRegisteredAt: "2026-03-01T08:15:00Z",
     lastRegisteredAt: "2026-04-14T06:10:00Z",
     lastSeenAt: "2026-04-14T19:58:00Z",
@@ -150,7 +158,7 @@ const devices: DeviceRecord[] = [
     displayName: "Valley Floor Sensor",
     ipv6Address: "2001:db8:100::12",
     firmwareVersion: "2.4.1",
-    location: { lat: 34.2411, lng: -118.5123, label: "Valley Floor" },
+    location: { lat: 40.43762953279087, lng: -86.93262806454159, label: "Valley Floor" },
     firstRegisteredAt: "2026-03-03T07:40:00Z",
     lastRegisteredAt: "2026-04-14T05:40:00Z",
     lastSeenAt: "2026-04-14T19:54:00Z",
@@ -166,7 +174,7 @@ const devices: DeviceRecord[] = [
     displayName: "Canyon Mouth Sensor",
     ipv6Address: "2001:db8:100::13",
     firmwareVersion: "2.4.0",
-    location: { lat: 34.2554, lng: -118.4688, label: "Canyon Mouth" },
+    location: { lat: 40.43691260317419, lng: -86.92977554062905, label: "Canyon Mouth" },
     firstRegisteredAt: "2026-03-04T12:10:00Z",
     lastRegisteredAt: "2026-04-13T04:22:00Z",
     lastSeenAt: "2026-04-13T10:30:00Z",
@@ -182,7 +190,7 @@ const devices: DeviceRecord[] = [
     displayName: "Operations Gateway",
     ipv6Address: "2001:db8:100::14",
     firmwareVersion: "3.0.2",
-    location: { lat: 34.2605, lng: -118.472, label: "Operations Yard" },
+    location: { lat: 40.43539954526423, lng: -86.92967431940525, label: "Operations Yard" },
     firstRegisteredAt: "2026-02-25T18:00:00Z",
     lastRegisteredAt: "2026-04-14T00:05:00Z",
     lastSeenAt: "2026-04-14T19:57:00Z",
@@ -583,8 +591,8 @@ const registrations: RegistrationRecord[] = [
     deviceId: "dev-001",
     observedAt: "2026-04-14T06:10:00Z",
     ipv6Address: "2001:db8:100::11",
-    latitude: 34.2847,
-    longitude: -118.4392,
+    latitude: 40.43579440192811,
+    longitude: -86.93249721937255,
     firmwareVersion: "2.4.1",
     batteryPct: 88,
   },
@@ -592,8 +600,8 @@ const registrations: RegistrationRecord[] = [
     deviceId: "dev-002",
     observedAt: "2026-04-14T05:40:00Z",
     ipv6Address: "2001:db8:100::12",
-    latitude: 34.2411,
-    longitude: -118.5123,
+    latitude: 40.43762953279087,
+    longitude: -86.93262806454159,
     firmwareVersion: "2.4.1",
     batteryPct: 48,
   },
@@ -601,8 +609,8 @@ const registrations: RegistrationRecord[] = [
     deviceId: "dev-003",
     observedAt: "2026-04-13T04:22:00Z",
     ipv6Address: "2001:db8:100::13",
-    latitude: 34.2554,
-    longitude: -118.4688,
+    latitude: 40.43691260317419,
+    longitude: -86.92977554062905,
     firmwareVersion: "2.4.0",
     batteryPct: 62,
   },
@@ -848,6 +856,7 @@ function toAlertIncident(alert: AlertRecord): AlertIncident {
     latestEventAt: alert.latestEventAt,
     locationLabel: node.location.label,
     notificationStatus: getNotificationStatusForAlert(alert.id, node.nodeId),
+    lastSeenAt: node.lastSeenAt,
     latestSnapshot,
   };
 }
@@ -876,6 +885,7 @@ function getOfflineIncidents(): AlertIncident[] {
         latestEventAt: offlineAt,
         locationLabel: device.location.label,
         notificationStatus: getNotificationStatusForAlert("", device.nodeId),
+        lastSeenAt: device.lastSeenAt,
         latestSnapshot: getLatestReading(device.id),
       });
     });
@@ -1003,6 +1013,113 @@ function buildTrendSummary(points: ReadingHistoryPoint[]): HistoryTrendSummary {
   };
 }
 
+function buildReadingDetail(reading: ReadingRecord) {
+  return [
+    `Risk ${reading.riskLevel}`,
+    `${reading.temperatureC.toFixed(1)}°C`,
+    `${reading.humidityPct.toFixed(0)}% RH`,
+    `VOC ${Math.round(reading.vocIaq)}`,
+    `PM2.5 ${reading.pm25UgM3.toFixed(1)}`,
+  ].join(" · ");
+}
+
+function toPacketLogEntryFromRegistration(registration: RegistrationRecord): PacketLogEntry {
+  const device = devices.find((entry) => entry.id === registration.deviceId);
+  if (!device) {
+    throw new Error(`Unknown device ${registration.deviceId}`);
+  }
+
+  return {
+    id: `registration-${device.id}-${registration.observedAt}`,
+    occurredAt: registration.observedAt,
+    nodeId: device.nodeId,
+    nodeName: device.displayName,
+    direction: "uplink",
+    packetCode: "0x01",
+    eventType: "registration",
+    status: "received",
+    summary: `Registration received from node ${device.nodeId}.`,
+    detail: [registration.ipv6Address, registration.firmwareVersion ? `FW ${registration.firmwareVersion}` : null, typeof registration.batteryPct === "number" ? `Battery ${registration.batteryPct}%` : null]
+      .filter(Boolean)
+      .join(" · "),
+  };
+}
+
+function toPacketLogEntryFromReading(reading: ReadingRecord): PacketLogEntry {
+  const device = devices.find((entry) => entry.id === reading.deviceId);
+  if (!device) {
+    throw new Error(`Unknown device ${reading.deviceId}`);
+  }
+
+  const isCritical = reading.sourceType === "critical_alert";
+
+  return {
+    id: `reading-${reading.id}`,
+    occurredAt: reading.reportedAt,
+    nodeId: device.nodeId,
+    nodeName: device.displayName,
+    direction: "uplink",
+    packetCode: isCritical ? "0x03" : "0x02",
+    eventType: reading.sourceType,
+    status: "received",
+    summary: isCritical ? `Critical alert uplink from node ${device.nodeId}.` : `Periodic report received from node ${device.nodeId}.`,
+    detail: buildReadingDetail(reading),
+  };
+}
+
+function toPacketLogEntryFromDownlink(record: DownlinkRecord): PacketLogEntry {
+  const device = devices.find((entry) => entry.id === record.deviceId);
+  if (!device) {
+    throw new Error(`Unknown device ${record.deviceId}`);
+  }
+
+  const eventTypeByCode: Record<DownlinkRecord["commandCode"], PacketEventType> = {
+    "0x04": "neighbor_distribution",
+    "0x05": "time_sync",
+    "0x06": "config_deployment",
+  };
+
+  return {
+    id: record.id,
+    occurredAt: record.sentAt,
+    nodeId: device.nodeId,
+    nodeName: device.displayName,
+    direction: "downlink",
+    packetCode: record.commandCode,
+    eventType: eventTypeByCode[record.commandCode],
+    status: record.status,
+    summary: `${record.commandName} sent to node ${device.nodeId}.`,
+    detail: [record.revisionNo !== null ? `Revision ${record.revisionNo}` : null, record.summary].filter(Boolean).join(" · "),
+  };
+}
+
+function listMockPacketLogEntries() {
+  return [...registrations.map(toPacketLogEntryFromRegistration), ...readings.map(toPacketLogEntryFromReading), ...downlinks.map(toPacketLogEntryFromDownlink)].sort(
+    (left, right) => timestampMs(right.occurredAt) - timestampMs(left.occurredAt),
+  );
+}
+
+function filterPacketLogEntries(entries: PacketLogEntry[], query: PacketHistoryQuery) {
+  return entries.filter((entry) => {
+    if (query.nodeId !== undefined && entry.nodeId !== query.nodeId) {
+      return false;
+    }
+    if (query.direction && entry.direction !== query.direction) {
+      return false;
+    }
+    if (query.packetCode && entry.packetCode !== query.packetCode) {
+      return false;
+    }
+    if (query.eventType && entry.eventType !== query.eventType) {
+      return false;
+    }
+    if (query.status && entry.status !== query.status) {
+      return false;
+    }
+    return true;
+  });
+}
+
 function toRecipient(record: RecipientRecord): NotificationRecipient {
   const enabled = new Set(notificationPreferences.get(record.id) ?? []);
   const eventTypes: NotificationEventType[] = [
@@ -1032,6 +1149,7 @@ export function getMockDashboard(): DashboardResponse {
     return (right.currentRiskLevel ?? 0) - (left.currentRiskLevel ?? 0);
   });
   const alertQueue = listAllAlerts();
+  const recentPackets = listMockPacketLogEntries().slice(0, 5);
   const summary = {
     totalNodes: fleet.length,
     onlineNodes: fleet.filter((node) => node.connectivity === "online").length,
@@ -1047,7 +1165,11 @@ export function getMockDashboard(): DashboardResponse {
     fleet,
     neighborLinks: buildMeshLinks(),
     alertQueue,
-    downlinks: downlinks.map(toDownlinkActivity).sort((left, right) => timestampMs(right.sentAt) - timestampMs(left.sentAt)),
+    downlinks: downlinks
+      .map(toDownlinkActivity)
+      .sort((left, right) => timestampMs(right.sentAt) - timestampMs(left.sentAt))
+      .slice(0, 5),
+    recentPackets,
   };
 }
 
@@ -1095,6 +1217,29 @@ export function getMockHistory(nodeId?: NodeId, window: HistoryWindow = "24h"): 
     rawReadings,
     aggregateBuckets: getAggregateBuckets(selectedNode.id, window),
     trendSummary: buildTrendSummary(rawReadings),
+  };
+}
+
+export function getMockPacketHistory(query: PacketHistoryQuery = {}): PacketHistoryResponse {
+  const limit = Math.max(1, query.limit ?? 20);
+  const offset = Math.max(0, query.offset ?? 0);
+  const filteredEntries = filterPacketLogEntries(listMockPacketLogEntries(), query);
+
+  return {
+    entries: filteredEntries.slice(offset, offset + limit),
+    totalCount: filteredEntries.length,
+    limit,
+    offset,
+    hasMore: offset + limit < filteredEntries.length,
+    availableNodes: devices.map((device) => ({
+      id: device.id,
+      nodeId: device.nodeId,
+      displayName: device.displayName,
+    })),
+    availableDirections: [...packetDirections] satisfies PacketDirection[],
+    availablePacketCodes: [...packetLogCodes] satisfies PacketLogCode[],
+    availableEventTypes: [...packetEventTypes] satisfies PacketEventType[],
+    availableStatuses: ["received", "pending", "sent", "acknowledged", "failed", "timed_out"] satisfies PacketLogStatus[],
   };
 }
 

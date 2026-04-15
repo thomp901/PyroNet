@@ -16,6 +16,20 @@ export type NotificationEventType =
 export type DeviceEventCode = "0x01" | "0x02" | "0x03" | "0x04" | "0x05" | "0x06" | "0x07";
 export type HistoryWindow = "24h" | "7d" | "30d";
 export type NodeId = number;
+export const packetDirections = ["uplink", "downlink"] as const;
+export type PacketDirection = (typeof packetDirections)[number];
+export const packetLogCodes = ["0x01", "0x02", "0x03", "0x04", "0x05", "0x06"] as const;
+export type PacketLogCode = (typeof packetLogCodes)[number];
+export const packetEventTypes = [
+  "registration",
+  "periodic_report",
+  "critical_alert",
+  "neighbor_distribution",
+  "time_sync",
+  "config_deployment",
+] as const;
+export type PacketEventType = (typeof packetEventTypes)[number];
+export type PacketLogStatus = "received" | DownlinkStatus;
 
 export interface Coordinate {
   lat: number;
@@ -99,6 +113,7 @@ export interface AlertIncident {
   latestEventAt: string;
   locationLabel: string;
   notificationStatus: "sent" | "partial" | "pending" | "skipped";
+  lastSeenAt?: string | null;
   latestSnapshot: TelemetrySnapshot | null;
 }
 
@@ -189,6 +204,7 @@ export interface DashboardResponse {
   neighborLinks: MeshLink[];
   alertQueue: AlertIncident[];
   downlinks: DownlinkActivity[];
+  recentPackets: PacketLogEntry[];
 }
 
 export interface HistoryNodeOption {
@@ -205,6 +221,42 @@ export interface HistoryResponse {
   rawReadings: ReadingHistoryPoint[];
   aggregateBuckets: HistoryAggregateBucket[];
   trendSummary: HistoryTrendSummary;
+}
+
+export interface PacketLogEntry {
+  id: string;
+  occurredAt: string;
+  nodeId: NodeId;
+  nodeName: string;
+  direction: PacketDirection;
+  packetCode: PacketLogCode;
+  eventType: PacketEventType;
+  status: PacketLogStatus;
+  summary: string;
+  detail: string | null;
+}
+
+export interface PacketHistoryQuery {
+  limit?: number;
+  offset?: number;
+  nodeId?: NodeId;
+  direction?: PacketDirection;
+  packetCode?: PacketLogCode;
+  eventType?: PacketEventType;
+  status?: PacketLogStatus;
+}
+
+export interface PacketHistoryResponse {
+  entries: PacketLogEntry[];
+  totalCount: number;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
+  availableNodes: HistoryNodeOption[];
+  availableDirections: PacketDirection[];
+  availablePacketCodes: PacketLogCode[];
+  availableEventTypes: PacketEventType[];
+  availableStatuses: PacketLogStatus[];
 }
 
 export interface ConfigThresholds {

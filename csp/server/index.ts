@@ -20,12 +20,20 @@ import type {
   NodeDetail,
   NodeId,
   NodeSummary,
+  PacketDirection,
+  PacketEventType,
+  PacketHistoryQuery,
+  PacketHistoryResponse,
+  PacketLogCode,
+  PacketLogEntry,
+  PacketLogStatus,
   NotificationEventType,
   NotificationRecipientUpdate,
   NotificationSettingsResponse,
   ReadingHistoryPoint,
   TelemetrySnapshot,
 } from "../src/api/types";
+import { packetDirections, packetEventTypes, packetLogCodes } from "../src/api/types";
 import { parseNodeId } from "../src/lib/nodeId";
 import {
   createMockConfigRevision,
@@ -35,6 +43,7 @@ import {
   getMockConfiguration,
   getMockDashboard,
   getMockHistory,
+  getMockPacketHistory,
   getMockNodeDetail,
   getMockNotificationSettings,
   listMockAlerts,
@@ -289,7 +298,7 @@ async function queryDownlinksFromDb(): Promise<DashboardResponse["downlinks"]> {
       JOIN devices d ON d.id = dcd.device_id
       JOIN config_revisions cr ON cr.id = dcd.config_revision_id
       ORDER BY sent_at DESC
-      LIMIT 20
+      LIMIT 5
     `,
   );
 
@@ -319,6 +328,7 @@ async function queryAlertsFromDb(nodes?: NodeSummary[]): Promise<AlertIncident[]
     occurred_at: string;
     detected_at: string;
     latest_event_at: string;
+    last_seen_at: string | null;
     current_latitude: string;
     current_longitude: string;
     snapshot_reported_at: string | null;
@@ -343,6 +353,7 @@ async function queryAlertsFromDb(nodes?: NodeSummary[]): Promise<AlertIncident[]
         a.occurred_at::text,
         a.detected_at::text,
         a.latest_event_at::text,
+        d.last_seen_at::text,
         d.current_latitude::text,
         d.current_longitude::text,
         a.snapshot_reported_at::text,
@@ -411,6 +422,7 @@ async function queryAlertsFromDb(nodes?: NodeSummary[]): Promise<AlertIncident[]
         latestEventAt: row.latest_event_at,
         locationLabel: formatCoordinatePair(Number(row.current_latitude), Number(row.current_longitude)),
         notificationStatus: totalCount === 0 ? "skipped" : sentCount === totalCount ? "sent" : sentCount > 0 ? "partial" : "pending",
+        lastSeenAt: row.last_seen_at,
         latestSnapshot:
           row.snapshot_reported_at && row.snapshot_risk_level !== null
             ? {
@@ -449,6 +461,7 @@ async function queryAlertsFromDb(nodes?: NodeSummary[]): Promise<AlertIncident[]
         latestEventAt: derivedAt,
         locationLabel: node.location.label,
         notificationStatus: "pending" as const,
+        lastSeenAt: node.lastSeenAt,
         latestSnapshot: node.latestTelemetry,
       };
     });
@@ -460,7 +473,11 @@ async function queryAlertsFromDb(nodes?: NodeSummary[]): Promise<AlertIncident[]
 
 async function getDashboardFromDb(): Promise<DashboardResponse> {
   const fleet = await queryNodesFromDb();
-  const [alertQueue, downlinks] = await Promise.all([queryAlertsFromDb(fleet), queryDownlinksFromDb()]);
+  const [alertQueue, downlinks, recentPackets] = await Promise.all([
+    queryAlertsFromDb(fleet),
+    queryDownlinksFromDb(),
+    getPacketHistoryFromDb({ limit: 5 }).then((response) => response.entries),
+  ]);
   const neighborLinksResult = await query<{
     owner_node_id: number;
     owner_latitude: string;
@@ -521,6 +538,7 @@ async function getDashboardFromDb(): Promise<DashboardResponse> {
     neighborLinks,
     alertQueue,
     downlinks,
+    recentPackets,
   };
 }
 
@@ -913,6 +931,242 @@ async function getHistoryFromDb(nodeId?: NodeId, window: HistoryWindow = "24h"):
         return bucket.avgPm25UgM3 === null ? peak : Math.max(peak ?? bucket.avgPm25UgM3, bucket.avgPm25UgM3);
       }, null),
     },
+  };
+}
+
+function buildSensorReadingDetail(row: {
+  risk_level: number;
+  temperature_c: string;
+  humidity_pct: string;
+  voc_iaq: number;
+  pm25_ug_m3: string;
+}) {
+  return [
+    `Risk ${row.risk_level}`,
+    `${Number(row.temperature_c).toFixed(1)}°C`,
+    `${Number(row.humidity_pct).toFixed(0)}% RH`,
+    `VOC ${row.voc_iaq}`,
+    `PM2.5 ${Number(row.pm25_ug_m3).toFixed(1)}`,
+  ].join(" · ");
+}
+
+async function getPacketHistoryFromDb(options: PacketHistoryQuery = {}): Promise<PacketHistoryResponse> {
+  const limit = Math.max(1, Math.min(100, options.limit ?? 20));
+  const offset = Math.max(0, options.offset ?? 0);
+  const nodes = await queryNodesFromDb();
+  const values: unknown[] = [];
+  const filters: string[] = [];
+
+  if (options.nodeId !== undefined) {
+    values.push(options.nodeId);
+    filters.push(`node_id = $${values.length}`);
+  }
+  if (options.direction) {
+    values.push(options.direction);
+    filters.push(`direction = $${values.length}`);
+  }
+  if (options.packetCode) {
+    values.push(options.packetCode);
+    filters.push(`packet_code = $${values.length}`);
+  }
+  if (options.eventType) {
+    values.push(options.eventType);
+    filters.push(`event_type = $${values.length}`);
+  }
+  if (options.status) {
+    values.push(options.status);
+    filters.push(`status = $${values.length}`);
+  }
+
+  const whereClause = filters.length > 0 ? `WHERE ${filters.join(" AND ")}` : "";
+  const packetLogCte = `
+    WITH packet_log AS (
+      SELECT
+        concat('registration-', registrations.id) AS id,
+        registrations.observed_at::text AS occurred_at,
+        d.node_id,
+        d.node_id::text AS node_name,
+        'uplink'::text AS direction,
+        '0x01'::text AS packet_code,
+        'registration'::text AS event_type,
+        'received'::text AS status,
+        concat('Registration received from node ', d.node_id, '.') AS summary,
+        concat_ws(
+          ' · ',
+          registrations.observed_ipv6::text,
+          CASE WHEN registrations.firmware_version IS NOT NULL THEN concat('FW ', registrations.firmware_version) END,
+          CASE WHEN registrations.battery_pct IS NOT NULL THEN concat('Battery ', registrations.battery_pct, '%') END
+        ) AS detail
+      FROM device_registrations registrations
+      JOIN devices d ON d.id = registrations.device_id
+
+      UNION ALL
+
+      SELECT
+        concat('reading-', sr.id) AS id,
+        sr.reported_at::text AS occurred_at,
+        d.node_id,
+        d.node_id::text AS node_name,
+        'uplink'::text AS direction,
+        CASE WHEN sr.source_type = 'critical_alert' THEN '0x03' ELSE '0x02' END AS packet_code,
+        sr.source_type::text AS event_type,
+        'received'::text AS status,
+        CASE
+          WHEN sr.source_type = 'critical_alert' THEN concat('Critical alert uplink from node ', d.node_id, '.')
+          ELSE concat('Periodic report received from node ', d.node_id, '.')
+        END AS summary,
+        concat_ws(
+          ' · ',
+          concat('Risk ', sr.risk_level),
+          concat(sr.temperature_c::text, '°C'),
+          concat(sr.humidity_pct::text, '% RH'),
+          concat('VOC ', sr.voc_iaq),
+          concat('PM2.5 ', sr.pm25_ug_m3::text)
+        ) AS detail
+      FROM sensor_readings sr
+      JOIN devices d ON d.id = sr.device_id
+
+      UNION ALL
+
+      SELECT
+        concat('nn-', nde.id) AS id,
+        nde.sent_at::text AS occurred_at,
+        d.node_id,
+        d.node_id::text AS node_name,
+        'downlink'::text AS direction,
+        '0x04'::text AS packet_code,
+        'neighbor_distribution'::text AS event_type,
+        nde.status::text AS status,
+        concat('Neighbor table distribution sent to node ', d.node_id, '.') AS summary,
+        concat_ws(
+          ' · ',
+          concat('Revision ', nn.revision_no),
+          concat('Attempt ', nde.attempt_no),
+          CASE WHEN nde.acknowledged_at IS NOT NULL THEN concat('Ack ', nde.acknowledged_at::text) END
+        ) AS detail
+      FROM nn_distribution_events nde
+      JOIN devices d ON d.id = nde.device_id
+      JOIN nn_revisions nn ON nn.id = nde.nn_revision_id
+
+      UNION ALL
+
+      SELECT
+        concat('time-sync-', tse.id) AS id,
+        tse.sent_at::text AS occurred_at,
+        d.node_id,
+        d.node_id::text AS node_name,
+        'downlink'::text AS direction,
+        '0x05'::text AS packet_code,
+        'time_sync'::text AS event_type,
+        tse.status::text AS status,
+        concat('Time sync sent to node ', d.node_id, '.') AS summary,
+        concat_ws(
+          ' · ',
+          concat('Target ', tse.target_time::text),
+          tse.result_message,
+          CASE WHEN tse.acknowledged_at IS NOT NULL THEN concat('Ack ', tse.acknowledged_at::text) END
+        ) AS detail
+      FROM time_sync_events tse
+      JOIN devices d ON d.id = tse.device_id
+
+      UNION ALL
+
+      SELECT
+        concat('config-', dcd.id) AS id,
+        dcd.sent_at::text AS occurred_at,
+        d.node_id,
+        d.node_id::text AS node_name,
+        'downlink'::text AS direction,
+        '0x06'::text AS packet_code,
+        'config_deployment'::text AS event_type,
+        dcd.status::text AS status,
+        concat('Threshold revision deployment sent to node ', d.node_id, '.') AS summary,
+        concat_ws(
+          ' · ',
+          concat('Revision ', cr.config_id),
+          concat('Attempt ', dcd.attempt_no),
+          CASE WHEN dcd.acknowledged_at IS NOT NULL THEN concat('Ack ', dcd.acknowledged_at::text) END,
+          CASE WHEN dcd.applied_at IS NOT NULL THEN concat('Applied ', dcd.applied_at::text) END
+        ) AS detail
+      FROM device_config_deployments dcd
+      JOIN devices d ON d.id = dcd.device_id
+      JOIN config_revisions cr ON cr.id = dcd.config_revision_id
+    )
+  `;
+
+  const [countResult, entriesResult] = await Promise.all([
+    query<{ count: string }>(
+      `
+        ${packetLogCte}
+        SELECT count(*)::text AS count
+        FROM packet_log
+        ${whereClause}
+      `,
+      values,
+    ),
+    query<{
+      id: string;
+      occurred_at: string;
+      node_id: number;
+      node_name: string;
+      direction: PacketDirection;
+      packet_code: PacketLogCode;
+      event_type: PacketEventType;
+      status: PacketLogStatus;
+      summary: string;
+      detail: string | null;
+    }>(
+      `
+        ${packetLogCte}
+        SELECT
+          id,
+          occurred_at,
+          node_id,
+          node_name,
+          direction,
+          packet_code,
+          event_type,
+          status,
+          summary,
+          detail
+        FROM packet_log
+        ${whereClause}
+        ORDER BY occurred_at DESC, id DESC
+        LIMIT $${values.length + 1}
+        OFFSET $${values.length + 2}
+      `,
+      [...values, limit, offset],
+    ),
+  ]);
+
+  const totalCount = Number(countResult.rows[0]?.count ?? 0);
+
+  return {
+    entries: entriesResult.rows.map<PacketLogEntry>((row: (typeof entriesResult.rows)[number]) => ({
+      id: row.id,
+      occurredAt: row.occurred_at,
+      nodeId: row.node_id,
+      nodeName: row.node_name,
+      direction: row.direction,
+      packetCode: row.packet_code,
+      eventType: row.event_type,
+      status: row.status,
+      summary: row.summary,
+      detail: row.detail,
+    })),
+    totalCount,
+    limit,
+    offset,
+    hasMore: offset + limit < totalCount,
+    availableNodes: nodes.map((node) => ({
+      id: node.id,
+      nodeId: node.nodeId,
+      displayName: String(node.nodeId),
+    })),
+    availableDirections: [...packetDirections],
+    availablePacketCodes: [...packetLogCodes],
+    availableEventTypes: [...packetEventTypes],
+    availableStatuses: ["received", "pending", "sent", "acknowledged", "failed", "timed_out"],
   };
 }
 
@@ -1536,6 +1790,68 @@ app.get("/api/history", async (request, response, next) => {
     const nodeId = parsedNodeId ?? undefined;
     const window = (typeof request.query.window === "string" ? request.query.window : "24h") as HistoryWindow;
     response.json(await withSource(() => getHistoryFromDb(nodeId, window), () => getMockHistory(nodeId, window)));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/history/packets", async (request, response, next) => {
+  try {
+    const nodeIdInput = typeof request.query.nodeId === "string" ? request.query.nodeId : undefined;
+    const parsedNodeId = nodeIdInput === undefined ? undefined : parseNodeId(nodeIdInput);
+    if (nodeIdInput !== undefined && parsedNodeId === null) {
+      response.status(400).json({ message: "nodeId must be a valid 2-byte integer." });
+      return;
+    }
+
+    const limitInput = typeof request.query.limit === "string" ? Number.parseInt(request.query.limit, 10) : undefined;
+    if (request.query.limit !== undefined && (!Number.isFinite(limitInput) || (limitInput ?? 0) <= 0)) {
+      response.status(400).json({ message: "limit must be a positive integer." });
+      return;
+    }
+
+    const offsetInput = typeof request.query.offset === "string" ? Number.parseInt(request.query.offset, 10) : undefined;
+    if (request.query.offset !== undefined && (!Number.isFinite(offsetInput) || (offsetInput ?? -1) < 0)) {
+      response.status(400).json({ message: "offset must be zero or a positive integer." });
+      return;
+    }
+
+    const direction = typeof request.query.direction === "string" ? request.query.direction : undefined;
+    if (direction !== undefined && !packetDirections.includes(direction as PacketDirection)) {
+      response.status(400).json({ message: "direction must be a supported packet direction." });
+      return;
+    }
+
+    const packetCode = typeof request.query.packetCode === "string" ? request.query.packetCode : undefined;
+    if (packetCode !== undefined && !packetLogCodes.includes(packetCode as PacketLogCode)) {
+      response.status(400).json({ message: "packetCode must be a supported packet code." });
+      return;
+    }
+
+    const eventType = typeof request.query.eventType === "string" ? request.query.eventType : undefined;
+    if (eventType !== undefined && !packetEventTypes.includes(eventType as PacketEventType)) {
+      response.status(400).json({ message: "eventType must be a supported packet event type." });
+      return;
+    }
+
+    const status = typeof request.query.status === "string" ? request.query.status : undefined;
+    const validStatuses: PacketLogStatus[] = ["received", "pending", "sent", "acknowledged", "failed", "timed_out"];
+    if (status !== undefined && !validStatuses.includes(status as PacketLogStatus)) {
+      response.status(400).json({ message: "status must be a supported packet status." });
+      return;
+    }
+
+    const query: PacketHistoryQuery = {
+      nodeId: parsedNodeId ?? undefined,
+      limit: limitInput,
+      offset: offsetInput,
+      direction: direction as PacketDirection | undefined,
+      packetCode: packetCode as PacketLogCode | undefined,
+      eventType: eventType as PacketEventType | undefined,
+      status: status as PacketLogStatus | undefined,
+    };
+
+    response.json(await withSource(() => getPacketHistoryFromDb(query), () => getMockPacketHistory(query)));
   } catch (error) {
     next(error);
   }

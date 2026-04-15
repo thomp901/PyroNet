@@ -3,29 +3,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { getDashboard } from "../api/dashboard";
 import { EmptyState } from "../components/common/EmptyState";
 import { LoadingState } from "../components/common/LoadingState";
+import { NodeFleetTable } from "../components/common/NodeFleetTable";
+import { PacketHistoryTable } from "../components/common/PacketHistoryTable";
 import { PageContainer } from "../components/common/PageContainer";
 import { StatCard } from "../components/common/StatCard";
 import { TableShell } from "../components/common/TableShell";
 import { MapPreview } from "../features/map/MapPreview";
-import {
-  formatCoordinatePair,
-  formatInteger,
-  formatNullableNumber,
-  formatRelativeMinutes,
-  formatTimestamp,
-  incidentTypeLabel,
-  riskLabel,
-} from "../lib/format";
+import { formatTimestamp, incidentTypeLabel } from "../lib/format";
 import { useAsyncData } from "../lib/useAsyncData";
-
-function latestSensorSummary(temperature?: number | null, humidity?: number | null, voc?: number | null, pm25?: number | null) {
-  return [
-    `Temp ${formatNullableNumber(temperature ?? null, "°C")}`,
-    `RH ${formatNullableNumber(humidity ?? null, "%")}`,
-    `VOC ${formatInteger(voc ?? null)}`,
-    `PM2.5 ${formatNullableNumber(pm25 ?? null, " ug/m3")}`,
-  ].join(" / ");
-}
 
 export function DashboardPage() {
   const navigate = useNavigate();
@@ -121,12 +106,12 @@ export function DashboardPage() {
             </div>
           </div>
 
-          <div className="dashboard-card-static-zone" onClick={stopCardNavigation} onKeyDownCapture={stopCardNavigation}>
+          <div className="dashboard-card-static-zone" onClick={stopCardNavigation} onKeyDown={stopCardNavigation}>
             <TableShell className="table-shell-compact incident-queue-table" columns={["Node", "Type", "Severity", "Detected"]}>
               {data.alertQueue.slice(0, 6).map((alert) => (
                 <tr key={alert.id}>
                   <td>
-                    <Link className="table-link" to={`/nodes/${alert.nodeId}`}>
+                    <Link to={`/nodes/${alert.nodeId}`}>
                       {alert.nodeId}
                     </Link>
                   </td>
@@ -152,42 +137,12 @@ export function DashboardPage() {
       >
         <div className="section-heading">
           <div>
-            <h2>Fleet overview</h2>
+            <h2>Fleet Overview</h2>
           </div>
         </div>
 
-        <div className="dashboard-card-static-zone" onClick={stopCardNavigation} onKeyDownCapture={stopCardNavigation}>
-          <TableShell columns={["Node", "IPv6", "Coordinates", "Last seen", "Risk", "Latest sensor values", "Connectivity"]}>
-            {data.fleet.map((node) => (
-              <tr key={node.id}>
-                <td>
-                  <Link className="table-link" to={`/nodes/${node.nodeId}`}>
-                    {node.nodeId}
-                  </Link>
-                </td>
-                <td>{node.ipv6Address ?? "N/A"}</td>
-                <td>{formatCoordinatePair(node.location.lat, node.location.lng)}</td>
-                <td>
-                  {formatTimestamp(node.lastSeenAt)}
-                  <div className="table-subtle">{formatRelativeMinutes(node.lastSeenAt)}</div>
-                </td>
-                <td>
-                  <span className={`badge risk-${node.currentRiskLevel ?? 0}`}>{riskLabel(node.currentRiskLevel)}</span>
-                </td>
-                <td>
-                  {latestSensorSummary(
-                    node.latestTelemetry?.temperatureC,
-                    node.latestTelemetry?.humidityPct,
-                    node.latestTelemetry?.vocIaq,
-                    node.latestTelemetry?.pm25UgM3,
-                  )}
-                </td>
-                <td>
-                  <span className={`badge status-${node.connectivity}`}>{node.connectivity}</span>
-                </td>
-              </tr>
-            ))}
-          </TableShell>
+        <div className="dashboard-card-static-zone" onClick={stopCardNavigation} onKeyDown={stopCardNavigation}>
+          <NodeFleetTable nodes={data.fleet} showNodeIdLink={false} />
         </div>
       </div>
 
@@ -201,25 +156,12 @@ export function DashboardPage() {
       >
         <div className="section-heading">
           <div>
-            <h2>Recent downlinks</h2>
-            <p>Latest 0x04 neighbor tables, 0x05 time syncs, and 0x06 threshold pushes originating from the CSP.</p>
+            <h2>Packet Traffic</h2>
           </div>
         </div>
 
-        <div className="dashboard-card-static-zone" onClick={stopCardNavigation} onKeyDownCapture={stopCardNavigation}>
-          <TableShell columns={["Command", "Node", "Status", "Revision", "Sent"]}>
-            {data.downlinks.slice(0, 6).map((downlink) => (
-              <tr key={downlink.id}>
-                <td>{`${downlink.commandCode} ${downlink.commandName}`}</td>
-                <td>{downlink.nodeId}</td>
-                <td>
-                  <span className={`badge downlink-${downlink.status}`}>{downlink.status}</span>
-                </td>
-                <td>{downlink.revisionNo ?? "N/A"}</td>
-                <td>{formatTimestamp(downlink.sentAt)}</td>
-              </tr>
-            ))}
-          </TableShell>
+        <div className="dashboard-card-static-zone" onClick={stopCardNavigation} onKeyDown={stopCardNavigation}>
+          <PacketHistoryTable entries={data.recentPackets} />
         </div>
       </div>
     </PageContainer>
