@@ -1,20 +1,37 @@
+import type { KeyboardEvent } from "react";
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { getHistory } from "../api/history";
 import { getNodeDetail } from "../api/nodes";
 import { EmptyState } from "../components/common/EmptyState";
 import { LoadingState } from "../components/common/LoadingState";
 import { PageContainer } from "../components/common/PageContainer";
+import { StatCard } from "../components/common/StatCard";
 import { TableShell } from "../components/common/TableShell";
 import { TelemetryTrendChart, telemetryMeasurementOptions, type TelemetryMeasurementId } from "../components/common/TelemetryTrendChart";
+import { MeshMap } from "../features/map/MeshMap";
 import { formatCoordinatePair, formatInteger, formatNullableNumber, formatTimestamp, riskLabel } from "../lib/format";
 import { parseNodeId } from "../lib/nodeId";
 import { useAsyncData } from "../lib/useAsyncData";
 
 export function NodeDetailPage() {
+  const navigate = useNavigate();
   const params = useParams();
   const nodeId = parseNodeId(params.nodeId);
   const [selectedMeasurement, setSelectedMeasurement] = useState<TelemetryMeasurementId>("temperatureC");
+
+  function openNeighborDetail(neighborNodeId: number) {
+    navigate(`/nodes/${neighborNodeId}`);
+  }
+
+  function handleNeighborRowKeyDown(event: KeyboardEvent<HTMLTableRowElement>, neighborNodeId: number) {
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+
+    event.preventDefault();
+    openNeighborDetail(neighborNodeId);
+  }
 
   if (nodeId === null) {
     return <EmptyState title="Invalid node detail request" message="Node IDs must be valid 2-byte integers." />;
@@ -25,7 +42,22 @@ export function NodeDetailPage() {
     data: historyData,
     error: historyError,
     loading: historyLoading,
-  } = useAsyncData(() => getHistory(nodeId, "24h"), [nodeId]);
+  } = useAsyncData(
+    async () => {
+      const [dayHistory, weekHistory, monthHistory] = await Promise.all([
+        getHistory(nodeId, "24h"),
+        getHistory(nodeId, "7d"),
+        getHistory(nodeId, "30d"),
+      ]);
+
+      return {
+        "24h": dayHistory,
+        "7d": weekHistory,
+        "30d": monthHistory,
+      };
+    },
+    [nodeId],
+  );
 
   if (loading) {
     return <LoadingState label="Loading node detail..." />;
@@ -37,14 +69,71 @@ export function NodeDetailPage() {
 
   return (
     <PageContainer
-      title={`${data.node.nodeId} Detail`}
-      description="Per-device identity, network address, topology, latest telemetry, recent history, and alert timeline."
+      title={`Node ${data.node.nodeId}`}
     >
+      <div className="stat-grid node-detail-stat-grid">
+        <StatCard label="Temperature" value={formatNullableNumber(data.node.latestTelemetry?.temperatureC ?? null, "°C")} />
+        <StatCard label="Humidity" value={formatNullableNumber(data.node.latestTelemetry?.humidityPct ?? null, "%")} />
+        <StatCard label="VOC" value={formatInteger(data.node.latestTelemetry?.vocIaq ?? null)} />
+        <StatCard label="PM2.5" value={formatNullableNumber(data.node.latestTelemetry?.pm25UgM3 ?? null, " ug/m3")} />
+        <StatCard label="Battery" value={formatInteger(data.node.latestTelemetry?.batteryPct ?? null, "%")} />
+        <StatCard label="Latest risk" value={riskLabel(data.node.currentRiskLevel)} />
+      </div>
+
+      <div className="dashboard-grid dashboard-grid-stack node-detail-hero">
+        <article className="card map-card">
+          <div className="section-heading">
+            <div>
+              <h2>Node map</h2>
+            </div>
+          </div>
+          <div className="map-container">
+            <MeshMap nodes={[data.node]} links={[]} focusNodeId={data.node.nodeId} focusZoom={16} />
+          </div>
+        </article>
+
+        <div className="stack-grid">
+          <article className="card">
+            <div className="section-heading">
+              <div>
+                <h2>Identity and network</h2>
+              </div>
+            </div>
+            <dl className="detail-list">
+              <div>
+                <dt>Node ID</dt>
+                <dd>{data.node.nodeId}</dd>
+              </div>
+              <div>
+                <dt>IPv6</dt>
+                <dd>{data.node.ipv6Address ?? "N/A"}</dd>
+              </div>
+              <div>
+                <dt>Firmware</dt>
+                <dd>{data.node.firmwareVersion ?? "N/A"}</dd>
+              </div>
+              <div>
+                <dt>Coordinates</dt>
+                <dd>{formatCoordinatePair(data.node.location.lat, data.node.location.lng)}</dd>
+              </div>
+              <div>
+                <dt>Last seen</dt>
+                <dd>{formatTimestamp(data.node.lastSeenAt)}</dd>
+              </div>
+              <div>
+                <dt>Active config revision</dt>
+                <dd>{data.node.activeConfigRevisionNo ?? "N/A"}</dd>
+              </div>
+            </dl>
+          </article>
+
+        </div>
+      </div>
+
       <article className="card history-card">
         <div className="section-heading history-card-heading">
           <div>
-            <h2>Historical telemetry</h2>
-            <p>Full-width 24-hour trend view for the selected sensor measurement.</p>
+            <h2>Historical Graph</h2>
           </div>
           <label className="field-inline history-card-select">
             <span>Measurement</span>
@@ -62,108 +151,36 @@ export function NodeDetailPage() {
         {!historyLoading && (historyError || !historyData) ? (
           <EmptyState title="Unable to load telemetry history" message={historyError ?? "Historical telemetry is unavailable."} />
         ) : null}
-        {!historyLoading && historyData ? <TelemetryTrendChart readings={historyData.rawReadings} measurementId={selectedMeasurement} /> : null}
+        {!historyLoading && historyData ? <TelemetryTrendChart historyByWindow={historyData} measurementId={selectedMeasurement} /> : null}
       </article>
 
-      <div className="split-grid">
-        <article className="card">
-          <div className="section-heading">
-            <div>
-              <h2>Identity and network</h2>
-              <p>Registration, firmware, location, and current address details.</p>
-            </div>
-          </div>
-          <dl className="detail-list">
-            <div>
-              <dt>Node ID</dt>
-              <dd>{data.node.nodeId}</dd>
-            </div>
-            <div>
-              <dt>IPv6</dt>
-              <dd>{data.node.ipv6Address ?? "N/A"}</dd>
-            </div>
-            <div>
-              <dt>Firmware</dt>
-              <dd>{data.node.firmwareVersion ?? "N/A"}</dd>
-            </div>
-            <div>
-              <dt>Coordinates</dt>
-              <dd>{formatCoordinatePair(data.node.location.lat, data.node.location.lng)}</dd>
-            </div>
-            <div>
-              <dt>Last seen</dt>
-              <dd>{formatTimestamp(data.node.lastSeenAt)}</dd>
-            </div>
-            <div>
-              <dt>Latest risk</dt>
-              <dd>{riskLabel(data.node.currentRiskLevel)}</dd>
-            </div>
-          </dl>
-        </article>
-
-        <article className="card">
-          <div className="section-heading">
-            <div>
-              <h2>Latest telemetry</h2>
-              <p>Current sensor values and config binding for this device.</p>
-            </div>
-          </div>
-          <dl className="detail-list">
-            <div>
-              <dt>Temperature</dt>
-              <dd>{formatNullableNumber(data.node.latestTelemetry?.temperatureC ?? null, "°C")}</dd>
-            </div>
-            <div>
-              <dt>Humidity</dt>
-              <dd>{formatNullableNumber(data.node.latestTelemetry?.humidityPct ?? null, "%")}</dd>
-            </div>
-            <div>
-              <dt>VOC</dt>
-              <dd>{formatInteger(data.node.latestTelemetry?.vocIaq ?? null)}</dd>
-            </div>
-            <div>
-              <dt>PM2.5</dt>
-              <dd>{formatNullableNumber(data.node.latestTelemetry?.pm25UgM3 ?? null, " ug/m3")}</dd>
-            </div>
-            <div>
-              <dt>Battery</dt>
-              <dd>{formatInteger(data.node.latestTelemetry?.batteryPct ?? null, "%")}</dd>
-            </div>
-            <div>
-              <dt>Active config revision</dt>
-              <dd>{data.node.activeConfigRevisionNo ?? "N/A"}</dd>
-            </div>
-          </dl>
-        </article>
-      </div>
-
-      <div className="card">
+      <div className="card node-detail-neighbor-card">
         <div className="section-heading">
           <div>
-            <h2>Current neighbor table</h2>
-            <p>Current NN revision, radius, and nearest-neighbor memberships.</p>
+            <h2>Current Neighbor Table</h2>
           </div>
         </div>
         {data.currentNeighborRevision ? (
-          <>
-            <p className="section-meta">
-              Revision {data.currentNeighborRevision.revisionNo} / Radius {data.currentNeighborRevision.radiusMeters} m / Source{" "}
-              {data.currentNeighborRevision.revisionSource}
-            </p>
-            <TableShell columns={["Rank", "Neighbor", "Distance", "Risk", "Connectivity"]}>
-              {data.currentNeighborRevision.neighbors.map((neighbor) => (
-                <tr key={neighbor.neighborNodeId}>
-                  <td>{neighbor.rank}</td>
-                  <td>{neighbor.neighborNodeId}</td>
-                  <td>{neighbor.distanceMeters} m</td>
-                  <td>{riskLabel(neighbor.riskLevel)}</td>
-                  <td>
-                    <span className={`badge status-${neighbor.connectivity}`}>{neighbor.connectivity}</span>
-                  </td>
-                </tr>
-              ))}
-            </TableShell>
-          </>
+          <TableShell className="neighbor-table" columns={["Neighbor ID", "Distance", "Risk", "Connectivity"]}>
+            {data.currentNeighborRevision.neighbors.map((neighbor) => (
+              <tr
+                key={neighbor.neighborNodeId}
+                className="neighbor-table-row"
+                onClick={() => openNeighborDetail(neighbor.neighborNodeId)}
+                onKeyDown={(event) => handleNeighborRowKeyDown(event, neighbor.neighborNodeId)}
+                role="link"
+                tabIndex={0}
+                aria-label={`Open node ${neighbor.neighborNodeId} detail`}
+              >
+                <td>{neighbor.neighborNodeId}</td>
+                <td>{neighbor.distanceMeters} m</td>
+                <td>{riskLabel(neighbor.riskLevel)}</td>
+                <td>
+                  <span className={`badge status-${neighbor.connectivity}`}>{neighbor.connectivity}</span>
+                </td>
+              </tr>
+            ))}
+          </TableShell>
         ) : (
           <EmptyState title="No neighbor revision" message="This node does not have an active NN table." />
         )}
