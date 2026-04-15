@@ -1,42 +1,33 @@
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useMatches } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
 import { AppHeader } from "./AppHeader";
 
-function getPageTitle(pathname: string) {
-  if (pathname === "/") {
-    return "Dashboard";
-  }
-  if (pathname.startsWith("/nodes/")) {
-    return "Node Detail";
-  }
-  if (pathname.startsWith("/nodes")) {
-    return "Node Fleet";
-  }
-  if (pathname.startsWith("/alerts")) {
-    return "Alerts";
-  }
-  if (pathname.startsWith("/history")) {
-    return "History";
-  }
-  if (pathname.startsWith("/configuration")) {
-    return "Configuration";
-  }
-  if (pathname.startsWith("/notifications")) {
-    return "Notifications";
-  }
-  return "PyroNet CSP";
+interface RouteHandle {
+  title?: string;
+  immersive?: boolean;
+}
+
+function isRouteHandle(handle: unknown): handle is RouteHandle {
+  return typeof handle === "object" && handle !== null;
 }
 
 export function AppLayout() {
-  const location = useLocation();
-  const title = getPageTitle(location.pathname);
+  const matches = useMatches();
+  const routeHandle = matches.reduce<RouteHandle>((currentHandle, match) => {
+    if (isRouteHandle(match.handle)) {
+      return { ...currentHandle, ...match.handle };
+    }
+    return currentHandle;
+  }, {});
+  const title = routeHandle.title ?? "PyroNet CSP";
+  const isImmersive = routeHandle.immersive === true;
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${isImmersive ? " app-shell-immersive" : ""}`}>
       <AppSidebar />
-      <div className="content-shell">
-        <AppHeader title={title} />
-        <main className="content-main">
+      <div className={`content-shell${isImmersive ? " content-shell-immersive" : ""}`}>
+        {isImmersive ? null : <AppHeader title={title} />}
+        <main className={`content-main${isImmersive ? " content-main-immersive" : ""}`}>
           <Outlet />
         </main>
       </div>

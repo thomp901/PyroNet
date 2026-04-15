@@ -4,7 +4,7 @@ import { EmptyState } from "../components/common/EmptyState";
 import { LoadingState } from "../components/common/LoadingState";
 import { PageContainer } from "../components/common/PageContainer";
 import { TableShell } from "../components/common/TableShell";
-import { formatTimestamp, riskLabel } from "../lib/format";
+import { formatInteger, formatTimestamp, riskLabel } from "../lib/format";
 import { useAsyncData } from "../lib/useAsyncData";
 
 export function AlertsPage() {
@@ -19,18 +19,19 @@ export function AlertsPage() {
   }
 
   const criticalAlerts = data.filter((alert) => alert.incidentType === "critical_alert");
+  const batteryHealthAlerts = data.filter((alert) => alert.incidentType === "battery_health_low");
   const offlineAlerts = data.filter((alert) => alert.incidentType === "offline");
 
   return (
     <PageContainer
       title="Alerts And Incidents"
-      description="Critical 0x03 events must surface within 10 minutes, and offline incidents are derived automatically after 24 hours of silence."
+      description="Critical alerts, battery health warnings, and offline incidents are surfaced here for operator response."
     >
       <div className="split-grid">
         <div className="card">
           <div className="section-heading">
             <div>
-              <h2>Critical 0x03 events</h2>
+              <h2>Critical Alert</h2>
               <p>Direct node-reported alerts with snapshot telemetry and notification delivery state.</p>
             </div>
           </div>
@@ -54,10 +55,7 @@ export function AlertsPage() {
                     {alert.latestSnapshot?.pm25UgM3 ?? "N/A"}
                   </td>
                   <td>{alert.notificationStatus}</td>
-                  <td>
-                    {formatTimestamp(alert.detectedAt)}
-                    <div className="table-subtle">{alert.visibleWithinSla ? "within SLA" : "outside SLA"}</div>
-                  </td>
+                  <td>{formatTimestamp(alert.detectedAt)}</td>
                 </tr>
               ))}
             </TableShell>
@@ -67,7 +65,40 @@ export function AlertsPage() {
         <div className="card">
           <div className="section-heading">
             <div>
-              <h2>Offline incidents</h2>
+              <h2>Battery Health Low</h2>
+              <p>Battery degradation alerts sourced from the database alert stream.</p>
+            </div>
+          </div>
+          {batteryHealthAlerts.length === 0 ? (
+            <EmptyState title="No battery health alerts" message="Battery health incidents will appear here when available." />
+          ) : (
+            <TableShell columns={["Node", "Severity", "Status", "Battery snapshot", "Notifications", "Detected"]}>
+              {batteryHealthAlerts.map((alert) => (
+                <tr key={alert.id}>
+                  <td>
+                    <Link className="table-link" to={`/nodes/${alert.nodeId}`}>
+                      {alert.nodeId}
+                    </Link>
+                  </td>
+                  <td>
+                    <span className={`badge severity-${alert.severity}`}>{alert.severity}</span>
+                  </td>
+                  <td>{alert.status}</td>
+                  <td>
+                    Battery {formatInteger(alert.latestSnapshot?.batteryPct, "%")} / {riskLabel(alert.latestSnapshot?.riskLevel)}
+                  </td>
+                  <td>{alert.notificationStatus}</td>
+                  <td>{formatTimestamp(alert.detectedAt)}</td>
+                </tr>
+              ))}
+            </TableShell>
+          )}
+        </div>
+
+        <div className="card">
+          <div className="section-heading">
+            <div>
+              <h2>Offline</h2>
               <p>Derived connectivity loss incidents based on the 24-hour silence rule.</p>
             </div>
           </div>

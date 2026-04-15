@@ -7,12 +7,13 @@ import {
   triggerTimeSync,
   updateNeighborRevision,
 } from "../api/configuration";
-import type { ConfigThresholds } from "../api/types";
+import type { ConfigThresholds, NodeId } from "../api/types";
 import { EmptyState } from "../components/common/EmptyState";
 import { LoadingState } from "../components/common/LoadingState";
 import { PageContainer } from "../components/common/PageContainer";
 import { TableShell } from "../components/common/TableShell";
 import { formatTimestamp } from "../lib/format";
+import { parseNodeId } from "../lib/nodeId";
 import { useAsyncData } from "../lib/useAsyncData";
 
 const emptyThresholds: ConfigThresholds = {
@@ -31,9 +32,9 @@ export function ConfigurationPage() {
   const { data, error, loading, reload } = useAsyncData(getConfiguration, []);
   const [thresholds, setThresholds] = useState<ConfigThresholds>(emptyThresholds);
   const [notes, setNotes] = useState("");
-  const [selectedNodeId, setSelectedNodeId] = useState("");
+  const [selectedNodeId, setSelectedNodeId] = useState<NodeId | undefined>(undefined);
   const [radiusMeters, setRadiusMeters] = useState(1500);
-  const [neighborNodeIds, setNeighborNodeIds] = useState<string[]>([]);
+  const [neighborNodeIds, setNeighborNodeIds] = useState<NodeId[]>([]);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -43,8 +44,8 @@ export function ConfigurationPage() {
     }
     setThresholds(data.activeRevision.thresholds);
     setNotes(data.activeRevision.notes ?? "");
-    const defaultNode = data.neighborTables[0]?.nodeId ?? "";
-    setSelectedNodeId((current) => current || defaultNode);
+    const defaultNode = data.neighborTables[0]?.nodeId;
+    setSelectedNodeId((current) => current ?? defaultNode);
   }, [data]);
 
   useEffect(() => {
@@ -137,6 +138,9 @@ export function ConfigurationPage() {
           className="card form-card"
           onSubmit={(event) => {
             event.preventDefault();
+            if (selectedNodeId === undefined) {
+              return;
+            }
             void runMutation(
               () =>
                 updateNeighborRevision(selectedNodeId, {
@@ -156,7 +160,13 @@ export function ConfigurationPage() {
           <div className="form-grid">
             <label className="field">
               <span>Node</span>
-              <select value={selectedNodeId} onChange={(event) => setSelectedNodeId(event.target.value)}>
+              <select
+                value={selectedNodeId ?? ""}
+                onChange={(event) => {
+                  const nextNodeId = parseNodeId(event.target.value);
+                  setSelectedNodeId(nextNodeId ?? undefined);
+                }}
+              >
                 {data.neighborTables.map((table) => (
                   <option key={table.nodeId} value={table.nodeId}>
                     {table.nodeId}
@@ -192,7 +202,7 @@ export function ConfigurationPage() {
               </div>
             </div>
           </div>
-          <button type="submit" className="primary-button" disabled={submitting || !selectedNodeId}>
+          <button type="submit" className="primary-button" disabled={submitting || selectedNodeId === undefined}>
             Save NN revision
           </button>
         </form>

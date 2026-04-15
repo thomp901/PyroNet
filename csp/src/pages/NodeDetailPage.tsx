@@ -1,16 +1,31 @@
+import { useState } from "react";
 import { useParams } from "react-router-dom";
+import { getHistory } from "../api/history";
 import { getNodeDetail } from "../api/nodes";
 import { EmptyState } from "../components/common/EmptyState";
 import { LoadingState } from "../components/common/LoadingState";
 import { PageContainer } from "../components/common/PageContainer";
 import { TableShell } from "../components/common/TableShell";
-import { formatInteger, formatNullableNumber, formatTimestamp, riskLabel } from "../lib/format";
+import { TelemetryTrendChart, telemetryMeasurementOptions, type TelemetryMeasurementId } from "../components/common/TelemetryTrendChart";
+import { formatCoordinatePair, formatInteger, formatNullableNumber, formatTimestamp, riskLabel } from "../lib/format";
+import { parseNodeId } from "../lib/nodeId";
 import { useAsyncData } from "../lib/useAsyncData";
 
 export function NodeDetailPage() {
   const params = useParams();
-  const nodeId = params.nodeId ?? "";
+  const nodeId = parseNodeId(params.nodeId);
+  const [selectedMeasurement, setSelectedMeasurement] = useState<TelemetryMeasurementId>("temperatureC");
+
+  if (nodeId === null) {
+    return <EmptyState title="Invalid node detail request" message="Node IDs must be valid 2-byte integers." />;
+  }
+
   const { data, error, loading } = useAsyncData(() => getNodeDetail(nodeId), [nodeId]);
+  const {
+    data: historyData,
+    error: historyError,
+    loading: historyLoading,
+  } = useAsyncData(() => getHistory(nodeId, "24h"), [nodeId]);
 
   if (loading) {
     return <LoadingState label="Loading node detail..." />;
@@ -25,6 +40,31 @@ export function NodeDetailPage() {
       title={`${data.node.nodeId} Detail`}
       description="Per-device identity, network address, topology, latest telemetry, recent history, and alert timeline."
     >
+      <article className="card history-card">
+        <div className="section-heading history-card-heading">
+          <div>
+            <h2>Historical telemetry</h2>
+            <p>Full-width 24-hour trend view for the selected sensor measurement.</p>
+          </div>
+          <label className="field-inline history-card-select">
+            <span>Measurement</span>
+            <select value={selectedMeasurement} onChange={(event) => setSelectedMeasurement(event.target.value as TelemetryMeasurementId)}>
+              {telemetryMeasurementOptions.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        {historyLoading ? <LoadingState label="Loading historical telemetry..." /> : null}
+        {!historyLoading && (historyError || !historyData) ? (
+          <EmptyState title="Unable to load telemetry history" message={historyError ?? "Historical telemetry is unavailable."} />
+        ) : null}
+        {!historyLoading && historyData ? <TelemetryTrendChart readings={historyData.rawReadings} measurementId={selectedMeasurement} /> : null}
+      </article>
+
       <div className="split-grid">
         <article className="card">
           <div className="section-heading">
@@ -48,7 +88,7 @@ export function NodeDetailPage() {
             </div>
             <div>
               <dt>Coordinates</dt>
-              <dd>{`${data.node.location.lat.toFixed(4)}, ${data.node.location.lng.toFixed(4)}`}</dd>
+              <dd>{formatCoordinatePair(data.node.location.lat, data.node.location.lng)}</dd>
             </div>
             <div>
               <dt>Last seen</dt>
@@ -188,7 +228,7 @@ export function NodeDetailPage() {
               <tr key={`${registration.observedAt}-${registration.ipv6Address}`}>
                 <td>{formatTimestamp(registration.observedAt)}</td>
                 <td>{registration.ipv6Address}</td>
-                <td>{`${registration.latitude.toFixed(4)}, ${registration.longitude.toFixed(4)}`}</td>
+                <td>{formatCoordinatePair(registration.latitude, registration.longitude)}</td>
                 <td>{registration.firmwareVersion ?? "N/A"}</td>
                 <td>{formatInteger(registration.batteryPct, "%")}</td>
               </tr>

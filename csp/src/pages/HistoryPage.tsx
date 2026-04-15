@@ -1,23 +1,24 @@
 import { useEffect, useState } from "react";
 import { getHistory } from "../api/history";
-import type { HistoryWindow } from "../api/types";
+import type { HistoryWindow, NodeId } from "../api/types";
 import { EmptyState } from "../components/common/EmptyState";
 import { LoadingState } from "../components/common/LoadingState";
 import { PageContainer } from "../components/common/PageContainer";
 import { StatCard } from "../components/common/StatCard";
 import { TableShell } from "../components/common/TableShell";
 import { formatInteger, formatNullableNumber, formatTimestamp } from "../lib/format";
+import { parseNodeId } from "../lib/nodeId";
 import { useAsyncData } from "../lib/useAsyncData";
 
 const windows: HistoryWindow[] = ["24h", "7d", "30d"];
 
 export function HistoryPage() {
-  const [selectedNodeId, setSelectedNodeId] = useState<string | undefined>(undefined);
+  const [selectedNodeId, setSelectedNodeId] = useState<NodeId | undefined>(undefined);
   const [window, setWindow] = useState<HistoryWindow>("24h");
   const { data, error, loading } = useAsyncData(() => getHistory(selectedNodeId, window), [selectedNodeId, window]);
 
   useEffect(() => {
-    if (!selectedNodeId && data?.selectedNodeId) {
+    if (selectedNodeId === undefined && data?.selectedNodeId !== undefined) {
       setSelectedNodeId(data.selectedNodeId);
     }
   }, [data, selectedNodeId]);
@@ -38,7 +39,15 @@ export function HistoryPage() {
         <div className="toolbar">
           <label className="field-inline">
             <span>Node</span>
-            <select value={selectedNodeId ?? data.selectedNodeId} onChange={(event) => setSelectedNodeId(event.target.value)}>
+            <select
+              value={selectedNodeId ?? data.selectedNodeId}
+              onChange={(event) => {
+                const nextNodeId = parseNodeId(event.target.value);
+                if (nextNodeId !== null) {
+                  setSelectedNodeId(nextNodeId);
+                }
+              }}
+            >
               {data.availableNodes.map((node) => (
                 <option key={node.nodeId} value={node.nodeId}>
                   {node.nodeId}

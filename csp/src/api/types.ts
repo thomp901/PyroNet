@@ -2,6 +2,7 @@ export type ConnectivityStatus = "online" | "degraded" | "offline";
 export type SensorReadingSource = "periodic_report" | "critical_alert";
 export type AlertSeverity = "info" | "warning" | "critical";
 export type AlertStatus = "open" | "acknowledged" | "cleared" | "derived";
+export type AlertIncidentType = "critical_alert" | "battery_health_low" | "offline";
 export type DownlinkStatus = "pending" | "sent" | "acknowledged" | "failed" | "timed_out";
 export type NeighborRevisionSource = "automatic" | "manual" | "imported";
 export type NotificationEventType =
@@ -14,6 +15,7 @@ export type NotificationEventType =
   | "config_update_failure";
 export type DeviceEventCode = "0x01" | "0x02" | "0x03" | "0x04" | "0x05" | "0x06" | "0x07";
 export type HistoryWindow = "24h" | "7d" | "30d";
+export type NodeId = number;
 
 export interface Coordinate {
   lat: number;
@@ -36,8 +38,7 @@ export interface TelemetrySnapshot {
 
 export interface NodeSummary {
   id: string;
-  nodeId: string;
-  displayName: string;
+  nodeId: NodeId;
   ipv6Address: string | null;
   connectivity: ConnectivityStatus;
   location: Coordinate;
@@ -55,8 +56,8 @@ export interface NodeSummary {
 }
 
 export interface NeighborMembership {
-  neighborId: string;
-  neighborNodeId: string;
+  neighborId: NodeId;
+  neighborNodeId: NodeId;
   neighborName: string;
   rank: number;
   distanceMeters: number;
@@ -75,8 +76,8 @@ export interface NeighborRevision {
 }
 
 export interface MeshLink {
-  ownerNodeId: string;
-  neighborNodeId: string;
+  ownerNodeId: NodeId;
+  neighborNodeId: NodeId;
   ownerName: string;
   neighborName: string;
   distanceMeters: number;
@@ -85,9 +86,9 @@ export interface MeshLink {
 
 export interface AlertIncident {
   id: string;
-  incidentType: "critical_alert" | "offline";
-  eventCode: "0x03" | "derived-offline";
-  nodeId: string;
+  incidentType: AlertIncidentType;
+  eventCode: "0x03" | "battery-health-low" | "derived-offline";
+  nodeId: NodeId;
   nodeName: string;
   severity: AlertSeverity;
   status: AlertStatus;
@@ -98,7 +99,6 @@ export interface AlertIncident {
   latestEventAt: string;
   locationLabel: string;
   notificationStatus: "sent" | "partial" | "pending" | "skipped";
-  visibleWithinSla: boolean;
   latestSnapshot: TelemetrySnapshot | null;
 }
 
@@ -115,7 +115,7 @@ export interface AlertTimelineEntry {
 
 export interface ReadingHistoryPoint extends TelemetrySnapshot {
   id: string;
-  nodeId: string;
+  nodeId: NodeId;
 }
 
 export interface HistoryAggregateBucket {
@@ -174,7 +174,7 @@ export interface DownlinkActivity {
   id: string;
   commandCode: "0x04" | "0x05" | "0x06";
   commandName: string;
-  nodeId: string;
+  nodeId: NodeId;
   nodeName: string;
   status: DownlinkStatus;
   sentAt: string;
@@ -193,12 +193,12 @@ export interface DashboardResponse {
 
 export interface HistoryNodeOption {
   id: string;
-  nodeId: string;
+  nodeId: NodeId;
   displayName: string;
 }
 
 export interface HistoryResponse {
-  selectedNodeId: string;
+  selectedNodeId: NodeId;
   selectedWindow: HistoryWindow;
   mode: "raw" | "aggregate";
   availableNodes: HistoryNodeOption[];
@@ -230,7 +230,7 @@ export interface ConfigRevision {
 }
 
 export interface NeighborTableRecord {
-  nodeId: string;
+  nodeId: NodeId;
   nodeName: string;
   revisionId: number | null;
   revisionNo: number | null;
@@ -247,17 +247,17 @@ export interface ConfigurationResponse {
 
 export interface ConfigRevisionDraft {
   notes?: string;
-  targetNodeIds?: string[];
+  targetNodeIds?: NodeId[];
   thresholds: ConfigThresholds;
 }
 
 export interface NeighborRevisionDraft {
   radiusMeters: number;
-  neighborNodeIds: string[];
+  neighborNodeIds: NodeId[];
 }
 
 export interface DownlinkRequest {
-  targetNodeIds?: string[];
+  targetNodeIds?: NodeId[];
   configRevisionId?: number;
 }
 
@@ -283,7 +283,7 @@ export interface NotificationDelivery {
   status: "queued" | "sent" | "failed" | "skipped";
   occurredAt: string;
   deliveredAt: string | null;
-  nodeId: string | null;
+  nodeId: NodeId | null;
   alertId: string | null;
   failureReason: string | null;
 }

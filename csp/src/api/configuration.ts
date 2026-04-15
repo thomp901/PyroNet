@@ -3,9 +3,11 @@ import type {
   ConfigurationResponse,
   DownlinkRequest,
   NeighborRevisionDraft,
+  NodeId,
 } from "./types";
 import { apiGet, apiPost } from "../lib/http";
 import { appConfig } from "../lib/config";
+import { formatNodeId } from "../lib/nodeId";
 import {
   createMockConfigRevision,
   createMockNeighborDistribution,
@@ -39,14 +41,14 @@ export async function createConfigRevision(draft: ConfigRevisionDraft) {
   }
 }
 
-export async function updateNeighborRevision(nodeId: string, draft: NeighborRevisionDraft) {
+export async function updateNeighborRevision(nodeId: NodeId, draft: NeighborRevisionDraft) {
   if (appConfig.useMockApi) {
     return updateMockNeighborRevision(nodeId, draft);
   }
 
   try {
     return await apiPost<ConfigurationResponse, NeighborRevisionDraft>(
-      `/configuration/neighbors/${encodeURIComponent(nodeId)}`,
+      `/configuration/neighbors/${encodeURIComponent(formatNodeId(nodeId))}`,
       draft,
     );
   } catch {

@@ -1,96 +1,50 @@
-import { latLngBounds } from "leaflet";
-import { useEffect } from "react";
-import { CircleMarker, MapContainer, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
+import type { KeyboardEvent, MouseEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import type { MeshLink, NodeSummary } from "../../api/types";
-import { riskLabel } from "../../lib/format";
-import "./leaflet";
+import { MeshMap } from "./MeshMap";
 
 interface MapPreviewProps {
   nodes: NodeSummary[];
   links: MeshLink[];
 }
 
-const fallbackCenter: [number, number] = [34.2605, -118.472];
+export function MapPreview({ nodes, links }: MapPreviewProps) {
+  const navigate = useNavigate();
 
-function FitToMesh({ nodes }: { nodes: NodeSummary[] }) {
-  const map = useMap();
+  function openMapPage() {
+    navigate("/map");
+  }
 
-  useEffect(() => {
-    if (nodes.length === 0) {
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key !== "Enter" && event.key !== " ") {
       return;
     }
 
-    const bounds = latLngBounds(nodes.map((node) => [node.location.lat, node.location.lng] as [number, number]));
-    map.fitBounds(bounds.pad(0.2));
-  }, [map, nodes]);
-
-  return null;
-}
-
-function markerColor(node: NodeSummary) {
-  if (node.connectivity === "offline") {
-    return "#5f6b7a";
+    event.preventDefault();
+    openMapPage();
   }
-  if ((node.currentRiskLevel ?? 0) >= 5) {
-    return "#cb3a28";
-  }
-  if ((node.currentRiskLevel ?? 0) >= 3) {
-    return "#f18b2c";
-  }
-  return "#2f9d68";
-}
 
-export function MapPreview({ nodes, links }: MapPreviewProps) {
-  const center = nodes[0]
-    ? ([nodes[0].location.lat, nodes[0].location.lng] as [number, number])
-    : fallbackCenter;
+  function stopMapPreviewNavigation(event: MouseEvent<HTMLDivElement> | KeyboardEvent<HTMLDivElement>) {
+    event.stopPropagation();
+  }
 
   return (
-    <div className="card map-card">
+    <div
+      className="card map-card dashboard-link-card map-preview-card"
+      onClick={openMapPage}
+      onKeyDown={handleKeyDown}
+      role="link"
+      tabIndex={0}
+      aria-label="Open full mesh map"
+    >
       <div className="section-heading">
         <div>
           <h2>Mesh map</h2>
-          <p>Leaflet topology view with node risk/connectivity state and nearest-neighbor links.</p>
+          <p>Map view with node risk level and connectivity state.</p>
         </div>
       </div>
-      <div className="map-container">
-        <MapContainer center={center} zoom={12} scrollWheelZoom className="leaflet-map">
-          <TileLayer
-            attribution="&copy; OpenStreetMap contributors"
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          <FitToMesh nodes={nodes} />
-          {links.map((link) => (
-            <Polyline
-              key={`${link.ownerNodeId}-${link.neighborNodeId}-${link.distanceMeters}`}
-              positions={link.points.map((point) => [point.lat, point.lng])}
-              pathOptions={{ color: "#f4d35e", opacity: 0.45, weight: 2 }}
-            />
-          ))}
-          {nodes.map((node) => (
-            <CircleMarker
-              key={node.id}
-              center={[node.location.lat, node.location.lng]}
-              radius={10}
-              pathOptions={{
-                color: "#08111a",
-                weight: 2,
-                fillColor: markerColor(node),
-                fillOpacity: 0.9,
-              }}
-            >
-              <Popup>
-                <strong>{node.nodeId}</strong>
-                <br />
-                {node.displayName}
-                <br />
-                {riskLabel(node.currentRiskLevel)} / {node.connectivity}
-                <br />
-                {node.ipv6Address ?? "No IPv6"}
-              </Popup>
-            </CircleMarker>
-          ))}
-        </MapContainer>
+      <div className="map-container" onClick={stopMapPreviewNavigation} onKeyDownCapture={stopMapPreviewNavigation}>
+        <MeshMap nodes={nodes} links={links} />
       </div>
     </div>
   );

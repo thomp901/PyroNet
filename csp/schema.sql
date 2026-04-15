@@ -132,7 +132,7 @@ ALTER SEQUENCE config_revisions_config_id_seq
 
 CREATE TABLE devices (
     id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    node_id text NOT NULL,
+    node_id smallint NOT NULL,
     current_ipv6 inet,
     current_latitude numeric(9,6) NOT NULL,
     current_longitude numeric(9,6) NOT NULL,
@@ -154,7 +154,7 @@ CREATE TABLE devices (
     updated_at timestamptz NOT NULL DEFAULT NOW(),
     CONSTRAINT uq_devices_node_id UNIQUE (node_id),
     CONSTRAINT uq_devices_current_ipv6 UNIQUE (current_ipv6),
-    CONSTRAINT chk_devices_node_id_not_blank CHECK (length(btrim(node_id)) > 0),
+    CONSTRAINT chk_devices_node_id_nonnegative CHECK (node_id >= 0),
     CONSTRAINT chk_devices_current_latitude CHECK (current_latitude >= -90 AND current_latitude <= 90),
     CONSTRAINT chk_devices_current_longitude CHECK (current_longitude >= -180 AND current_longitude <= 180),
     CONSTRAINT chk_devices_current_ipv6_global_unicast CHECK (

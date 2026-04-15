@@ -17,6 +17,7 @@ import type {
   NeighborRevision,
   NeighborRevisionDraft,
   NodeDetail,
+  NodeId,
   NodeSummary,
   NotificationDelivery,
   NotificationEventType,
@@ -29,7 +30,7 @@ import type {
 
 interface DeviceRecord {
   id: string;
-  nodeId: string;
+  nodeId: NodeId;
   displayName: string;
   ipv6Address: string;
   firmwareVersion: string;
@@ -129,7 +130,7 @@ const NOW = "2026-04-14T20:00:00Z";
 const devices: DeviceRecord[] = [
   {
     id: "dev-001",
-    nodeId: "node-001",
+    nodeId: 1,
     displayName: "North Ridge Sensor",
     ipv6Address: "2001:db8:100::11",
     firmwareVersion: "2.4.1",
@@ -145,7 +146,7 @@ const devices: DeviceRecord[] = [
   },
   {
     id: "dev-002",
-    nodeId: "node-002",
+    nodeId: 2,
     displayName: "Valley Floor Sensor",
     ipv6Address: "2001:db8:100::12",
     firmwareVersion: "2.4.1",
@@ -161,7 +162,7 @@ const devices: DeviceRecord[] = [
   },
   {
     id: "dev-003",
-    nodeId: "node-003",
+    nodeId: 3,
     displayName: "Canyon Mouth Sensor",
     ipv6Address: "2001:db8:100::13",
     firmwareVersion: "2.4.0",
@@ -177,7 +178,7 @@ const devices: DeviceRecord[] = [
   },
   {
     id: "dev-004",
-    nodeId: "node-004",
+    nodeId: 4,
     displayName: "Operations Gateway",
     ipv6Address: "2001:db8:100::14",
     firmwareVersion: "3.0.2",
@@ -676,11 +677,11 @@ const deliveries: DeliveryRecord[] = [
     recipientId: "rec-001",
     recipientName: "Ops Primary",
     eventType: "critical_risk",
-    subject: "Critical risk detected at node-002",
+    subject: "Critical risk detected at node 2",
     status: "sent",
     occurredAt: "2026-04-14T19:52:00Z",
     deliveredAt: "2026-04-14T19:53:00Z",
-    nodeId: "node-002",
+    nodeId: 2,
     alertId: "alert-001",
     failureReason: null,
   },
@@ -689,11 +690,11 @@ const deliveries: DeliveryRecord[] = [
     recipientId: "rec-002",
     recipientName: "Fire Analyst",
     eventType: "critical_risk",
-    subject: "Critical risk detected at node-002",
+    subject: "Critical risk detected at node 2",
     status: "queued",
     occurredAt: "2026-04-14T19:52:00Z",
     deliveredAt: null,
-    nodeId: "node-002",
+    nodeId: 2,
     alertId: "alert-001",
     failureReason: null,
   },
@@ -702,11 +703,11 @@ const deliveries: DeliveryRecord[] = [
     recipientId: "rec-001",
     recipientName: "Ops Primary",
     eventType: "connectivity_loss",
-    subject: "Connectivity loss derived for node-003",
+    subject: "Connectivity loss derived for node 3",
     status: "sent",
     occurredAt: "2026-04-14T10:30:00Z",
     deliveredAt: "2026-04-14T10:31:00Z",
-    nodeId: "node-003",
+    nodeId: 3,
     alertId: null,
     failureReason: null,
   },
@@ -750,7 +751,6 @@ function toNodeSummary(device: DeviceRecord): NodeSummary {
   return {
     id: device.id,
     nodeId: device.nodeId,
-    displayName: device.displayName,
     ipv6Address: device.ipv6Address,
     connectivity: getConnectivity(device.lastSeenAt),
     location: device.location,
@@ -779,7 +779,7 @@ function getNeighborMembershipsForRevision(revisionId: number): NeighborMembersh
       }
       const latest = getLatestReading(neighbor.id);
       return {
-        neighborId: neighbor.id,
+        neighborId: neighbor.nodeId,
         neighborNodeId: neighbor.nodeId,
         neighborName: neighbor.displayName,
         rank: membership.rank,
@@ -806,7 +806,7 @@ function getNeighborRevisionForDevice(deviceId: string): NeighborRevision | null
   };
 }
 
-function getNotificationStatusForAlert(alertId: string, nodeId: string) {
+function getNotificationStatusForAlert(alertId: string, nodeId: NodeId) {
   const alertDeliveries = deliveries.filter(
     (delivery) => delivery.alertId === alertId || (delivery.alertId === null && delivery.nodeId === nodeId),
   );
@@ -838,8 +838,8 @@ function toAlertIncident(alert: AlertRecord): AlertIncident {
     incidentType: "critical_alert",
     eventCode: "0x03",
     nodeId: node.nodeId,
-    nodeName: node.displayName,
-    severity: alert.severity,
+    nodeName: String(node.nodeId),
+    severity: "critical",
     status: alert.status,
     title: alert.title,
     summary: alert.summary,
@@ -848,7 +848,6 @@ function toAlertIncident(alert: AlertRecord): AlertIncident {
     latestEventAt: alert.latestEventAt,
     locationLabel: node.location.label,
     notificationStatus: getNotificationStatusForAlert(alert.id, node.nodeId),
-    visibleWithinSla: timestampMs(alert.detectedAt) - timestampMs(alert.occurredAt) <= SLA_THRESHOLD_MS,
     latestSnapshot,
   };
 }
@@ -877,7 +876,6 @@ function getOfflineIncidents(): AlertIncident[] {
         latestEventAt: offlineAt,
         locationLabel: device.location.label,
         notificationStatus: getNotificationStatusForAlert("", device.nodeId),
-        visibleWithinSla: true,
         latestSnapshot: getLatestReading(device.id),
       });
     });
@@ -896,10 +894,17 @@ function getRecentReadings(deviceId: string, hours = 24) {
   return readings
     .filter((reading) => reading.deviceId === deviceId && timestampMs(reading.reportedAt) >= cutoffMs)
     .sort((left, right) => timestampMs(right.reportedAt) - timestampMs(left.reportedAt))
-    .map((reading) => ({
-      ...reading,
-      nodeId: devices.find((device) => device.id === reading.deviceId)?.nodeId ?? reading.deviceId,
-    }));
+    .map((reading) => {
+      const device = devices.find((entry) => entry.id === reading.deviceId);
+      if (!device) {
+        throw new Error(`Unknown device ${reading.deviceId}`);
+      }
+
+      return {
+        ...reading,
+        nodeId: device.nodeId,
+      };
+    });
 }
 
 function buildMeshLinks(): MeshLink[] {
@@ -1047,11 +1052,11 @@ export function getMockDashboard(): DashboardResponse {
 }
 
 export function listMockNodes(): NodeSummary[] {
-  return devices.map(toNodeSummary).sort((left, right) => left.nodeId.localeCompare(right.nodeId));
+  return devices.map(toNodeSummary).sort((left, right) => left.nodeId - right.nodeId);
 }
 
-export function getMockNodeDetail(nodeId: string): NodeDetail {
-  const device = devices.find((entry) => entry.nodeId === nodeId || entry.id === nodeId);
+export function getMockNodeDetail(nodeId: NodeId): NodeDetail {
+  const device = devices.find((entry) => entry.nodeId === nodeId);
   if (!device) {
     throw new Error(`Unknown node ${nodeId}`);
   }
@@ -1074,7 +1079,7 @@ export function listMockAlerts(): AlertIncident[] {
   return listAllAlerts();
 }
 
-export function getMockHistory(nodeId?: string, window: HistoryWindow = "24h"): HistoryResponse {
+export function getMockHistory(nodeId?: NodeId, window: HistoryWindow = "24h"): HistoryResponse {
   const selectedNode = devices.find((device) => device.nodeId === nodeId) ?? devices[0];
   const rawReadings = window === "24h" ? getRecentReadings(selectedNode.id, 24) : [];
 
@@ -1085,7 +1090,7 @@ export function getMockHistory(nodeId?: string, window: HistoryWindow = "24h"): 
     availableNodes: devices.map((device) => ({
       id: device.id,
       nodeId: device.nodeId,
-      displayName: device.displayName,
+      displayName: String(device.nodeId),
     })),
     rawReadings,
     aggregateBuckets: getAggregateBuckets(selectedNode.id, window),
@@ -1159,7 +1164,7 @@ export function createMockConfigRevision(draft: ConfigRevisionDraft): Configurat
   return getMockConfiguration();
 }
 
-export function updateMockNeighborRevision(nodeId: string, draft: NeighborRevisionDraft): ConfigurationResponse {
+export function updateMockNeighborRevision(nodeId: NodeId, draft: NeighborRevisionDraft): ConfigurationResponse {
   const device = devices.find((entry) => entry.nodeId === nodeId);
   if (!device) {
     throw new Error(`Unknown node ${nodeId}`);

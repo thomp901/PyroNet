@@ -18,6 +18,7 @@ import type {
   NeighborRevision,
   NeighborRevisionDraft,
   NodeDetail,
+  NodeId,
   NodeSummary,
   NotificationEventType,
   NotificationRecipientUpdate,
@@ -25,6 +26,7 @@ import type {
   ReadingHistoryPoint,
   TelemetrySnapshot,
 } from "../src/api/types";
+import { parseNodeId } from "../src/lib/nodeId";
 import {
   createMockConfigRevision,
   createMockNeighborDistribution,
@@ -64,6 +66,31 @@ function getNowMs() {
 
 function timestampMs(value: string | null) {
   return value ? new Date(value).getTime() : 0;
+}
+
+function formatCoordinateDms(value: number, positiveHemisphere: string, negativeHemisphere: string) {
+  const hemisphere = value >= 0 ? positiveHemisphere : negativeHemisphere;
+  const absoluteValue = Math.abs(value);
+  let degrees = Math.floor(absoluteValue);
+  const minutesFloat = (absoluteValue - degrees) * 60;
+  let minutes = Math.floor(minutesFloat);
+  let seconds = Number(((minutesFloat - minutes) * 60).toFixed(1));
+
+  if (seconds >= 60) {
+    seconds = 0;
+    minutes += 1;
+  }
+
+  if (minutes >= 60) {
+    minutes = 0;
+    degrees += 1;
+  }
+
+  return `${degrees}°${String(minutes).padStart(2, "0")}'${seconds.toFixed(1).padStart(4, "0")}"${hemisphere}`;
+}
+
+function formatCoordinatePair(latitude: number, longitude: number) {
+  return `${formatCoordinateDms(latitude, "N", "S")}, ${formatCoordinateDms(longitude, "E", "W")}`;
 }
 
 function connectivityFromLastSeen(lastSeenAt: string | null): ConnectivityStatus {
@@ -109,7 +136,7 @@ async function query<T extends QueryResultRow>(text: string, values: unknown[] =
 async function queryNodesFromDb(): Promise<NodeSummary[]> {
   const result = await query<{
     id: number;
-    node_id: string;
+    node_id: number;
     current_ipv6: string | null;
     current_latitude: string;
     current_longitude: string;
@@ -182,13 +209,12 @@ async function queryNodesFromDb(): Promise<NodeSummary[]> {
     return {
       id: String(row.id),
       nodeId: row.node_id,
-      displayName: row.node_id,
       ipv6Address: row.current_ipv6,
       connectivity: connectivityFromLastSeen(row.last_seen_at),
       location: {
         lat: Number(row.current_latitude),
         lng: Number(row.current_longitude),
-        label: `${Number(row.current_latitude).toFixed(4)}, ${Number(row.current_longitude).toFixed(4)}`,
+        label: formatCoordinatePair(Number(row.current_latitude), Number(row.current_longitude)),
       },
       firmwareVersion: row.current_firmware_version,
       firstRegisteredAt: row.first_registered_at,
@@ -210,8 +236,8 @@ async function queryDownlinksFromDb(): Promise<DashboardResponse["downlinks"]> {
     id: string;
     command_code: "0x04" | "0x05" | "0x06";
     command_name: string;
-    node_id: string;
-    node_name: string;
+    node_id: number;
+    node_name: number;
     status: DashboardResponse["downlinks"][number]["status"];
     sent_at: string;
     acknowledged_at: string | null;
@@ -272,7 +298,7 @@ async function queryDownlinksFromDb(): Promise<DashboardResponse["downlinks"]> {
     commandCode: row.command_code,
     commandName: row.command_name,
     nodeId: row.node_id,
-    nodeName: row.node_name,
+    nodeName: String(row.node_name),
     status: row.status,
     sentAt: row.sent_at,
     acknowledgedAt: row.acknowledged_at,
@@ -285,7 +311,8 @@ async function queryAlertsFromDb(nodes?: NodeSummary[]): Promise<AlertIncident[]
   const fleet = nodes ?? (await queryNodesFromDb());
   const result = await query<{
     id: number;
-    node_id: string;
+    node_id: number;
+    alert_type: "critical_risk" | "connectivity_loss" | "battery_degradation" | "system";
     title: string;
     severity: AlertIncident["severity"];
     status: "open" | "acknowledged" | "cleared";
@@ -309,6 +336,7 @@ async function queryAlertsFromDb(nodes?: NodeSummary[]): Promise<AlertIncident[]
       SELECT
         a.id,
         d.node_id,
+        a.alert_type,
         a.title,
         a.severity,
         a.status,
@@ -342,41 +370,64 @@ async function queryAlertsFromDb(nodes?: NodeSummary[]): Promise<AlertIncident[]
     `,
   );
 
-  const directAlerts: AlertIncident[] = result.rows.map((row: (typeof result.rows)[number]) => {
+  const directAlerts: AlertIncident[] = result.rows.flatMap((row: (typeof result.rows)[number]) => {
+    const incidentMeta =
+      row.alert_type === "critical_risk"
+        ? {
+            incidentType: "critical_alert" as const,
+            eventCode: "0x03" as const,
+            sourceType: "critical_alert" as const,
+            severity: "critical" as const,
+          }
+        : row.alert_type === "battery_degradation"
+          ? {
+              incidentType: "battery_health_low" as const,
+              eventCode: "battery-health-low" as const,
+              sourceType: "periodic_report" as const,
+              severity: "warning" as const,
+            }
+          : null;
+
+    if (!incidentMeta) {
+      return [];
+    }
+
     const sentCount = Number(row.sent_count);
     const totalCount = Number(row.total_count);
-    return {
-      id: `alert-${row.id}`,
-      incidentType: "critical_alert",
-      eventCode: "0x03",
-      nodeId: row.node_id,
-      nodeName: row.node_id,
-      severity: row.severity,
-      status: row.status,
-      title: row.title,
-      summary: typeof row.details === "object" ? "Database alert event" : "Database alert event",
-      occurredAt: row.occurred_at,
-      detectedAt: row.detected_at,
-      latestEventAt: row.latest_event_at,
-      locationLabel: `${Number(row.current_latitude).toFixed(4)}, ${Number(row.current_longitude).toFixed(4)}`,
-      notificationStatus: totalCount === 0 ? "skipped" : sentCount === totalCount ? "sent" : sentCount > 0 ? "partial" : "pending",
-      visibleWithinSla: timestampMs(row.detected_at) - timestampMs(row.occurred_at) <= 10 * 60 * 1000,
-      latestSnapshot:
-        row.snapshot_reported_at && row.snapshot_risk_level !== null
-          ? {
-              reportedAt: row.snapshot_reported_at,
-              sourceType: "critical_alert",
-              riskLevel: row.snapshot_risk_level,
-              temperatureC: Number(row.snapshot_temperature_c ?? 0),
-              humidityPct: Number(row.snapshot_humidity_pct ?? 0),
-              vocIaq: row.snapshot_voc_iaq ?? 0,
-              pm25UgM3: Number(row.snapshot_pm25_ug_m3 ?? 0),
-              batteryPct: row.snapshot_battery_pct,
-              pressureHpa: null,
-              batteryHealthScore: null,
-            }
-          : null,
-    };
+
+    return [
+      {
+        id: `alert-${row.id}`,
+        incidentType: incidentMeta.incidentType,
+        eventCode: incidentMeta.eventCode,
+        nodeId: row.node_id,
+        nodeName: String(row.node_id),
+        severity: incidentMeta.severity,
+        status: row.status,
+        title: row.title,
+        summary: typeof row.details === "object" ? "Database alert event" : "Database alert event",
+        occurredAt: row.occurred_at,
+        detectedAt: row.detected_at,
+        latestEventAt: row.latest_event_at,
+        locationLabel: formatCoordinatePair(Number(row.current_latitude), Number(row.current_longitude)),
+        notificationStatus: totalCount === 0 ? "skipped" : sentCount === totalCount ? "sent" : sentCount > 0 ? "partial" : "pending",
+        latestSnapshot:
+          row.snapshot_reported_at && row.snapshot_risk_level !== null
+            ? {
+                reportedAt: row.snapshot_reported_at,
+                sourceType: incidentMeta.sourceType,
+                riskLevel: row.snapshot_risk_level,
+                temperatureC: Number(row.snapshot_temperature_c ?? 0),
+                humidityPct: Number(row.snapshot_humidity_pct ?? 0),
+                vocIaq: row.snapshot_voc_iaq ?? 0,
+                pm25UgM3: Number(row.snapshot_pm25_ug_m3 ?? 0),
+                batteryPct: row.snapshot_battery_pct,
+                pressureHpa: null,
+                batteryHealthScore: null,
+              }
+            : null,
+      },
+    ];
   });
 
   const offlineIncidents = fleet
@@ -388,7 +439,7 @@ async function queryAlertsFromDb(nodes?: NodeSummary[]): Promise<AlertIncident[]
         incidentType: "offline" as const,
         eventCode: "derived-offline" as const,
         nodeId: node.nodeId,
-        nodeName: node.displayName,
+        nodeName: String(node.nodeId),
         severity: "warning" as const,
         status: "derived" as const,
         title: `${node.nodeId} silent for 24 hours`,
@@ -398,7 +449,6 @@ async function queryAlertsFromDb(nodes?: NodeSummary[]): Promise<AlertIncident[]
         latestEventAt: derivedAt,
         locationLabel: node.location.label,
         notificationStatus: "pending" as const,
-        visibleWithinSla: true,
         latestSnapshot: node.latestTelemetry,
       };
     });
@@ -412,10 +462,10 @@ async function getDashboardFromDb(): Promise<DashboardResponse> {
   const fleet = await queryNodesFromDb();
   const [alertQueue, downlinks] = await Promise.all([queryAlertsFromDb(fleet), queryDownlinksFromDb()]);
   const neighborLinksResult = await query<{
-    owner_node_id: string;
+    owner_node_id: number;
     owner_latitude: string;
     owner_longitude: string;
-    neighbor_node_id: string;
+    neighbor_node_id: number;
     neighbor_latitude: string;
     neighbor_longitude: string;
     distance_meters: number;
@@ -440,19 +490,19 @@ async function getDashboardFromDb(): Promise<DashboardResponse> {
   const neighborLinks = neighborLinksResult.rows.map((row: (typeof neighborLinksResult.rows)[number]) => ({
     ownerNodeId: row.owner_node_id,
     neighborNodeId: row.neighbor_node_id,
-    ownerName: row.owner_node_id,
-    neighborName: row.neighbor_node_id,
+    ownerName: String(row.owner_node_id),
+    neighborName: String(row.neighbor_node_id),
     distanceMeters: row.distance_meters,
     points: [
       {
         lat: Number(row.owner_latitude),
         lng: Number(row.owner_longitude),
-        label: row.owner_node_id,
+        label: String(row.owner_node_id),
       },
       {
         lat: Number(row.neighbor_latitude),
         lng: Number(row.neighbor_longitude),
-        label: row.neighbor_node_id,
+        label: String(row.neighbor_node_id),
       },
     ] as MeshLink["points"],
   }));
@@ -474,7 +524,7 @@ async function getDashboardFromDb(): Promise<DashboardResponse> {
   };
 }
 
-async function getNodeDetailFromDb(nodeId: string): Promise<NodeDetail> {
+async function getNodeDetailFromDb(nodeId: NodeId): Promise<NodeDetail> {
   const fleet = await queryNodesFromDb();
   const node = fleet.find((entry) => entry.nodeId === nodeId);
   if (!node) {
@@ -488,8 +538,8 @@ async function getNodeDetailFromDb(nodeId: string): Promise<NodeDetail> {
       radius_meters: number;
       revision_source: NeighborRevision["revisionSource"];
       active_from: string;
-      neighbor_node_id: string;
-      neighbor_name: string;
+      neighbor_node_id: number;
+      neighbor_name: number;
       neighbor_rank: number;
       distance_meters: number;
       neighbor_latitude: string;
@@ -635,13 +685,13 @@ async function getNodeDetailFromDb(nodeId: string): Promise<NodeDetail> {
         neighbors: neighborRows.map<NeighborMembership>((row: (typeof neighborRows)[number]) => ({
           neighborId: row.neighbor_node_id,
           neighborNodeId: row.neighbor_node_id,
-          neighborName: row.neighbor_name,
+          neighborName: String(row.neighbor_name),
           rank: row.neighbor_rank,
           distanceMeters: row.distance_meters,
           location: {
             lat: Number(row.neighbor_latitude),
             lng: Number(row.neighbor_longitude),
-            label: row.neighbor_name,
+            label: String(row.neighbor_name),
           },
           riskLevel: row.latest_risk_level,
           connectivity: connectivityFromLastSeen(row.last_seen_at),
@@ -710,7 +760,7 @@ async function getNodeDetailFromDb(nodeId: string): Promise<NodeDetail> {
   };
 }
 
-async function getHistoryFromDb(nodeId?: string, window: HistoryWindow = "24h"): Promise<HistoryResponse> {
+async function getHistoryFromDb(nodeId?: NodeId, window: HistoryWindow = "24h"): Promise<HistoryResponse> {
   const nodes = await queryNodesFromDb();
   const selectedNode = nodes.find((node) => node.nodeId === nodeId) ?? nodes[0];
 
@@ -778,7 +828,7 @@ async function getHistoryFromDb(nodeId?: string, window: HistoryWindow = "24h"):
       availableNodes: nodes.map((node) => ({
         id: node.id,
         nodeId: node.nodeId,
-        displayName: node.displayName,
+        displayName: String(node.nodeId),
       })),
       rawReadings,
       aggregateBuckets: rawReadings.map((reading: ReadingHistoryPoint) => ({
@@ -843,7 +893,7 @@ async function getHistoryFromDb(nodeId?: string, window: HistoryWindow = "24h"):
     availableNodes: nodes.map((node) => ({
       id: node.id,
       nodeId: node.nodeId,
-      displayName: node.displayName,
+      displayName: String(node.nodeId),
     })),
     rawReadings: [],
     aggregateBuckets,
@@ -936,7 +986,7 @@ async function getConfigurationFromDb(): Promise<ConfigurationResponse> {
       if (!node.currentNeighborRevisionId) {
         return {
           nodeId: node.nodeId,
-          nodeName: node.displayName,
+          nodeName: String(node.nodeId),
           revisionId: null,
           revisionNo: null,
           radiusMeters: null,
@@ -947,7 +997,7 @@ async function getConfigurationFromDb(): Promise<ConfigurationResponse> {
       const membershipsResult = await query<{
         revision_no: number;
         radius_meters: number;
-        neighbor_node_id: string;
+        neighbor_node_id: number;
         neighbor_rank: number;
         distance_meters: number;
         neighbor_latitude: string;
@@ -977,7 +1027,7 @@ async function getConfigurationFromDb(): Promise<ConfigurationResponse> {
 
       return {
         nodeId: node.nodeId,
-        nodeName: node.displayName,
+        nodeName: String(node.nodeId),
         revisionId: node.currentNeighborRevisionId,
         revisionNo: membershipsResult.rows[0]?.revision_no ?? node.currentNeighborRevisionNo,
         radiusMeters: membershipsResult.rows[0]?.radius_meters ?? null,
@@ -986,13 +1036,13 @@ async function getConfigurationFromDb(): Promise<ConfigurationResponse> {
           .map((row: (typeof membershipsResult.rows)[number]) => ({
             neighborId: row.neighbor_node_id,
             neighborNodeId: row.neighbor_node_id,
-            neighborName: row.neighbor_node_id,
+            neighborName: String(row.neighbor_node_id),
             rank: row.neighbor_rank,
             distanceMeters: row.distance_meters,
             location: {
               lat: Number(row.neighbor_latitude),
               lng: Number(row.neighbor_longitude),
-              label: row.neighbor_node_id,
+              label: String(row.neighbor_node_id),
             },
             riskLevel: row.latest_risk_level,
             connectivity: connectivityFromLastSeen(row.last_seen_at),
@@ -1061,7 +1111,7 @@ async function getNotificationsFromDb(): Promise<NotificationSettingsResponse> {
       status: NotificationSettingsResponse["deliveries"][number]["status"];
       event_occurred_at: string;
       delivered_at: string | null;
-      node_id: string | null;
+      node_id: number | null;
       alert_id: number | null;
       failure_reason: string | null;
     }>(
@@ -1193,7 +1243,7 @@ async function createConfigRevisionInDb(draft: ConfigRevisionDraft): Promise<Con
     }
 
     const targets = draft.targetNodeIds?.length
-      ? await client.query<{ id: number }>("SELECT id FROM devices WHERE node_id = ANY($1::text[])", [draft.targetNodeIds])
+      ? await client.query<{ id: number }>("SELECT id FROM devices WHERE node_id = ANY($1::smallint[])", [draft.targetNodeIds])
       : await client.query<{ id: number }>("SELECT id FROM devices");
 
     for (const target of targets.rows) {
@@ -1218,7 +1268,7 @@ async function createConfigRevisionInDb(draft: ConfigRevisionDraft): Promise<Con
   return getConfigurationFromDb();
 }
 
-async function updateNeighborRevisionInDb(nodeId: string, draft: NeighborRevisionDraft): Promise<ConfigurationResponse> {
+async function updateNeighborRevisionInDb(nodeId: NodeId, draft: NeighborRevisionDraft): Promise<ConfigurationResponse> {
   if (!pool) {
     throw new Error("Database is not configured.");
   }
@@ -1258,8 +1308,8 @@ async function updateNeighborRevisionInDb(nodeId: string, draft: NeighborRevisio
 
     const neighborRows = draft.neighborNodeIds.length
       ? (
-          await client.query<{ id: number; node_id: string; current_latitude: string; current_longitude: string }>(
-            "SELECT id, node_id, current_latitude::text, current_longitude::text FROM devices WHERE node_id = ANY($1::text[])",
+          await client.query<{ id: number; node_id: number; current_latitude: string; current_longitude: string }>(
+            "SELECT id, node_id, current_latitude::text, current_longitude::text FROM devices WHERE node_id = ANY($1::smallint[])",
             [draft.neighborNodeIds],
           )
         ).rows
@@ -1316,7 +1366,7 @@ async function createTimeSyncInDb(request: DownlinkRequest): Promise<Configurati
     throw new Error("Database is not configured.");
   }
   const targets = request.targetNodeIds?.length
-    ? await query<{ id: number }>("SELECT id FROM devices WHERE node_id = ANY($1::text[])", [request.targetNodeIds])
+    ? await query<{ id: number }>("SELECT id FROM devices WHERE node_id = ANY($1::smallint[])", [request.targetNodeIds])
     : await query<{ id: number }>("SELECT id FROM devices");
 
   for (const target of targets.rows) {
@@ -1338,7 +1388,7 @@ async function createNeighborDistributionInDb(request: DownlinkRequest): Promise
   }
   const targets = request.targetNodeIds?.length
     ? await query<{ id: number; current_nn_revision_id: number | null }>(
-        "SELECT id, current_nn_revision_id FROM devices WHERE node_id = ANY($1::text[])",
+        "SELECT id, current_nn_revision_id FROM devices WHERE node_id = ANY($1::smallint[])",
         [request.targetNodeIds],
       )
     : await query<{ id: number; current_nn_revision_id: number | null }>("SELECT id, current_nn_revision_id FROM devices");
@@ -1377,7 +1427,7 @@ async function createThresholdPushInDb(request: DownlinkRequest): Promise<Config
   }
 
   const targets = request.targetNodeIds?.length
-    ? await query<{ id: number }>("SELECT id FROM devices WHERE node_id = ANY($1::text[])", [request.targetNodeIds])
+    ? await query<{ id: number }>("SELECT id FROM devices WHERE node_id = ANY($1::smallint[])", [request.targetNodeIds])
     : await query<{ id: number }>("SELECT id FROM devices");
 
   for (const target of targets.rows) {
@@ -1454,8 +1504,13 @@ app.get("/api/nodes", async (_request, response, next) => {
 
 app.get("/api/nodes/:nodeId", async (request, response, next) => {
   try {
+    const nodeId = parseNodeId(request.params.nodeId);
+    if (nodeId === null) {
+      response.status(400).json({ message: "nodeId must be a valid 2-byte integer." });
+      return;
+    }
     response.json(
-      await withSource(() => getNodeDetailFromDb(request.params.nodeId), () => getMockNodeDetail(request.params.nodeId)),
+      await withSource(() => getNodeDetailFromDb(nodeId), () => getMockNodeDetail(nodeId)),
     );
   } catch (error) {
     next(error);
@@ -1472,7 +1527,13 @@ app.get("/api/alerts", async (_request, response, next) => {
 
 app.get("/api/history", async (request, response, next) => {
   try {
-    const nodeId = typeof request.query.nodeId === "string" ? request.query.nodeId : undefined;
+    const nodeIdInput = typeof request.query.nodeId === "string" ? request.query.nodeId : undefined;
+    const parsedNodeId = nodeIdInput === undefined ? undefined : parseNodeId(nodeIdInput);
+    if (nodeIdInput !== undefined && parsedNodeId === null) {
+      response.status(400).json({ message: "nodeId must be a valid 2-byte integer." });
+      return;
+    }
+    const nodeId = parsedNodeId ?? undefined;
     const window = (typeof request.query.window === "string" ? request.query.window : "24h") as HistoryWindow;
     response.json(await withSource(() => getHistoryFromDb(nodeId, window), () => getMockHistory(nodeId, window)));
   } catch (error) {
@@ -1499,11 +1560,16 @@ app.post("/api/configuration/revisions", async (request, response, next) => {
 
 app.post("/api/configuration/neighbors/:nodeId", async (request, response, next) => {
   try {
+    const nodeId = parseNodeId(request.params.nodeId);
+    if (nodeId === null) {
+      response.status(400).json({ message: "nodeId must be a valid 2-byte integer." });
+      return;
+    }
     const body = request.body as NeighborRevisionDraft;
     response.json(
       await withSource(
-        () => updateNeighborRevisionInDb(request.params.nodeId, body),
-        () => updateMockNeighborRevision(request.params.nodeId, body),
+        () => updateNeighborRevisionInDb(nodeId, body),
+        () => updateMockNeighborRevision(nodeId, body),
       ),
     );
   } catch (error) {
