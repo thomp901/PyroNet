@@ -1,0 +1,32 @@
+# macOS / editor noise
+.DS_Store
+.idea/
+.vscode/
+
+# Local project metadata
+.projectlinkstore
+
+# Build output
+cmake_gcc/build/
+
+# Optional local logs and temporary files
+*.log
+*.tmp
+*.swp
+*~
+AGENTS.md
+Makefile
+
+# Keep project sources and generated source/config checked in
+!main.c
+!wisun_rcp.slcp
+!wisun_rcp.slps
+!wisun_rcp.pintool
+!vscode.conf
+!config/
+!autogen/
+!doc/
+!cmake_gcc/CMakeLists.txt
+!cmake_gcc/CMakePresets.json
+!cmake_gcc/toolchain.cmake
+!cmake_gcc/wisun_rcp.cmake

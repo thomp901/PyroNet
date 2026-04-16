@@ -38,11 +38,11 @@
 // <h> Memory configuration
 
 // <o SL_STACK_SIZE> Stack size for the application.
-// <i> Default: 1024
+// <i> Default: 32768
 // <i> The stack size configured here will be used by the stack that the
 // <i> application uses when coming out of a reset.
 #ifndef SL_STACK_SIZE
-#define SL_STACK_SIZE 1024
+#define SL_STACK_SIZE 32768
 #endif
 // </h>
 
