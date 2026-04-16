@@ -1,0 +1,70 @@
+# Silicon Labs Project Configuration Tools: slcp, v0, Component selection file.
+project_name: wisun_rcp
+label: wisun_rcp
+description: |
+  The Wi-SUN RCP (radio coprocessor) application provides a radio interface to a Linux host. It is meant to be paired with wsbrd (Wi-SUN Network implementation for Linux) to run as a Linux border router device.
+category: Wi-SUN Examples
+filter:
+- name: Device Type
+  value: [RCP]
+- name: Project Difficulty
+  value: [Advanced]
+- name: Wireless Technology
+  value: [Wi-SUN]
+package: wisun
+quality: production
+readme:
+- {path: doc/readme.md}
+- {path: doc/readme.md}
+tag: [prebuilt_demo]
+sdk: {vendor: null, id: simplicity_sdk, version: 2025.6.2}
+toolchain_settings: []
+component:
+- {id: EFR32ZG28B312F1024IM48}
+- {id: brd2705a}
+- {id: iostream_retarget_stdio}
+- {id: iostream_rtt}
+- {id: wisun_default_radioconf}
+- {id: wisun_rcp_app}
+- {id: wisun_stack_ffn}
+other_file:
+- {path: doc/readme_img0.png}
+- {path: doc/readme_img1.png}
+configuration:
+- condition: [cpc_secondary]
+  name: SL_CPC_RX_PAYLOAD_MAX_LENGTH
+  value: '2038'
+- condition: [cpc_secondary]
+  name: SL_CPC_TX_QUEUE_ITEM_MAX_COUNT
+  value: '2'
+- condition: [cpc_secondary]
+  name: SL_CPC_RX_BUFFER_MAX_COUNT
+  value: '2'
+- condition: [cpc_secondary, cpc_secondary_driver_uart_usart]
+  name: SL_CPC_DRV_UART_VCOM_RX_QUEUE_SIZE
+  value: '2'
+- condition: [cpc_secondary, cpc_secondary_driver_uart_usart]
+  name: SL_CPC_DRV_UART_VCOM_TX_QUEUE_SIZE
+  value: '2'
+- condition: [cpc_secondary, cpc_secondary_driver_uart_eusart]
+  name: SL_CPC_DRV_UART_VCOM_RX_QUEUE_SIZE
+  value: '2'
+- condition: [cpc_secondary, cpc_secondary_driver_uart_eusart]
+  name: SL_CPC_DRV_UART_VCOM_TX_QUEUE_SIZE
+  value: '2'
+- {name: SL_BOARD_ENABLE_VCOM, value: '1'}
+- condition: [micriumos_kernel]
+  name: OS_CFG_APP_HOOKS_EN
+  value: '1'
+- condition: [micriumos_kernel]
+  name: OS_CFG_DBG_EN
+  value: '1'
+- {name: SL_RAIL_UTIL_PTI_BAUD_RATE_HZ, value: '3200000'}
+- {name: SL_MAIN_START_TASK_STACK_SIZE_BYTES, value: '2048'}
+- condition: [device_sdid_220]
+  name: SL_RAIL_UTIL_SFM_SEQUENCER_SUN_MODULATIONS_SELECTION
+  value: SL_RAIL_UTIL_SFM_SEQUENCER_SUN_MODULATIONS_OFDM
+ui_hints:
+  highlight:
+  - {path: doc/readme.md, focus: true}
+
