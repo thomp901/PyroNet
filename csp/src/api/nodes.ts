@@ -1,0 +1,29 @@
+import type { NodeDetail, NodeSummary, NodeId } from "./types";
+import { apiGet } from "../lib/http";
+import { appConfig } from "../lib/config";
+import { getMockNodeDetail, listMockNodes } from "../mocks/mockBackend";
+import { formatNodeId } from "../lib/nodeId";
+
+export async function listNodes() {
+  if (appConfig.useMockApi) {
+    return listMockNodes();
+  }
+
+  try {
+    return await apiGet<NodeSummary[]>("/nodes");
+  } catch {
+    return listMockNodes();
+  }
+}
+
+export async function getNodeDetail(nodeId: NodeId) {
+  if (appConfig.useMockApi) {
+    return getMockNodeDetail(nodeId);
+  }
+
+  try {
+    return await apiGet<NodeDetail>(`/nodes/${encodeURIComponent(formatNodeId(nodeId))}`);
+  } catch {
+    return getMockNodeDetail(nodeId);
+  }
+}
