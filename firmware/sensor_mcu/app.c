@@ -15,9 +15,20 @@
  *
  ******************************************************************************/
 
+#include <stdint.h>
+#include <stdio.h>
+
+#include "debug_console.h"
+
 /***************************************************************************//**
  * Initialize application.
  ******************************************************************************/
+void app_init_early(void)
+{
+  debug_console_init();
+  puts(SWO_SELF_TEST_TOKEN " phase=EARLY");
+}
+
 void app_init(void)
 {
 }
