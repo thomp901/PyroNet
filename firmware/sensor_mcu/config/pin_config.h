@@ -1,6 +1,8 @@
 #ifndef PIN_CONFIG_H
 #define PIN_CONFIG_H
 
+#include "sl_gpio.h"
+
 // $[CMU]
 // [CMU]$
 
@@ -132,6 +134,37 @@
 #define _PIN                                     0
 #endif
 
+// <<< sl:start pin_tool >>>
+// <i2c signal=SCL,SDA> SL_I2C_BUS
+// I2C1 on PD02/PD03
+#define SL_I2C_BUS_PERIPHERAL                    I2C1
+#define SL_I2C_BUS_PERIPHERAL_NO                 1
+#define SL_I2C_BUS_CLOCK                        cmuClock_I2C1
+
+// I2C1 SCL on PD02
+#define SL_I2C_BUS_SCL_PORT                      SL_GPIO_PORT_D
+#define SL_I2C_BUS_SCL_PIN                       2
+
+// I2C1 SDA on PD03
+#define SL_I2C_BUS_SDA_PORT                      SL_GPIO_PORT_D
+#define SL_I2C_BUS_SDA_PIN                       3
+
+// <gpio> DEBUG_LED_D103
+// D103 on PA07
+#define DEBUG_LED_D103_PORT                      SL_GPIO_PORT_A
+#define DEBUG_LED_D103_PIN                       7
+
+// <gpio> DEBUG_LED_D102
+// D102 on PA08
+#define DEBUG_LED_D102_PORT                      SL_GPIO_PORT_A
+#define DEBUG_LED_D102_PIN                       8
+
+// <gpio> DEBUG_LED_D101
+// D101 on PA09
+#define DEBUG_LED_D101_PORT                      SL_GPIO_PORT_A
+#define DEBUG_LED_D101_PIN                       9
+// <<< sl:end pin_tool >>>
+
 
 
 
@@ -166,5 +199,3 @@
 
 
 #endif // PIN_CONFIG_H
-
-

@@ -13,7 +13,8 @@ project(
 include(sensor_mcu.cmake)
 
 add_executable(sensor_mcu
-    # Add additional sources here
+    ${SDK_PATH}/platform/emlib/src/em_eusart.c
+    ${SDK_PATH}/platform/emlib/src/em_i2c.c
 )
 
 target_include_directories(sensor_mcu PUBLIC
