@@ -13,31 +13,20 @@ project(
 include(sensor_mcu.cmake)
 
 target_include_directories(slc PUBLIC
-    ../third_party/bme68x
-    ../third_party/bsec2/inc
-    ../third_party/bsec2/config
-)
-
-target_compile_definitions(slc PUBLIC
-    BME68X_DO_NOT_USE_FPU
+    ../third_party/sps30
 )
 
 add_executable(sensor_mcu
     ../debug_console.c
-    ../third_party/bme68x/bme68x.c
-    ../third_party/bsec2/config/bsec_iaq.c
+    ../third_party/sps30/sensirion_common.c
+    ../third_party/sps30/sensirion_i2c.c
+    ../third_party/sps30/sps30_i2c.c
     ${SDK_PATH}/platform/emlib/src/em_eusart.c
     ${SDK_PATH}/platform/emlib/src/em_i2c.c
 )
 
 target_include_directories(sensor_mcu PUBLIC
-    ../third_party/bme68x
-    ../third_party/bsec2/inc
-    ../third_party/bsec2/config
-)
-
-target_compile_definitions(sensor_mcu PUBLIC
-    BME68X_DO_NOT_USE_FPU
+    ../third_party/sps30
 )
 
 target_compile_options(sensor_mcu PUBLIC
@@ -51,7 +40,6 @@ target_link_options(sensor_mcu PUBLIC
 # Link with the content defined in the SLC project
 target_link_libraries(sensor_mcu PRIVATE
     slc
-    ${CMAKE_CURRENT_LIST_DIR}/../third_party/bsec2/lib/libalgobsec.a
 )
 
 # Include managed project content if available
