@@ -34,6 +34,7 @@ import type {
   ReadingHistoryPoint,
   TelemetrySnapshot,
 } from "../api/types";
+import type { DecodedPacket } from "../api/packetIngest";
 import { packetDirections, packetEventTypes, packetLogCodes } from "../api/types";
 
 interface DeviceRecord {
@@ -47,10 +48,10 @@ interface DeviceRecord {
   lastRegisteredAt: string;
   lastSeenAt: string;
   lastReportedAt: string;
-  activeConfigRevisionId: number;
-  activeConfigRevisionNo: number;
-  currentNeighborRevisionId: number;
-  currentNeighborRevisionNo: number;
+  activeConfigRevisionId: number | null;
+  activeConfigRevisionNo: number | null;
+  currentNeighborRevisionId: number | null;
+  currentNeighborRevisionNo: number | null;
 }
 
 interface ReadingRecord extends TelemetrySnapshot {
@@ -101,6 +102,22 @@ interface RegistrationRecord {
   longitude: number;
   firmwareVersion: string;
   batteryPct: number;
+}
+
+interface NeighborAlertRecord {
+  id: string;
+  deviceId: string;
+  occurredAt: string;
+  riskLevel: number;
+  targetNodeIds: NodeId[];
+  status: "received" | "sent" | "acknowledged" | "failed" | "timed_out";
+}
+
+interface ParentUpdateRecord {
+  id: string;
+  deviceId: string;
+  occurredAt: string;
+  parentIpv6: string | null;
 }
 
 interface Ipv6HistoryRecord {
@@ -616,6 +633,32 @@ const registrations: RegistrationRecord[] = [
   },
 ];
 
+const neighborAlerts: NeighborAlertRecord[] = [
+  {
+    id: "nal-001",
+    deviceId: "dev-002",
+    occurredAt: "2026-04-14T19:52:05Z",
+    riskLevel: 5,
+    targetNodeIds: [1, 4],
+    status: "acknowledged",
+  },
+];
+
+const parentUpdates: ParentUpdateRecord[] = [
+  {
+    id: "parent-001",
+    deviceId: "dev-001",
+    occurredAt: "2026-04-14T17:24:00Z",
+    parentIpv6: "2001:db8:100::14",
+  },
+  {
+    id: "parent-002",
+    deviceId: "dev-003",
+    occurredAt: "2026-04-13T08:05:00Z",
+    parentIpv6: "2001:db8:100::12",
+  },
+];
+
 const ipv6History: Ipv6HistoryRecord[] = [
   { deviceId: "dev-001", address: "2001:db8:100::11", validFrom: "2026-03-01T08:15:00Z", validTo: null },
   { deviceId: "dev-002", address: "2001:db8:100::12", validFrom: "2026-03-03T07:40:00Z", validTo: null },
@@ -729,6 +772,56 @@ function getNowMs() {
   return new Date(NOW).getTime();
 }
 
+function nextNumericId(values: number[]) {
+  return values.length > 0 ? Math.max(...values) + 1 : 1;
+}
+
+function nextDeviceId() {
+  const numericIds = devices
+    .map((device) => Number.parseInt(device.id.replace("dev-", ""), 10))
+    .filter((value) => Number.isFinite(value));
+  return `dev-${String(nextNumericId(numericIds)).padStart(3, "0")}`;
+}
+
+function activeConfigRevisionRecord() {
+  return (
+    [...configRevisions]
+      .sort((left, right) => timestampMs(right.createdAt) - timestampMs(left.createdAt))
+      .find((revision) => revision.retiredAt === null) ?? null
+  );
+}
+
+function distanceMetersBetween(
+  first: { lat: number; lng: number },
+  second: { lat: number; lng: number },
+) {
+  const toRad = (value: number) => (value * Math.PI) / 180;
+  const earthRadius = 6_371_000;
+  const deltaLat = toRad(second.lat - first.lat);
+  const deltaLng = toRad(second.lng - first.lng);
+  const a =
+    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+    Math.cos(toRad(first.lat)) * Math.cos(toRad(second.lat)) * Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.max(1, Math.round(earthRadius * c));
+}
+
+function getDeviceByNodeId(nodeId: NodeId) {
+  return devices.find((entry) => entry.nodeId === nodeId) ?? null;
+}
+
+function getDeviceByIpv6(ipv6Address: string) {
+  return devices.find((entry) => entry.ipv6Address === ipv6Address) ?? null;
+}
+
+function requireMockDevice(nodeId: NodeId) {
+  const device = getDeviceByNodeId(nodeId);
+  if (!device) {
+    throw new Error(`Unknown node ${nodeId}`);
+  }
+  return device;
+}
+
 function getLatestReading(deviceId: string) {
   return [...readings]
     .filter((reading) => reading.deviceId === deviceId)
@@ -800,7 +893,11 @@ function getNeighborMembershipsForRevision(revisionId: number): NeighborMembersh
 }
 
 function getNeighborRevisionForDevice(deviceId: string): NeighborRevision | null {
-  const revision = neighborRevisions.find((entry) => entry.deviceId === deviceId);
+  const device = devices.find((entry) => entry.id === deviceId);
+  const revision =
+    (device?.currentNeighborRevisionId
+      ? neighborRevisions.find((entry) => entry.id === device.currentNeighborRevisionId)
+      : neighborRevisions.find((entry) => entry.deviceId === deviceId)) ?? null;
   if (!revision) {
     return null;
   }
@@ -1093,10 +1190,59 @@ function toPacketLogEntryFromDownlink(record: DownlinkRecord): PacketLogEntry {
   };
 }
 
+function toPacketLogEntryFromNeighborAlert(record: NeighborAlertRecord): PacketLogEntry {
+  const device = devices.find((entry) => entry.id === record.deviceId);
+  if (!device) {
+    throw new Error(`Unknown device ${record.deviceId}`);
+  }
+
+  return {
+    id: record.id,
+    occurredAt: record.occurredAt,
+    nodeId: device.nodeId,
+    nodeName: device.displayName,
+    direction: "lateral",
+    packetCode: "0x07",
+    eventType: "neighbor_alert",
+    status: record.status,
+    summary: `Neighbor alert forwarded from node ${device.nodeId}.`,
+    detail: [
+      `Risk ${record.riskLevel}`,
+      record.targetNodeIds.length > 0 ? `Targets ${record.targetNodeIds.join(", ")}` : null,
+    ]
+      .filter(Boolean)
+      .join(" · "),
+  };
+}
+
+function toPacketLogEntryFromParentUpdate(record: ParentUpdateRecord): PacketLogEntry {
+  const device = devices.find((entry) => entry.id === record.deviceId);
+  if (!device) {
+    throw new Error(`Unknown device ${record.deviceId}`);
+  }
+
+  return {
+    id: record.id,
+    occurredAt: record.occurredAt,
+    nodeId: device.nodeId,
+    nodeName: device.displayName,
+    direction: "uplink",
+    packetCode: "0x08",
+    eventType: "parent_update",
+    status: "received",
+    summary: `Parent update received from node ${device.nodeId}.`,
+    detail: record.parentIpv6 ? `Preferred parent ${record.parentIpv6}` : "Preferred parent none",
+  };
+}
+
 function listMockPacketLogEntries() {
-  return [...registrations.map(toPacketLogEntryFromRegistration), ...readings.map(toPacketLogEntryFromReading), ...downlinks.map(toPacketLogEntryFromDownlink)].sort(
-    (left, right) => timestampMs(right.occurredAt) - timestampMs(left.occurredAt),
-  );
+  return [
+    ...registrations.map(toPacketLogEntryFromRegistration),
+    ...readings.map(toPacketLogEntryFromReading),
+    ...downlinks.map(toPacketLogEntryFromDownlink),
+    ...neighborAlerts.map(toPacketLogEntryFromNeighborAlert),
+    ...parentUpdates.map(toPacketLogEntryFromParentUpdate),
+  ].sort((left, right) => timestampMs(right.occurredAt) - timestampMs(left.occurredAt));
 }
 
 function filterPacketLogEntries(entries: PacketLogEntry[], query: PacketHistoryQuery) {
@@ -1438,6 +1584,257 @@ export function createMockThresholdPush(request: DownlinkRequest): Configuration
   });
 
   return getMockConfiguration();
+}
+
+export function ingestMockPacket(packet: DecodedPacket, receivedAt: string) {
+  switch (packet.packetCode) {
+    case "0x01": {
+      const activeRevision = activeConfigRevisionRecord();
+      const existingDevice = getDeviceByNodeId(packet.nodeId);
+      const device =
+        existingDevice ??
+        {
+          id: nextDeviceId(),
+          nodeId: packet.nodeId,
+          displayName: `Node ${packet.nodeId}`,
+          ipv6Address: packet.sourceIpv6,
+          firmwareVersion: packet.firmwareVersion,
+          location: {
+            lat: packet.latitude,
+            lng: packet.longitude,
+            label: `Node ${packet.nodeId}`,
+          },
+          firstRegisteredAt: receivedAt,
+          lastRegisteredAt: receivedAt,
+          lastSeenAt: receivedAt,
+          lastReportedAt: receivedAt,
+          activeConfigRevisionId: activeRevision?.id ?? null,
+          activeConfigRevisionNo: activeRevision?.configId ?? null,
+          currentNeighborRevisionId: null,
+          currentNeighborRevisionNo: null,
+        };
+
+      if (!existingDevice) {
+        devices.push(device);
+      }
+
+      device.ipv6Address = packet.sourceIpv6;
+      device.firmwareVersion = packet.firmwareVersion;
+      device.location = {
+        lat: packet.latitude,
+        lng: packet.longitude,
+        label: device.location.label,
+      };
+      device.lastRegisteredAt = receivedAt;
+      device.lastSeenAt = receivedAt;
+
+      registrations.unshift({
+        deviceId: device.id,
+        observedAt: receivedAt,
+        ipv6Address: packet.sourceIpv6,
+        latitude: packet.latitude,
+        longitude: packet.longitude,
+        firmwareVersion: packet.firmwareVersion,
+        batteryPct: packet.batteryPct,
+      });
+
+      const openIpv6 = ipv6History.find((entry) => entry.deviceId === device.id && entry.validTo === null);
+      if (!openIpv6 || openIpv6.address !== packet.sourceIpv6) {
+        if (openIpv6) {
+          openIpv6.validTo = receivedAt;
+        }
+        ipv6History.unshift({
+          deviceId: device.id,
+          address: packet.sourceIpv6,
+          validFrom: receivedAt,
+          validTo: null,
+        });
+      }
+      return;
+    }
+    case "0x02":
+    case "0x03": {
+      const device = requireMockDevice(packet.nodeId);
+      device.lastSeenAt = packet.occurredAt;
+      device.lastReportedAt = packet.occurredAt;
+
+      readings.unshift({
+        id: `r-${String(nextNumericId(readings.map((reading) => Number.parseInt(reading.id.replace("r-", ""), 10))))}`,
+        deviceId: device.id,
+        reportedAt: packet.occurredAt,
+        sourceType: packet.eventType,
+        riskLevel: packet.riskLevel,
+        temperatureC: packet.temperatureC,
+        humidityPct: packet.humidityPct,
+        vocIaq: packet.vocIaq,
+        pm25UgM3: packet.pm25UgM3,
+        batteryPct: packet.batteryPct,
+        pressureHpa: null,
+        batteryHealthScore: null,
+      });
+
+      if (packet.packetCode === "0x03") {
+        const alertId = `alert-${String(nextNumericId(alerts.map((alert) => Number.parseInt(alert.id.replace("alert-", ""), 10)).filter((value) => Number.isFinite(value))))}`;
+        alerts.unshift({
+          id: alertId,
+          deviceId: device.id,
+          severity: "critical",
+          status: "open",
+          title: `Critical 0x03 event from ${device.displayName}`,
+          summary: `Node ${device.nodeId} reported a critical sensor alert.`,
+          occurredAt: packet.occurredAt,
+          detectedAt: receivedAt,
+          latestEventAt: receivedAt,
+        });
+        timeline.unshift({
+          id: `timeline-${Date.now()}`,
+          deviceId: device.id,
+          eventCode: "0x03",
+          title: "Critical alert opened",
+          summary: "CSP ingested a critical 0x03 uplink and opened the incident.",
+          occurredAt: receivedAt,
+          status: "open",
+          severity: "critical",
+          actor: "system",
+        });
+      }
+      return;
+    }
+    case "0x04": {
+      const device = requireMockDevice(packet.nodeId);
+      const neighborDevices = packet.neighborIpv6Addresses.map((address) => {
+        const neighbor = getDeviceByIpv6(address);
+        if (!neighbor) {
+          throw new Error(`Unknown neighbor IPv6 ${address}`);
+        }
+        return neighbor;
+      });
+      const nextRevisionId = nextNumericId(neighborRevisions.map((revision) => revision.id));
+      const nextRevisionNo = nextNumericId(
+        neighborRevisions.filter((revision) => revision.deviceId === device.id).map((revision) => revision.revisionNo),
+      );
+      const radiusMeters = neighborDevices.reduce((radius, neighbor) => {
+        return Math.max(radius, distanceMetersBetween(device.location, neighbor.location));
+      }, 1);
+
+      neighborRevisions.push({
+        id: nextRevisionId,
+        deviceId: device.id,
+        revisionNo: nextRevisionNo,
+        radiusMeters,
+        revisionSource: "automatic",
+        activeFrom: receivedAt,
+      });
+
+      for (const [index, neighbor] of neighborDevices.entries()) {
+        memberships.push({
+          revisionId: nextRevisionId,
+          ownerDeviceId: device.id,
+          neighborDeviceId: neighbor.id,
+          rank: index + 1,
+          distanceMeters: distanceMetersBetween(device.location, neighbor.location),
+        });
+      }
+
+      device.currentNeighborRevisionId = nextRevisionId;
+      device.currentNeighborRevisionNo = nextRevisionNo;
+
+      downlinks.unshift({
+        id: `dl-0x04-ingest-${nextRevisionId}`,
+        commandCode: "0x04",
+        commandName: "Neighbor table distribution",
+        deviceId: device.id,
+        status: "sent",
+        sentAt: receivedAt,
+        acknowledgedAt: null,
+        revisionNo: nextRevisionNo,
+        summary: `Revision ${nextRevisionNo} ingested for ${device.displayName}.`,
+      });
+      return;
+    }
+    case "0x05": {
+      const device = requireMockDevice(packet.nodeId);
+      downlinks.unshift({
+        id: `dl-0x05-ingest-${Date.now()}`,
+        commandCode: "0x05",
+        commandName: "Daily time synchronization",
+        deviceId: device.id,
+        status: "sent",
+        sentAt: receivedAt,
+        acknowledgedAt: null,
+        revisionNo: null,
+        summary: `Time sync packet ingested for ${device.displayName}.`,
+      });
+      return;
+    }
+    case "0x06": {
+      const device = requireMockDevice(packet.nodeId);
+      const existingRevision = configRevisions.find((revision) => revision.configId === packet.configId) ?? null;
+      const currentMaxConfigId = Math.max(...configRevisions.map((revision) => revision.configId));
+      const revision =
+        existingRevision ??
+        (() => {
+          if (packet.configId <= currentMaxConfigId) {
+            throw new Error(`Config ${packet.configId} is stale or missing from the mock revision history.`);
+          }
+          const currentActive = configRevisions.find((entry) => entry.retiredAt === null);
+          if (currentActive) {
+            currentActive.retiredAt = receivedAt;
+          }
+          const nextRevision: ConfigRevisionRecord = {
+            id: nextNumericId(configRevisions.map((entry) => entry.id)),
+            configId: packet.configId,
+            activatedAt: receivedAt,
+            retiredAt: null,
+            createdAt: receivedAt,
+            notes: "Ingested from 0x06 packet.",
+            thresholds: packet.thresholds,
+          };
+          configRevisions.unshift(nextRevision);
+          return nextRevision;
+        })();
+
+      device.activeConfigRevisionId = revision.id;
+      device.activeConfigRevisionNo = revision.configId;
+
+      downlinks.unshift({
+        id: `dl-0x06-ingest-${revision.id}-${device.nodeId}`,
+        commandCode: "0x06",
+        commandName: "Threshold revision deployment",
+        deviceId: device.id,
+        status: "sent",
+        sentAt: receivedAt,
+        acknowledgedAt: null,
+        revisionNo: revision.configId,
+        summary: `Revision ${revision.configId} ingested for ${device.displayName}.`,
+      });
+      return;
+    }
+    case "0x07": {
+      const device = requireMockDevice(packet.nodeId);
+      device.lastSeenAt = packet.occurredAt;
+      neighborAlerts.unshift({
+        id: `nal-${String(nextNumericId(neighborAlerts.map((alert) => Number.parseInt(alert.id.replace("nal-", ""), 10)).filter((value) => Number.isFinite(value))))}`,
+        deviceId: device.id,
+        occurredAt: packet.occurredAt,
+        riskLevel: packet.riskLevel,
+        targetNodeIds: packet.targetNodeId === null ? [] : [packet.targetNodeId],
+        status: "received",
+      });
+      return;
+    }
+    case "0x08": {
+      const device = requireMockDevice(packet.nodeId);
+      device.lastSeenAt = packet.occurredAt;
+      parentUpdates.unshift({
+        id: `parent-${String(nextNumericId(parentUpdates.map((update) => Number.parseInt(update.id.replace("parent-", ""), 10)).filter((value) => Number.isFinite(value))))}`,
+        deviceId: device.id,
+        occurredAt: packet.occurredAt,
+        parentIpv6: packet.parentIpv6,
+      });
+      return;
+    }
+  }
 }
 
 export function getMockNotificationSettings(): NotificationSettingsResponse {

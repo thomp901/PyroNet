@@ -36,11 +36,22 @@ function eventTypeLabel(eventType: PacketEventType) {
       return "Time Sync";
     case "config_deployment":
       return "Config Deployment";
+    case "neighbor_alert":
+      return "Neighbor Alert";
+    case "parent_update":
+      return "Parent Update";
   }
 }
 
 function directionLabel(direction: PacketDirection) {
-  return direction === "uplink" ? "Inbound" : "Outbound";
+  switch (direction) {
+    case "uplink":
+      return "Inbound";
+    case "downlink":
+      return "Outbound";
+    case "lateral":
+      return "Lateral";
+  }
 }
 
 function statusLabel(status: PacketLogStatus) {
@@ -206,7 +217,12 @@ export function PacketHistoryTable({ entries }: PacketHistoryTableProps) {
           <td>
             <span className={`badge packet-direction-${entry.direction}`}>{directionLabel(entry.direction)}</span>
           </td>
-          <td>{eventTypeLabel(entry.eventType)}</td>
+          <td>
+            <div className="packet-history-event">
+              <span>{eventTypeLabel(entry.eventType)}</span>
+              <span className="badge packet-code-badge">{entry.packetCode}</span>
+            </div>
+          </td>
           <td>
             <span className={`badge ${statusClassName(entry.status)}`}>{statusLabel(entry.status)}</span>
           </td>

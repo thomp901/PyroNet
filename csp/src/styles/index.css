@@ -964,6 +964,13 @@ table {
   font-weight: 600;
 }
 
+.packet-history-event {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .packet-direction-uplink {
   background: rgba(74, 139, 237, 0.16);
   color: #bdd7ff;
@@ -974,6 +981,12 @@ table {
   background: rgba(216, 106, 52, 0.16);
   color: #ffd4ba;
   border-color: rgba(216, 106, 52, 0.3);
+}
+
+.packet-direction-lateral {
+  background: rgba(148, 110, 224, 0.16);
+  color: #e0d0ff;
+  border-color: rgba(148, 110, 224, 0.3);
 }
 
 .packet-code-badge {

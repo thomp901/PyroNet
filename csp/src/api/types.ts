@@ -13,12 +13,12 @@ export type NotificationEventType =
   | "time_sync_failure"
   | "nn_update_failure"
   | "config_update_failure";
-export type DeviceEventCode = "0x01" | "0x02" | "0x03" | "0x04" | "0x05" | "0x06" | "0x07";
+export type DeviceEventCode = "0x01" | "0x02" | "0x03" | "0x04" | "0x05" | "0x06" | "0x07" | "0x08";
 export type HistoryWindow = "24h" | "7d" | "30d";
 export type NodeId = number;
-export const packetDirections = ["uplink", "downlink"] as const;
+export const packetDirections = ["uplink", "downlink", "lateral"] as const;
 export type PacketDirection = (typeof packetDirections)[number];
-export const packetLogCodes = ["0x01", "0x02", "0x03", "0x04", "0x05", "0x06"] as const;
+export const packetLogCodes = ["0x01", "0x02", "0x03", "0x04", "0x05", "0x06", "0x07", "0x08"] as const;
 export type PacketLogCode = (typeof packetLogCodes)[number];
 export const packetEventTypes = [
   "registration",
@@ -27,6 +27,8 @@ export const packetEventTypes = [
   "neighbor_distribution",
   "time_sync",
   "config_deployment",
+  "neighbor_alert",
+  "parent_update",
 ] as const;
 export type PacketEventType = (typeof packetEventTypes)[number];
 export type PacketLogStatus = "received" | DownlinkStatus;

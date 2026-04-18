@@ -61,6 +61,15 @@ CREATE TYPE config_deployment_status AS ENUM (
     'timed_out'
 );
 
+CREATE TYPE packet_observation_status AS ENUM (
+    'received',
+    'pending',
+    'sent',
+    'acknowledged',
+    'failed',
+    'timed_out'
+);
+
 CREATE TYPE notification_event_type AS ENUM (
     'critical_risk',
     'connectivity_loss',
@@ -191,6 +200,7 @@ CREATE TABLE device_registrations (
     longitude numeric(9,6) NOT NULL,
     firmware_version text,
     battery_pct smallint,
+    preferred_parent_ipv6 inet,
     observed_at timestamptz NOT NULL,
     ingested_at timestamptz NOT NULL DEFAULT NOW(),
     raw_payload_metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
@@ -205,6 +215,16 @@ CREATE TABLE device_registrations (
     CONSTRAINT chk_device_registrations_latitude CHECK (latitude >= -90 AND latitude <= 90),
     CONSTRAINT chk_device_registrations_longitude CHECK (longitude >= -180 AND longitude <= 180),
     CONSTRAINT chk_device_registrations_battery CHECK (battery_pct IS NULL OR (battery_pct >= 0 AND battery_pct <= 100)),
+    CONSTRAINT chk_device_registrations_parent_ipv6_global_unicast CHECK (
+        preferred_parent_ipv6 IS NULL OR (
+            family(preferred_parent_ipv6) = 6
+            AND NOT (preferred_parent_ipv6 <<= inet '::/128')
+            AND NOT (preferred_parent_ipv6 <<= inet '::1/128')
+            AND NOT (preferred_parent_ipv6 <<= inet 'fe80::/10')
+            AND NOT (preferred_parent_ipv6 <<= inet 'fc00::/7')
+            AND NOT (preferred_parent_ipv6 <<= inet 'ff00::/8')
+        )
+    ),
     CONSTRAINT chk_device_registrations_ingested_after_observed CHECK (ingested_at >= observed_at),
     CONSTRAINT chk_device_registrations_metadata_object CHECK (jsonb_typeof(raw_payload_metadata) = 'object')
 );
@@ -226,6 +246,32 @@ CREATE TABLE device_ipv6_history (
         AND NOT (ipv6_address <<= inet 'ff00::/8')
     ),
     CONSTRAINT chk_device_ipv6_history_valid_window CHECK (valid_to IS NULL OR valid_to > valid_from)
+);
+
+CREATE TABLE device_parent_updates (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    device_id bigint NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+    parent_ipv6 inet,
+    parent_device_id bigint REFERENCES devices(id) ON DELETE SET NULL,
+    observed_at timestamptz NOT NULL,
+    ingested_at timestamptz NOT NULL DEFAULT NOW(),
+    raw_payload_metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+    CONSTRAINT chk_device_parent_updates_parent_ipv6_global_unicast CHECK (
+        parent_ipv6 IS NULL OR (
+            family(parent_ipv6) = 6
+            AND NOT (parent_ipv6 <<= inet '::/128')
+            AND NOT (parent_ipv6 <<= inet '::1/128')
+            AND NOT (parent_ipv6 <<= inet 'fe80::/10')
+            AND NOT (parent_ipv6 <<= inet 'fc00::/7')
+            AND NOT (parent_ipv6 <<= inet 'ff00::/8')
+        )
+    ),
+    CONSTRAINT chk_device_parent_updates_parent_not_self CHECK (
+        parent_device_id IS NULL OR parent_device_id <> device_id
+    ),
+    CONSTRAINT chk_device_parent_updates_metadata_object CHECK (
+        jsonb_typeof(raw_payload_metadata) = 'object'
+    )
 );
 
 CREATE TABLE sensor_readings (
@@ -256,6 +302,24 @@ CREATE TABLE sensor_readings (
         )
     ),
     CONSTRAINT chk_sensor_readings_metadata_object CHECK (jsonb_typeof(raw_payload_metadata) = 'object')
+);
+
+CREATE TABLE neighbor_alerts (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    source_device_id bigint NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+    target_device_id bigint REFERENCES devices(id) ON DELETE SET NULL,
+    risk_level smallint NOT NULL,
+    occurred_at timestamptz NOT NULL,
+    ingested_at timestamptz NOT NULL DEFAULT NOW(),
+    status packet_observation_status NOT NULL DEFAULT 'received',
+    raw_payload_metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+    CONSTRAINT chk_neighbor_alerts_risk_level CHECK (risk_level BETWEEN 1 AND 5),
+    CONSTRAINT chk_neighbor_alerts_target_not_self CHECK (
+        target_device_id IS NULL OR target_device_id <> source_device_id
+    ),
+    CONSTRAINT chk_neighbor_alerts_metadata_object CHECK (
+        jsonb_typeof(raw_payload_metadata) = 'object'
+    )
 );
 
 CREATE TABLE alerts (
@@ -599,6 +663,12 @@ CREATE INDEX idx_device_registrations_device_observed_at
 CREATE INDEX idx_device_registrations_ipv6_observed_at
     ON device_registrations (observed_ipv6, observed_at DESC);
 
+CREATE INDEX idx_device_parent_updates_device_observed_at
+    ON device_parent_updates (device_id, observed_at DESC);
+
+CREATE INDEX idx_device_parent_updates_parent_device_observed_at
+    ON device_parent_updates (parent_device_id, observed_at DESC);
+
 CREATE INDEX idx_device_ipv6_history_device_valid_from
     ON device_ipv6_history (device_id, valid_from DESC);
 
@@ -611,6 +681,12 @@ CREATE INDEX idx_sensor_readings_device_ingested_at
 CREATE INDEX idx_sensor_readings_critical_alerts
     ON sensor_readings (reported_at DESC)
     WHERE source_type = 'critical_alert';
+
+CREATE INDEX idx_neighbor_alerts_source_occurred_at
+    ON neighbor_alerts (source_device_id, occurred_at DESC);
+
+CREATE INDEX idx_neighbor_alerts_target_occurred_at
+    ON neighbor_alerts (target_device_id, occurred_at DESC);
 
 CREATE INDEX idx_alerts_active_detected_at
     ON alerts (detected_at DESC)
@@ -838,8 +914,14 @@ COMMENT ON TABLE device_registrations IS
 COMMENT ON TABLE device_ipv6_history IS
 'Tracks validity windows for each IPv6 address observed for a device. The row with NULL valid_to is the current address assignment.';
 
+COMMENT ON TABLE device_parent_updates IS
+'Append-only audit log of 0x08 preferred-parent changes reported by devices after registration.';
+
 COMMENT ON TABLE sensor_readings IS
 'Append-only telemetry history for sensor reports and sensor alerts. Raw rows should remain available for at least 24 hours even if longer-term aggregates are also maintained.';
+
+COMMENT ON TABLE neighbor_alerts IS
+'Observed 0x07 lateral neighbor-alert packets, including the source device, optional target device, and captured delivery status.';
 
 COMMENT ON TABLE alerts IS
 'Alert records with lifecycle state, timestamps, and metric snapshots captured at alert time.';
@@ -879,6 +961,9 @@ COMMENT ON TABLE sensor_reading_hourly_aggregates IS
 
 COMMENT ON COLUMN devices.current_ipv6 IS
 'Authoritative current network address for the device. This value may change when a node rejoins.';
+
+COMMENT ON COLUMN device_registrations.preferred_parent_ipv6 IS
+'Preferred RPL parent observed at registration time from packet 0x01. NULL means the packet carried an all-zero parent value.';
 
 COMMENT ON COLUMN sensor_readings.raw_payload_metadata IS
 'Supplemental packet metadata such as original epoch seconds, packet counters, or gateway ingestion details.';
