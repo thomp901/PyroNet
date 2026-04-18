@@ -70,3 +70,10 @@ schema.sql          PostgreSQL schema used by the API layer
 - The frontend never talks to PostgreSQL directly.
 - The server exposes a stable resource layer for nodes, history, alerts, configuration, and notifications.
 - The mock backend and PostgreSQL-backed API return the same response shapes, so the UI can develop safely without coupling to raw SQL.
+
+## Packet ingest
+
+- `POST /api/packets/ingest` accepts raw packet payloads as `hex` or `base64`.
+- `sourceIpv6` is required for `0x01` registration packets because the node's current IPv6 address is not carried in the payload.
+- `targetNodeId` is required for `0x05` time-sync and `0x06` config-update packets because those payloads do not include a node id.
+- `receivedAt` is optional and lets you override the ingest timestamp used for downlink/audit records.

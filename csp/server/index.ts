@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
-import { Pool, type QueryResultRow } from "pg";
+import { Pool, type PoolClient, type QueryResultRow } from "pg";
+import type { DecodedPacket, PacketIngestRequest, PacketIngestResponse } from "../src/api/packetIngest";
 import type {
   AlertIncident,
   AlertTimelineEntry,
@@ -48,9 +49,11 @@ import {
   getMockNotificationSettings,
   listMockAlerts,
   listMockNodes,
+  ingestMockPacket,
   updateMockNeighborRevision,
   updateMockNotificationRecipient,
 } from "../src/mocks/mockBackend";
+import { decodePacket, PacketIngestError, resolvePacketReceivedAt } from "./packetIngest";
 
 const app = express();
 const port = Number(process.env.API_PORT ?? "4000");
@@ -140,6 +143,769 @@ async function query<T extends QueryResultRow>(text: string, values: unknown[] =
     throw new Error("Database is not configured.");
   }
   return pool.query<T>(text, values);
+}
+
+function packetOccurredAt(packet: DecodedPacket, acceptedAt: string) {
+  switch (packet.packetCode) {
+    case "0x01":
+    case "0x04":
+    case "0x05":
+    case "0x06":
+      return acceptedAt;
+    case "0x02":
+    case "0x03":
+    case "0x07":
+    case "0x08":
+      return packet.occurredAt;
+  }
+}
+
+function buildPacketMetadata(packet: DecodedPacket, acceptedAt: string) {
+  const base = {
+    packetCode: packet.packetCode,
+    eventType: packet.eventType,
+    direction: packet.direction,
+    version: packet.version,
+    payloadHex: packet.payloadHex,
+    payloadSizeBytes: packet.payloadSizeBytes,
+    acceptedAt,
+  };
+
+  switch (packet.packetCode) {
+    case "0x01":
+      return {
+        ...base,
+        sourceIpv6: packet.sourceIpv6,
+        parentIpv6: packet.parentIpv6,
+      };
+    case "0x02":
+    case "0x03":
+      return {
+        ...base,
+        reportedAt: packet.occurredAt,
+      };
+    case "0x04":
+      return {
+        ...base,
+        neighborIpv6Addresses: packet.neighborIpv6Addresses,
+      };
+    case "0x05":
+      return {
+        ...base,
+        targetTime: packet.occurredAt,
+      };
+    case "0x06":
+      return {
+        ...base,
+        configId: packet.configId,
+      };
+    case "0x07":
+      return {
+        ...base,
+        targetNodeId: packet.targetNodeId,
+      };
+    case "0x08":
+      return {
+        ...base,
+        parentIpv6: packet.parentIpv6,
+      };
+  }
+}
+
+function buildPacketSummary(packet: DecodedPacket) {
+  switch (packet.packetCode) {
+    case "0x01":
+      return {
+        summary: `Registration received from node ${packet.nodeId}.`,
+        detail: [packet.sourceIpv6, `FW ${packet.firmwareVersion}`, `Battery ${packet.batteryPct}%`].join(" · "),
+      };
+    case "0x02":
+      return {
+        summary: `Periodic report received from node ${packet.nodeId}.`,
+        detail: [
+          `Risk ${packet.riskLevel}`,
+          `${packet.temperatureC.toFixed(1)}°C`,
+          `${packet.humidityPct.toFixed(0)}% RH`,
+          `VOC ${packet.vocIaq}`,
+          `PM2.5 ${packet.pm25UgM3.toFixed(1)}`,
+        ].join(" · "),
+      };
+    case "0x03":
+      return {
+        summary: `Critical alert uplink from node ${packet.nodeId}.`,
+        detail: [
+          `Risk ${packet.riskLevel}`,
+          `${packet.temperatureC.toFixed(1)}°C`,
+          `${packet.humidityPct.toFixed(0)}% RH`,
+          `VOC ${packet.vocIaq}`,
+          `PM2.5 ${packet.pm25UgM3.toFixed(1)}`,
+        ].join(" · "),
+      };
+    case "0x04":
+      return {
+        summary: `Neighbor table distribution sent to node ${packet.nodeId}.`,
+        detail: `${packet.neighborIpv6Addresses.length} neighbors`,
+      };
+    case "0x05":
+      return {
+        summary: `Time sync sent to node ${packet.nodeId}.`,
+        detail: `Target ${packet.occurredAt}`,
+      };
+    case "0x06":
+      return {
+        summary: `Threshold revision deployment sent to node ${packet.nodeId}.`,
+        detail: `Revision ${packet.configId}`,
+      };
+    case "0x07":
+      return {
+        summary: `Neighbor alert forwarded from node ${packet.nodeId}.`,
+        detail:
+          packet.targetNodeId === null
+            ? `Risk ${packet.riskLevel}`
+            : `Risk ${packet.riskLevel} · Target ${packet.targetNodeId}`,
+      };
+    case "0x08":
+      return {
+        summary: `Parent update received from node ${packet.nodeId}.`,
+        detail: packet.parentIpv6 ? `Preferred parent ${packet.parentIpv6}` : "Preferred parent none",
+      };
+  }
+}
+
+function buildPacketIngestResponse(
+  packet: DecodedPacket,
+  acceptedAt: string,
+  storage: PacketIngestResponse["storage"],
+): PacketIngestResponse {
+  const { summary, detail } = buildPacketSummary(packet);
+  return {
+    storage,
+    packetCode: packet.packetCode,
+    eventType: packet.eventType,
+    direction: packet.direction,
+    nodeId: packet.nodeId,
+    version: packet.version,
+    acceptedAt,
+    occurredAt: packetOccurredAt(packet, acceptedAt),
+    summary,
+    detail,
+  };
+}
+
+interface DeviceIdentityRow {
+  id: number;
+  node_id: number;
+  current_ipv6: string | null;
+  current_latitude: string;
+  current_longitude: string;
+  current_config_revision_id: number | null;
+}
+
+async function getDeviceByNodeIdOrThrow(client: PoolClient, nodeId: NodeId) {
+  const result = await client.query<DeviceIdentityRow>(
+    `
+      SELECT
+        id,
+        node_id,
+        host(current_ipv6) AS current_ipv6,
+        current_latitude::text,
+        current_longitude::text,
+        current_config_revision_id
+      FROM devices
+      WHERE node_id = $1
+    `,
+    [nodeId],
+  );
+
+  const device = result.rows[0];
+  if (!device) {
+    throw new Error(`Unknown node ${nodeId}`);
+  }
+
+  return device;
+}
+
+async function getDeviceByIpv6(client: PoolClient, ipv6Address: string) {
+  const result = await client.query<DeviceIdentityRow>(
+    `
+      SELECT
+        id,
+        node_id,
+        host(current_ipv6) AS current_ipv6,
+        current_latitude::text,
+        current_longitude::text,
+        current_config_revision_id
+      FROM devices
+      WHERE current_ipv6 = $1::inet
+    `,
+    [ipv6Address],
+  );
+
+  return result.rows[0] ?? null;
+}
+
+async function ingestRegistrationPacketInDb(
+  client: PoolClient,
+  packet: Extract<DecodedPacket, { packetCode: "0x01" }>,
+  acceptedAt: string,
+) {
+  const existing = await client.query<{ id: number; current_ipv6: string | null }>(
+    "SELECT id, host(current_ipv6) AS current_ipv6 FROM devices WHERE node_id = $1",
+    [packet.nodeId],
+  );
+
+  let deviceId = existing.rows[0]?.id ?? null;
+
+  if (deviceId === null) {
+    const inserted = await client.query<{ id: number }>(
+      `
+        INSERT INTO devices (
+          node_id,
+          current_ipv6,
+          current_latitude,
+          current_longitude,
+          current_firmware_version,
+          first_registered_at,
+          last_registered_at,
+          last_seen_at,
+          current_config_revision_id
+        )
+        VALUES (
+          $1,
+          $2,
+          $3,
+          $4,
+          $5,
+          $6,
+          $6,
+          $6,
+          (
+            SELECT id
+            FROM config_revisions
+            WHERE retired_at IS NULL
+            ORDER BY created_at DESC
+            LIMIT 1
+          )
+        )
+        RETURNING id
+      `,
+      [packet.nodeId, packet.sourceIpv6, packet.latitude, packet.longitude, packet.firmwareVersion, acceptedAt],
+    );
+    deviceId = inserted.rows[0]?.id ?? null;
+  } else {
+    await client.query(
+      `
+        UPDATE devices
+        SET
+          current_ipv6 = $2::inet,
+          current_latitude = $3,
+          current_longitude = $4,
+          current_firmware_version = $5,
+          last_registered_at = $6,
+          last_seen_at = $6
+        WHERE id = $1
+      `,
+      [deviceId, packet.sourceIpv6, packet.latitude, packet.longitude, packet.firmwareVersion, acceptedAt],
+    );
+  }
+
+  if (!deviceId) {
+    throw new Error("Unable to upsert device from registration packet.");
+  }
+
+  await client.query(
+    `
+      INSERT INTO device_registrations (
+        device_id,
+        observed_ipv6,
+        latitude,
+        longitude,
+        firmware_version,
+        battery_pct,
+        preferred_parent_ipv6,
+        observed_at,
+        ingested_at,
+        raw_payload_metadata
+      )
+      VALUES ($1, $2::inet, $3, $4, $5, $6, $7::inet, $8, $9, $10)
+    `,
+    [
+      deviceId,
+      packet.sourceIpv6,
+      packet.latitude,
+      packet.longitude,
+      packet.firmwareVersion,
+      packet.batteryPct,
+      packet.parentIpv6,
+      acceptedAt,
+      acceptedAt,
+      buildPacketMetadata(packet, acceptedAt),
+    ],
+  );
+
+  const openIpv6History = await client.query<{ id: number; ipv6_address: string }>(
+    `
+      SELECT id, host(ipv6_address) AS ipv6_address
+      FROM device_ipv6_history
+      WHERE device_id = $1
+        AND valid_to IS NULL
+      ORDER BY valid_from DESC
+      LIMIT 1
+    `,
+    [deviceId],
+  );
+
+  const currentIpv6 = openIpv6History.rows[0];
+  if (!currentIpv6 || currentIpv6.ipv6_address !== packet.sourceIpv6) {
+    if (currentIpv6) {
+      await client.query("UPDATE device_ipv6_history SET valid_to = $2 WHERE id = $1", [currentIpv6.id, acceptedAt]);
+    }
+
+    await client.query(
+      `
+        INSERT INTO device_ipv6_history (device_id, ipv6_address, valid_from)
+        VALUES ($1, $2::inet, $3)
+      `,
+      [deviceId, packet.sourceIpv6, acceptedAt],
+    );
+  }
+}
+
+async function ingestSensorPacketInDb(
+  client: PoolClient,
+  packet: Extract<DecodedPacket, { packetCode: "0x02" | "0x03" }>,
+  acceptedAt: string,
+) {
+  const device = await getDeviceByNodeIdOrThrow(client, packet.nodeId);
+  const insertedReading = await client.query<{ id: number }>(
+    `
+      INSERT INTO sensor_readings (
+        device_id,
+        source_type,
+        reported_at,
+        ingested_at,
+        risk_level,
+        temperature_c,
+        humidity_pct,
+        voc_iaq,
+        pm25_ug_m3,
+        battery_pct,
+        config_revision_id,
+        raw_payload_metadata
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      RETURNING id
+    `,
+    [
+      device.id,
+      packet.eventType,
+      packet.occurredAt,
+      acceptedAt,
+      packet.riskLevel,
+      packet.temperatureC,
+      packet.humidityPct,
+      packet.vocIaq,
+      packet.pm25UgM3,
+      packet.batteryPct,
+      device.current_config_revision_id,
+      buildPacketMetadata(packet, acceptedAt),
+    ],
+  );
+
+  await client.query(
+    `
+      UPDATE devices
+      SET
+        last_seen_at = $2,
+        latest_reported_at = $2,
+        latest_risk_level = $3,
+        latest_temperature_c = $4,
+        latest_humidity_pct = $5,
+        latest_voc_iaq = $6,
+        latest_pm25_ug_m3 = $7,
+        latest_battery_pct = $8
+      WHERE id = $1
+    `,
+    [
+      device.id,
+      packet.occurredAt,
+      packet.riskLevel,
+      packet.temperatureC,
+      packet.humidityPct,
+      packet.vocIaq,
+      packet.pm25UgM3,
+      packet.batteryPct,
+    ],
+  );
+
+  if (packet.packetCode === "0x03") {
+    const insertedAlert = await client.query<{ id: number }>(
+      `
+        INSERT INTO alerts (
+          device_id,
+          sensor_reading_id,
+          config_revision_id,
+          alert_type,
+          status,
+          severity,
+          title,
+          details,
+          occurred_at,
+          detected_at,
+          latest_event_at,
+          snapshot_reported_at,
+          snapshot_risk_level,
+          snapshot_temperature_c,
+          snapshot_humidity_pct,
+          snapshot_voc_iaq,
+          snapshot_pm25_ug_m3,
+          snapshot_battery_pct
+        )
+        VALUES (
+          $1,
+          $2,
+          $3,
+          'critical_risk',
+          'open',
+          'critical',
+          $4,
+          $5,
+          $6,
+          $7,
+          $7,
+          $6,
+          $8,
+          $9,
+          $10,
+          $11,
+          $12,
+          $13
+        )
+        RETURNING id
+      `,
+      [
+        device.id,
+        insertedReading.rows[0]?.id ?? null,
+        device.current_config_revision_id,
+        `Critical 0x03 event from node ${packet.nodeId}`,
+        buildPacketMetadata(packet, acceptedAt),
+        packet.occurredAt,
+        acceptedAt,
+        packet.riskLevel,
+        packet.temperatureC,
+        packet.humidityPct,
+        packet.vocIaq,
+        packet.pm25UgM3,
+        packet.batteryPct,
+      ],
+    );
+
+    const alertId = insertedAlert.rows[0]?.id;
+    if (alertId) {
+      await client.query(
+        `
+          INSERT INTO alert_events (alert_id, event_type, new_status, event_at, actor, note, details)
+          VALUES ($1, 'opened', 'open', $2, 'system', $3, $4)
+        `,
+        [
+          alertId,
+          acceptedAt,
+          "CSP ingested a critical 0x03 uplink and opened the incident.",
+          buildPacketMetadata(packet, acceptedAt),
+        ],
+      );
+    }
+  }
+}
+
+async function ingestNeighborDistributionPacketInDb(
+  client: PoolClient,
+  packet: Extract<DecodedPacket, { packetCode: "0x04" }>,
+  acceptedAt: string,
+) {
+  const device = await getDeviceByNodeIdOrThrow(client, packet.nodeId);
+  const neighborRows = await Promise.all(
+    packet.neighborIpv6Addresses.map(async (ipv6Address: string) => {
+      const neighbor = await getDeviceByIpv6(client, ipv6Address);
+      if (!neighbor) {
+        throw new Error(`Unknown neighbor IPv6 ${ipv6Address}`);
+      }
+      return neighbor;
+    }),
+  );
+
+  await client.query("UPDATE nn_revisions SET active_to = $2 WHERE device_id = $1 AND active_to IS NULL", [device.id, acceptedAt]);
+  const nextRevisionResult = await client.query<{ revision_no: number }>(
+    "SELECT COALESCE(MAX(revision_no), 0) + 1 AS revision_no FROM nn_revisions WHERE device_id = $1",
+    [device.id],
+  );
+  const nextRevisionNo = nextRevisionResult.rows[0]?.revision_no ?? 1;
+  const radiusMeters = neighborRows.reduce((radius, neighbor) => {
+    return Math.max(
+      radius,
+      haversineDistanceMeters(
+        { lat: Number(device.current_latitude), lng: Number(device.current_longitude) },
+        { lat: Number(neighbor.current_latitude), lng: Number(neighbor.current_longitude) },
+      ),
+    );
+  }, 1);
+
+  const insertedRevision = await client.query<{ id: number }>(
+    `
+      INSERT INTO nn_revisions (device_id, revision_no, radius_meters, revision_source, active_from, details)
+      VALUES ($1, $2, $3, 'automatic', $4, $5)
+      RETURNING id
+    `,
+    [device.id, nextRevisionNo, radiusMeters, acceptedAt, buildPacketMetadata(packet, acceptedAt)],
+  );
+  const revisionId = insertedRevision.rows[0]?.id;
+  if (!revisionId) {
+    throw new Error("Unable to create neighbor revision from 0x04 packet.");
+  }
+
+  for (const [index, neighbor] of neighborRows.entries()) {
+    await client.query(
+      `
+        INSERT INTO nn_revision_memberships (
+          nn_revision_id,
+          owner_device_id,
+          neighbor_device_id,
+          neighbor_rank,
+          distance_meters,
+          neighbor_latitude,
+          neighbor_longitude
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `,
+      [
+        revisionId,
+        device.id,
+        neighbor.id,
+        index + 1,
+        haversineDistanceMeters(
+          { lat: Number(device.current_latitude), lng: Number(device.current_longitude) },
+          { lat: Number(neighbor.current_latitude), lng: Number(neighbor.current_longitude) },
+        ),
+        neighbor.current_latitude,
+        neighbor.current_longitude,
+      ],
+    );
+  }
+
+  await client.query("UPDATE devices SET current_nn_revision_id = $2 WHERE id = $1", [device.id, revisionId]);
+  await client.query(
+    `
+      INSERT INTO nn_distribution_events (device_id, nn_revision_id, status, sent_at, payload_metadata)
+      VALUES ($1, $2, 'sent', $3, $4)
+    `,
+    [device.id, revisionId, acceptedAt, buildPacketMetadata(packet, acceptedAt)],
+  );
+}
+
+async function ingestTimeSyncPacketInDb(
+  client: PoolClient,
+  packet: Extract<DecodedPacket, { packetCode: "0x05" }>,
+  acceptedAt: string,
+) {
+  const device = await getDeviceByNodeIdOrThrow(client, packet.nodeId);
+  await client.query(
+    `
+      INSERT INTO time_sync_events (device_id, target_time, status, sent_at, payload_metadata)
+      VALUES ($1, $2, 'sent', $3, $4)
+    `,
+    [device.id, packet.occurredAt, acceptedAt, buildPacketMetadata(packet, acceptedAt)],
+  );
+}
+
+async function ingestConfigUpdatePacketInDb(
+  client: PoolClient,
+  packet: Extract<DecodedPacket, { packetCode: "0x06" }>,
+  acceptedAt: string,
+) {
+  const device = await getDeviceByNodeIdOrThrow(client, packet.nodeId);
+  const existingRevision = await client.query<{ id: number; config_id: number }>(
+    "SELECT id, config_id FROM config_revisions WHERE config_id = $1",
+    [packet.configId],
+  );
+
+  let configRevisionId = existingRevision.rows[0]?.id ?? null;
+  if (configRevisionId === null) {
+    const maxConfigIdResult = await client.query<{ max_config_id: string | null }>(
+      "SELECT MAX(config_id)::text AS max_config_id FROM config_revisions",
+    );
+    const maxConfigId = Number(maxConfigIdResult.rows[0]?.max_config_id ?? 0);
+    if (maxConfigId > 0 && packet.configId < maxConfigId) {
+      throw new Error(`Config revision ${packet.configId} is older than the current config history.`);
+    }
+
+    await client.query(
+      "UPDATE config_revisions SET retired_at = $1 WHERE retired_at IS NULL AND activated_at IS NOT NULL",
+      [acceptedAt],
+    );
+    const insertedRevision = await client.query<{ id: number }>(
+      `
+        INSERT INTO config_revisions (
+          config_id,
+          l2_temp_thresh,
+          l2_humidity_thresh,
+          l2_voc_thresh,
+          l3_temp_thresh,
+          l3_humidity_thresh,
+          l3_voc_thresh,
+          l4_voc_thresh,
+          l5_voc_thresh,
+          l5_pm25_thresh,
+          activated_at,
+          notes,
+          metadata
+        )
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+        RETURNING id
+      `,
+      [
+        packet.configId,
+        packet.thresholds.l2TempThresh,
+        packet.thresholds.l2HumidityThresh,
+        packet.thresholds.l2VocThresh,
+        packet.thresholds.l3TempThresh,
+        packet.thresholds.l3HumidityThresh,
+        packet.thresholds.l3VocThresh,
+        packet.thresholds.l4VocThresh,
+        packet.thresholds.l5VocThresh,
+        packet.thresholds.l5Pm25Thresh,
+        acceptedAt,
+        "Ingested from 0x06 packet.",
+        buildPacketMetadata(packet, acceptedAt),
+      ],
+    );
+    configRevisionId = insertedRevision.rows[0]?.id ?? null;
+  }
+
+  if (!configRevisionId) {
+    throw new Error("Unable to resolve config revision for 0x06 packet.");
+  }
+
+  await client.query(
+    `
+      INSERT INTO device_config_deployments (device_id, config_revision_id, status, sent_at, payload_metadata)
+      VALUES ($1, $2, 'sent', $3, $4)
+    `,
+    [device.id, configRevisionId, acceptedAt, buildPacketMetadata(packet, acceptedAt)],
+  );
+  await client.query("UPDATE devices SET current_config_revision_id = $2 WHERE id = $1", [device.id, configRevisionId]);
+}
+
+async function ingestNeighborAlertPacketInDb(
+  client: PoolClient,
+  packet: Extract<DecodedPacket, { packetCode: "0x07" }>,
+  acceptedAt: string,
+) {
+  const sourceDevice = await getDeviceByNodeIdOrThrow(client, packet.nodeId);
+  const targetDevice =
+    packet.targetNodeId === null ? null : await getDeviceByNodeIdOrThrow(client, packet.targetNodeId);
+
+  await client.query(
+    `
+      INSERT INTO neighbor_alerts (
+        source_device_id,
+        target_device_id,
+        risk_level,
+        occurred_at,
+        ingested_at,
+        status,
+        raw_payload_metadata
+      )
+      VALUES ($1, $2, $3, $4, $5, 'received', $6)
+    `,
+    [
+      sourceDevice.id,
+      targetDevice?.id ?? null,
+      packet.riskLevel,
+      packet.occurredAt,
+      acceptedAt,
+      buildPacketMetadata(packet, acceptedAt),
+    ],
+  );
+
+  await client.query(
+    `
+      UPDATE devices
+      SET
+        last_seen_at = $2,
+        latest_risk_level = GREATEST(COALESCE(latest_risk_level, 0), $3)
+      WHERE id = $1
+    `,
+    [sourceDevice.id, packet.occurredAt, packet.riskLevel],
+  );
+}
+
+async function ingestParentUpdatePacketInDb(
+  client: PoolClient,
+  packet: Extract<DecodedPacket, { packetCode: "0x08" }>,
+  acceptedAt: string,
+) {
+  const device = await getDeviceByNodeIdOrThrow(client, packet.nodeId);
+  const parentDevice = packet.parentIpv6 ? await getDeviceByIpv6(client, packet.parentIpv6) : null;
+
+  await client.query(
+    `
+      INSERT INTO device_parent_updates (
+        device_id,
+        parent_ipv6,
+        parent_device_id,
+        observed_at,
+        ingested_at,
+        raw_payload_metadata
+      )
+      VALUES ($1, $2::inet, $3, $4, $5, $6)
+    `,
+    [device.id, packet.parentIpv6, parentDevice?.id ?? null, packet.occurredAt, acceptedAt, buildPacketMetadata(packet, acceptedAt)],
+  );
+
+  await client.query("UPDATE devices SET last_seen_at = $2 WHERE id = $1", [device.id, packet.occurredAt]);
+}
+
+async function ingestPacketInDb(packet: DecodedPacket, acceptedAt: string) {
+  if (!pool) {
+    throw new Error("Database is not configured.");
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    switch (packet.packetCode) {
+      case "0x01":
+        await ingestRegistrationPacketInDb(client, packet, acceptedAt);
+        break;
+      case "0x02":
+      case "0x03":
+        await ingestSensorPacketInDb(client, packet, acceptedAt);
+        break;
+      case "0x04":
+        await ingestNeighborDistributionPacketInDb(client, packet, acceptedAt);
+        break;
+      case "0x05":
+        await ingestTimeSyncPacketInDb(client, packet, acceptedAt);
+        break;
+      case "0x06":
+        await ingestConfigUpdatePacketInDb(client, packet, acceptedAt);
+        break;
+      case "0x07":
+        await ingestNeighborAlertPacketInDb(client, packet, acceptedAt);
+        break;
+      case "0x08":
+        await ingestParentUpdatePacketInDb(client, packet, acceptedAt);
+        break;
+    }
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 async function queryNodesFromDb(): Promise<NodeSummary[]> {
@@ -1029,6 +1795,46 @@ async function getPacketHistoryFromDb(options: PacketHistoryQuery = {}): Promise
       UNION ALL
 
       SELECT
+        concat('neighbor-alert-', na.id) AS id,
+        na.occurred_at::text AS occurred_at,
+        source.node_id,
+        source.node_id::text AS node_name,
+        'lateral'::text AS direction,
+        '0x07'::text AS packet_code,
+        'neighbor_alert'::text AS event_type,
+        na.status::text AS status,
+        concat('Neighbor alert forwarded from node ', source.node_id, '.') AS summary,
+        concat_ws(
+          ' · ',
+          concat('Risk ', na.risk_level),
+          CASE WHEN target.node_id IS NOT NULL THEN concat('Target ', target.node_id) END
+        ) AS detail
+      FROM neighbor_alerts na
+      JOIN devices source ON source.id = na.source_device_id
+      LEFT JOIN devices target ON target.id = na.target_device_id
+
+      UNION ALL
+
+      SELECT
+        concat('parent-update-', dpu.id) AS id,
+        dpu.observed_at::text AS occurred_at,
+        d.node_id,
+        d.node_id::text AS node_name,
+        'uplink'::text AS direction,
+        '0x08'::text AS packet_code,
+        'parent_update'::text AS event_type,
+        'received'::text AS status,
+        concat('Parent update received from node ', d.node_id, '.') AS summary,
+        CASE
+          WHEN dpu.parent_ipv6 IS NULL THEN 'Preferred parent none'
+          ELSE concat('Preferred parent ', host(dpu.parent_ipv6))
+        END AS detail
+      FROM device_parent_updates dpu
+      JOIN devices d ON d.id = dpu.device_id
+
+      UNION ALL
+
+      SELECT
         concat('nn-', nde.id) AS id,
         nde.sent_at::text AS occurred_at,
         d.node_id,
@@ -1853,6 +2659,35 @@ app.get("/api/history/packets", async (request, response, next) => {
 
     response.json(await withSource(() => getPacketHistoryFromDb(query), () => getMockPacketHistory(query)));
   } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/packets/ingest", async (request, response, next) => {
+  try {
+    const body = (request.body ?? {}) as PacketIngestRequest;
+    const packet = decodePacket(body);
+    const acceptedAt = resolvePacketReceivedAt(body);
+
+    if (pool) {
+      await ingestPacketInDb(packet, acceptedAt);
+    } else {
+      ingestMockPacket(packet, acceptedAt);
+    }
+
+    response.status(201).json(buildPacketIngestResponse(packet, acceptedAt, pool ? "database" : "mock"));
+  } catch (error) {
+    if (
+      error instanceof PacketIngestError ||
+      (error instanceof Error &&
+        (error.message.startsWith("Unknown node") ||
+          error.message.startsWith("Unknown neighbor IPv6") ||
+          error.message.includes("older than the current config history") ||
+          error.message.includes("stale or missing")))
+    ) {
+      response.status(400).json({ message: error.message });
+      return;
+    }
     next(error);
   }
 });

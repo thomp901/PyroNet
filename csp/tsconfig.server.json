@@ -13,5 +13,11 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["server/**/*.ts", "src/mocks/mockBackend.ts", "src/api/types.ts", "src/lib/nodeId.ts"]
+  "include": [
+    "server/**/*.ts",
+    "src/mocks/mockBackend.ts",
+    "src/api/types.ts",
+    "src/api/packetIngest.ts",
+    "src/lib/nodeId.ts"
+  ]
 }

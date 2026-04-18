@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getPacketHistory } from "../api/history";
-import type { PacketDirection, PacketEventType, PacketHistoryQuery, PacketHistoryResponse, PacketLogStatus } from "../api/types";
+import type { PacketDirection, PacketEventType, PacketHistoryQuery, PacketHistoryResponse, PacketLogCode, PacketLogStatus } from "../api/types";
 import { EmptyState } from "../components/common/EmptyState";
 import { LoadingState } from "../components/common/LoadingState";
 import { PacketHistoryTable } from "../components/common/PacketHistoryTable";
@@ -18,6 +18,38 @@ function humanizeLabel(value: string) {
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+function directionLabel(direction: PacketDirection) {
+  switch (direction) {
+    case "uplink":
+      return "Inbound";
+    case "downlink":
+      return "Outbound";
+    case "lateral":
+      return "Lateral";
+  }
+}
+
+function packetCodeLabel(packetCode: PacketLogCode) {
+  switch (packetCode) {
+    case "0x01":
+      return "0x01 Registration";
+    case "0x02":
+      return "0x02 Sensor Report";
+    case "0x03":
+      return "0x03 Sensor Alert";
+    case "0x04":
+      return "0x04 NN Table Update";
+    case "0x05":
+      return "0x05 Time Sync";
+    case "0x06":
+      return "0x06 Config Update";
+    case "0x07":
+      return "0x07 Neighbor Alert";
+    case "0x08":
+      return "0x08 Parent Update";
+  }
 }
 
 export function HistoryPage() {
@@ -102,7 +134,7 @@ export function HistoryPage() {
     setFilters({});
   }
 
-  const activeFilterCount = [filters.nodeId, filters.direction, filters.eventType, filters.status].filter(Boolean).length;
+  const activeFilterCount = [filters.nodeId, filters.direction, filters.packetCode, filters.eventType, filters.status].filter(Boolean).length;
 
   if (loading && !data) {
     return <LoadingState label="Loading packet history..." />;
@@ -166,7 +198,22 @@ export function HistoryPage() {
                 <option value="">All directions</option>
                 {data.availableDirections.map((direction) => (
                   <option key={direction} value={direction}>
-                    {direction === "uplink" ? "Inbound" : "Outbound"}
+                    {directionLabel(direction)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span>Packet Code</span>
+              <select
+                value={filters.packetCode ?? ""}
+                onChange={(event) => updateFilter("packetCode", (event.target.value || undefined) as PacketLogCode | undefined)}
+              >
+                <option value="">All packet codes</option>
+                {data.availablePacketCodes.map((packetCode) => (
+                  <option key={packetCode} value={packetCode}>
+                    {packetCodeLabel(packetCode)}
                   </option>
                 ))}
               </select>

@@ -4,13 +4,13 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -k \"npm:dev:api\" \"npm:dev:web\"",
-    "dev:web": "vite",
-    "dev:api": "tsx watch server/index.ts",
-    "build": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.server.json && vite build",
-    "preview": "vite preview",
-    "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.server.json",
-    "start:api": "tsx server/index.ts"
+    "dev": "node ./node_modules/concurrently/dist/bin/concurrently.js -k \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:web": "node ./node_modules/vite/bin/vite.js",
+    "dev:api": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --watch --import tsx server/index.ts",
+    "build": "node ./node_modules/typescript/bin/tsc --noEmit -p tsconfig.app.json && node ./node_modules/typescript/bin/tsc --noEmit -p tsconfig.server.json && node ./node_modules/vite/bin/vite.js build",
+    "preview": "node ./node_modules/vite/bin/vite.js preview",
+    "typecheck": "node ./node_modules/typescript/bin/tsc --noEmit -p tsconfig.app.json && node ./node_modules/typescript/bin/tsc --noEmit -p tsconfig.server.json",
+    "start:api": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --import tsx server/index.ts"
   },
   "dependencies": {
     "cors": "^2.8.6",
