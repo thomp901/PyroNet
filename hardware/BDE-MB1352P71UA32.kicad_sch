@@ -3825,7 +3825,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "0.1uF"
+		(property "Value" "0R"
 			(at 222.758 52.578 0)
 			(effects
 				(font
@@ -4930,7 +4930,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "bb7679e2-1da5-4059-8da4-2f6735061366")
-		(property "Reference" "C302"
+		(property "Reference" "0R"
 			(at 236.22 50.7999 0)
 			(effects
 				(font
@@ -4984,7 +4984,7 @@
 		(instances
 			(project "Senior_Design"
 				(path "/8f5928e8-0fc1-4443-a20f-3bfeb956761e/dd2813e4-a810-44d7-8b7e-d46ce1c3fa30"
-					(reference "C302")
+					(reference "0R")
 					(unit 1)
 				)
 			)

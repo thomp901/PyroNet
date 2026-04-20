@@ -1030,7 +1030,7 @@
 				)
 			)
 		)
-		(property "Value" "22R"
+		(property "Value" "5R"
 			(at 0 1.17 0)
 			(layer "F.Fab")
 			(uuid "6ff94693-8b9e-4692-99d1-1c3e9a1fe882")
@@ -4526,7 +4526,7 @@
 				)
 			)
 		)
-		(property "Value" "0.1uF"
+		(property "Value" "4.7uF"
 			(at 0 1.43 90)
 			(layer "F.Fab")
 			(uuid "6751e530-2d3c-4054-b734-21fef9f35575")
@@ -32375,7 +32375,7 @@
 		(at 39.7 -79.944675 90)
 		(descr "Capacitor SMD 0805 (2012 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf, https://docs.google.com/spreadsheets/d/1BsfQQcO9C6DZCsRaXUlFlo91Tg2WpOkGARC1WS5S8t0/edit?usp=sharing), generated with kicad-footprint-generator")
 		(tags "capacitor")
-		(property "Reference" "C302"
+		(property "Reference" "0R301"
 			(at -0.05 -1.75 90)
 			(layer "B.SilkS")
 			(uuid "a9ef7550-bdc2-4e2d-a826-61baf2ed2d2e")
@@ -35673,7 +35673,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Value" "0.1uF"
+		(property "Value" "0R"
 			(at 0 -1.68 90)
 			(layer "B.Fab")
 			(uuid "2cf1e1ac-20ee-4510-983d-f648bb1c5dfa")
