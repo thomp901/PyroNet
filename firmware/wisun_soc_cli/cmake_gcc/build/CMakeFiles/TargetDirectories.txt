@@ -1,0 +1,4 @@
+/Users/diegosmacbook/Documents/PyroNet/firmware/wisun_soc_cli/cmake_gcc/build/CMakeFiles/slc.dir
+/Users/diegosmacbook/Documents/PyroNet/firmware/wisun_soc_cli/cmake_gcc/build/CMakeFiles/wisun_soc_cli.dir
+/Users/diegosmacbook/Documents/PyroNet/firmware/wisun_soc_cli/cmake_gcc/build/CMakeFiles/edit_cache.dir
+/Users/diegosmacbook/Documents/PyroNet/firmware/wisun_soc_cli/cmake_gcc/build/CMakeFiles/rebuild_cache.dir

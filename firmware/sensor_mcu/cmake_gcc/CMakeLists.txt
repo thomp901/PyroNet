@@ -12,21 +12,16 @@ project(
 # which contains the content of the SLC project
 include(sensor_mcu.cmake)
 
-target_include_directories(slc PUBLIC
-    ../third_party/sps30
-)
-
 add_executable(sensor_mcu
     ../debug_console.c
-    ../third_party/sps30/sensirion_common.c
-    ../third_party/sps30/sensirion_i2c.c
-    ../third_party/sps30/sps30_i2c.c
-    ${SDK_PATH}/platform/emlib/src/em_eusart.c
-    ${SDK_PATH}/platform/emlib/src/em_i2c.c
 )
 
 target_include_directories(sensor_mcu PUBLIC
-    ../third_party/sps30
+    # Add additional include paths here
+)
+
+target_compile_definitions(sensor_mcu PUBLIC
+    # Add additional macros here
 )
 
 target_compile_options(sensor_mcu PUBLIC

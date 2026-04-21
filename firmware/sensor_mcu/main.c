@@ -28,10 +28,7 @@
  *
  ******************************************************************************/
 #include "sl_component_catalog.h"
-#include "app.h"
-#include "debug_console.h"
 #include "sl_main_init.h"
-#include <stdio.h>
 #if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
 #include "sl_power_manager.h"
 #endif
@@ -41,22 +38,12 @@
 #include "sl_main_process_action.h"
 #endif // SL_CATALOG_KERNEL_PRESENT
 
-static void swo_self_test_delay(void)
-{
-  for (volatile uint32_t i = 0; i < 200000U; i++) {
-  }
-}
-
 int main(void)
 {
   // Initialize Silicon Labs device, system, service(s) and protocol stack(s).
   // Note that if the kernel is present, the start task will be started and software
   // component initialization will take place there.
   sl_main_init();
-
-  puts(SWO_SELF_TEST_TOKEN " phase=POST_INIT");
-  swo_self_test_delay();
-  puts(SWO_SELF_TEST_TOKEN " phase=POST_INIT_RETRY");
 
 #if defined(SL_CATALOG_KERNEL_PRESENT)
   // Start the kernel. The start task will be executed (Highest priority) to complete

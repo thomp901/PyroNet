@@ -34,12 +34,6 @@
  *  ======== sensor_ncp.c ========
  */
 
-/* For usleep() */
-#include <unistd.h>
-#include <stdint.h>
-#include <stddef.h>
-#include <stdbool.h>
-#include <stdio.h>
 #include <string.h>
 
 /* Driver Header files */
@@ -50,17 +44,12 @@
 // #include <ti/drivers/Watchdog.h>
 
 /* Driver configuration */
-#include "ti_drivers_config.h"
+#include <ti_drivers_config.h>
+#include "uart_transport.h"
 
-/*
- * Use the raw GPIO index so this stays tied to the custom-board DIO mapping
- * instead of LaunchPad aliases.
- */
-#define TEST_PULSE_DIO 28U
 #define SWO_TRACE_PORT 0U
 #define SWO_RESET_PORT 31U
 #define SWO_RESET_FRAME 0xBBBBBBBBUL
-#define SWO_LINE_BUFFER_SIZE 96U
 #define SWO_SELF_TEST_TOKEN "SWO_SELF_TEST: CC1352P7_DIO16_ITM_CH0"
 
 static void swoWriteLine(const char *line)
@@ -86,7 +75,7 @@ static void swoInit(void)
      * software stimulus stream.
      */
     ITM_send32Atomic(SWO_RESET_PORT, SWO_RESET_FRAME);
-    swoWriteLine(SWO_SELF_TEST_TOKEN " phase=BOOT pulse_dio=28");
+    swoWriteLine(SWO_SELF_TEST_TOKEN " phase=BOOT uart_transport=starting");
 }
 
 /*
@@ -94,11 +83,6 @@ static void swoInit(void)
  */
 void *mainThread(void *arg0)
 {
-    const uint32_t halfPeriodUs = 500000;
-    bool pulseLevel = false;
-    uint32_t sequence = 0;
-    char swoLine[SWO_LINE_BUFFER_SIZE];
-
     (void)arg0;
 
     /* Call driver init functions */
@@ -108,22 +92,7 @@ void *mainThread(void *arg0)
     // SPI_init();
     // Watchdog_init();
 
-    /* Drive DIO_28 as a push-pull output for the pulse test. */
-    GPIO_setConfig(TEST_PULSE_DIO, GPIO_CFG_OUT_STD | GPIO_CFG_OUT_LOW);
-    GPIO_write(TEST_PULSE_DIO, 0);
+    uartTransportRun(swoWriteLine);
 
-    while (1)
-    {
-        usleep(halfPeriodUs);
-        GPIO_toggle(TEST_PULSE_DIO);
-        pulseLevel = !pulseLevel;
-
-        sequence++;
-        snprintf(swoLine,
-                 sizeof(swoLine),
-                 SWO_SELF_TEST_TOKEN " phase=HEARTBEAT seq=%lu level=%u",
-                 (unsigned long)sequence,
-                 pulseLevel ? 1U : 0U);
-        swoWriteLine(swoLine);
-    }
+    return NULL;
 }

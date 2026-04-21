@@ -63,12 +63,13 @@ for (var setting in rfDesignSettings)
     rfDesign[setting] = rfDesignSettings[setting];
 }
 
+/* ======== ITM / SWO ======== */
+var ITM = scripting.addModule("/ti/drivers/ITM");
+ITM.baudRate = 3000000;
+ITM.swoPin.$assign = "DIO16";
+
 /* ======== Drivers ======== */
 var RF = scripting.addModule("/ti/drivers/RF");
-if (system.deviceData.board && system.deviceData.board.components.RF)
-{
-    RF.$hardware = system.deviceData.board.components.RF;
-}
 
 var TRNG = scripting.addModule("/ti/drivers/TRNG", {}, false);
 var trng = TRNG.addInstance();
@@ -83,6 +84,15 @@ var nvsInternal = NVS.addInstance();
 nvsInternal.$name = "CONFIG_NVSINTERNAL";
 nvsInternal.internalFlash.regionBase = 0xA8000;
 nvsInternal.internalFlash.regionSize = 0x4000;
+
+var UART2 = scripting.addModule("/ti/drivers/UART2");
+var uart2 = UART2.addInstance();
+uart2.$name = "CONFIG_UART2_0";
+uart2.uart.txPin.$assign = "DIO_28";
+uart2.uart.rxPin.$assign = "DIO_27";
+uart2.txPinInstance.$name = "CONFIG_PIN_UART_TX";
+uart2.rxPinInstance.$name = "CONFIG_PIN_UART_RX";
+uart2.txPinInstance.initialOutputState = "High";
 
 var GPIO = scripting.addModule("/ti/drivers/GPIO");
 

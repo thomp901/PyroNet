@@ -10,6 +10,7 @@ SDK_WISUN_PROJECTSPEC := $(SDK_WISUN_EXAMPLE_DIR)/freertos/ticlang/ns_coap_node_
 SDK_WISUN_LINKER_CMD := $(SDK_WISUN_EXAMPLE_DIR)/freertos/ticlang/cc13x2x7_cc26x2x7.cmd
 
 LOCAL_APP_DIR := ../../application
+LOCAL_SRC_FILES := ../../freertos/main_freertos.c ../../sensor_ncp.c ../../uart_transport.c
 LOCAL_TRACE_SRC := ../../wisun/platform/ns_trace.c
 LOCAL_EVENTLOOP_TIMER_SRC := $(SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR)/source/third_party/mbed/nanostack/sal-stack-nanostack-eventloop/source/ns_timer.cpp
 BUILD_DIR := build
@@ -24,9 +25,9 @@ SYSCFG_C_FILES = $(filter %.c,$(SYSCFG_FILES))
 SYSCFG_H_FILES = $(filter %.h,$(SYSCFG_FILES))
 SYSCFG_OPT_FILES = $(filter %.opt,$(SYSCFG_FILES))
 
-EXAMPLE_C_FILES := $(shell PROJECTSPEC="$(SDK_WISUN_PROJECTSPEC)" SDK="$(SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR)" python3 -c "import os, xml.etree.ElementTree as ET; sdk=os.environ['SDK']; token='\$${COM_TI_SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR}'; root=ET.parse(os.environ['PROJECTSPEC']).getroot(); print(' '.join([node.attrib.get('path', '').replace(token, sdk) for node in root.findall('.//file') if node.attrib.get('path', '').endswith('.c') and 'ncp_interface' not in node.attrib.get('path', '') and not node.attrib.get('path', '').endswith('/source/ti/ti_wisunfan/mbed_port/mbednanostack2tirtos/platform/ns_trace.c')]))")
+EXAMPLE_C_FILES := $(shell PROJECTSPEC="$(SDK_WISUN_PROJECTSPEC)" SDK="$(SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR)" python3 -c "import os, xml.etree.ElementTree as ET; sdk=os.environ['SDK']; token='\$${COM_TI_SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR}'; excluded=('ncp_interface','/source/ti/ti_wisunfan/mbed_port/mbednanostack2tirtos/platform/ns_trace.c','/source/ti/ti_wisunfan/apps/udp_nanostack_mesh_tirf/main.c','/source/ti/ti_wisunfan/apps/udp_nanostack_mesh_tirf/application.c'); root=ET.parse(os.environ['PROJECTSPEC']).getroot(); print(' '.join([node.attrib.get('path', '').replace(token, sdk) for node in root.findall('.//file') if node.attrib.get('path', '').endswith('.c') and not any(ex in node.attrib.get('path', '') for ex in excluded)]))")
 
-SRC_FILES := $(EXAMPLE_C_FILES) $(LOCAL_TRACE_SRC)
+SRC_FILES := $(EXAMPLE_C_FILES) $(LOCAL_SRC_FILES) $(LOCAL_TRACE_SRC)
 CPP_FILES := $(LOCAL_EVENTLOOP_TIMER_SRC)
 
 define sanitize

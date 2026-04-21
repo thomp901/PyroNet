@@ -68,17 +68,17 @@ extern const uint_least8_t                  CONFIG_AESECB_0_CONST;
 /*
  *  ======== GPIO ========
  */
-/* Owned by /ti/drivers/RF as  */
-extern const uint_least8_t CONFIG_RF_24GHZ_CONST;
-#define CONFIG_RF_24GHZ 28
+/* Owned by /ti/drivers/ITM as  */
+extern const uint_least8_t CONFIG_GPIO_ITM_SWO_CONST;
+#define CONFIG_GPIO_ITM_SWO 16
 
-/* Owned by /ti/drivers/RF as  */
-extern const uint_least8_t CONFIG_RF_HIGH_PA_CONST;
-#define CONFIG_RF_HIGH_PA 29
+/* Owned by CONFIG_UART2_0 as  */
+extern const uint_least8_t CONFIG_PIN_UART_TX_CONST;
+#define CONFIG_PIN_UART_TX 28
 
-/* Owned by /ti/drivers/RF as  */
-extern const uint_least8_t CONFIG_RF_SUB1GHZ_CONST;
-#define CONFIG_RF_SUB1GHZ 30
+/* Owned by CONFIG_UART2_0 as  */
+extern const uint_least8_t CONFIG_PIN_UART_RX_CONST;
+#define CONFIG_PIN_UART_RX 27
 
 extern const uint_least8_t CONFIG_GPIO_RLED_CONST;
 #define CONFIG_GPIO_RLED 6
@@ -113,10 +113,6 @@ extern const uint_least8_t              CONFIG_NVSINTERNAL_CONST;
 #define CONFIG_TI_DRIVERS_NVS_COUNT     1
 
 
-/*
- *  ======== RF ========
- */
-#define Board_DIO_30_RFSW 0x0000001e
 
 
 /*
@@ -126,6 +122,19 @@ extern const uint_least8_t              CONFIG_NVSINTERNAL_CONST;
 extern const uint_least8_t              NANOSTACK_TRNG_CONST;
 #define NANOSTACK_TRNG                  0
 #define CONFIG_TI_DRIVERS_TRNG_COUNT    1
+
+
+/*
+ *  ======== UART2 ========
+ */
+
+/*
+ *  TX: DIO28
+ *  RX: DIO27
+ */
+extern const uint_least8_t                  CONFIG_UART2_0_CONST;
+#define CONFIG_UART2_0                      0
+#define CONFIG_TI_DRIVERS_UART2_COUNT       1
 
 
 /*
