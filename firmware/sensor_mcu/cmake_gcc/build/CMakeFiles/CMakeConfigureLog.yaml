@@ -135,8 +135,8 @@ events:
     checks:
       - "Detecting C compiler ABI info"
     directories:
-      source: "/Users/diegosmacbook/Documents/PyroNet/firmware/sensor_mcu/cmake_gcc/build/CMakeFiles/CMakeScratch/TryCompile-eEhSCX"
-      binary: "/Users/diegosmacbook/Documents/PyroNet/firmware/sensor_mcu/cmake_gcc/build/CMakeFiles/CMakeScratch/TryCompile-eEhSCX"
+      source: "/Users/diegosmacbook/Documents/PyroNet/firmware/sensor_mcu/cmake_gcc/build/CMakeFiles/CMakeScratch/TryCompile-xJs5Od"
+      binary: "/Users/diegosmacbook/Documents/PyroNet/firmware/sensor_mcu/cmake_gcc/build/CMakeFiles/CMakeScratch/TryCompile-xJs5Od"
     cmakeVariables:
       CMAKE_C_FLAGS: ""
       CMAKE_C_FLAGS_DEBUG: "-g"
@@ -145,10 +145,10 @@ events:
       variable: "CMAKE_C_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: '/Users/diegosmacbook/Documents/PyroNet/firmware/sensor_mcu/cmake_gcc/build/CMakeFiles/CMakeScratch/TryCompile-eEhSCX'
+        Change Dir: '/Users/diegosmacbook/Documents/PyroNet/firmware/sensor_mcu/cmake_gcc/build/CMakeFiles/CMakeScratch/TryCompile-xJs5Od'
         
-        Run Build Command(s): /Users/diegosmacbook/.silabs/slt/installs/conan/p/ninja48deaaf744f20/p/ninja -v cmTC_9b0df
-        [1/2] /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-gcc @CMakeFiles/cmTC_9b0df.dir/Debug/CMakeCCompilerABI.c.obj.rsp -o CMakeFiles/cmTC_9b0df.dir/Debug/CMakeCCompilerABI.c.obj -c /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/share/cmake-3.30/Modules/CMakeCCompilerABI.c
+        Run Build Command(s): /Users/diegosmacbook/.silabs/slt/installs/conan/p/ninja48deaaf744f20/p/ninja -v cmTC_0a66e
+        [1/2] /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-gcc @CMakeFiles/cmTC_0a66e.dir/Debug/CMakeCCompilerABI.c.obj.rsp -o CMakeFiles/cmTC_0a66e.dir/Debug/CMakeCCompilerABI.c.obj -c /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/share/cmake-3.30/Modules/CMakeCCompilerABI.c
         Using built-in specs.
         COLLECT_GCC=/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-gcc
         Target: arm-none-eabi
@@ -156,8 +156,8 @@ events:
         Thread model: single
         Supported LTO compression algorithms: zlib
         gcc version 12.2.1 20221205 (Arm GNU Toolchain 12.2 (Build arm-12.24)) 
-        COLLECT_GCC_OPTIONS='-D' 'CMAKE_INTDIR="Debug"' '-g' '-std=c17' '-v' '-o' 'CMakeFiles/cmTC_9b0df.dir/Debug/CMakeCCompilerABI.c.obj' '-c' '-mcpu=arm7tdmi' '-mfloat-abi=soft' '-marm' '-mlibarch=armv4t' '-march=armv4t' '-dumpdir' 'CMakeFiles/cmTC_9b0df.dir/Debug/'
-         /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../libexec/gcc/arm-none-eabi/12.2.1/cc1 -quiet -v -iprefix /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/ -isysroot /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../arm-none-eabi -D__USES_INITFINI__ -D CMAKE_INTDIR="Debug" /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/share/cmake-3.30/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_9b0df.dir/Debug/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mcpu=arm7tdmi -mfloat-abi=soft -marm -mlibarch=armv4t -march=armv4t -g -std=c17 -version -o /var/folders/b7/79zc9zgd6z79fcx57blsgdy80000gn/T//ccD0fRaO.s
+        COLLECT_GCC_OPTIONS='-D' 'CMAKE_INTDIR="Debug"' '-g' '-std=c17' '-v' '-o' 'CMakeFiles/cmTC_0a66e.dir/Debug/CMakeCCompilerABI.c.obj' '-c' '-mcpu=arm7tdmi' '-mfloat-abi=soft' '-marm' '-mlibarch=armv4t' '-march=armv4t' '-dumpdir' 'CMakeFiles/cmTC_0a66e.dir/Debug/'
+         /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../libexec/gcc/arm-none-eabi/12.2.1/cc1 -quiet -v -iprefix /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/ -isysroot /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../arm-none-eabi -D__USES_INITFINI__ -D CMAKE_INTDIR="Debug" /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/share/cmake-3.30/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_0a66e.dir/Debug/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mcpu=arm7tdmi -mfloat-abi=soft -marm -mlibarch=armv4t -march=armv4t -g -std=c17 -version -o /var/folders/b7/79zc9zgd6z79fcx57blsgdy80000gn/T//ccHDTELX.s
         GNU C17 (Arm GNU Toolchain 12.2 (Build arm-12.24)) version 12.2.1 20221205 (arm-none-eabi)
         	compiled by GNU C version Apple LLVM 13.0.0 (clang-1300.0.29.30), GMP version 6.2.1, MPFR version 3.1.6, MPC version 1.0.3, isl version isl-0.15-1-g835ea3a-GMP
         
@@ -178,13 +178,13 @@ events:
         
         GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
         Compiler executable checksum: b051748e6cb8fe9cdcfb9cd31e398caa
-        COLLECT_GCC_OPTIONS='-D' 'CMAKE_INTDIR="Debug"' '-g' '-std=c17' '-v' '-o' 'CMakeFiles/cmTC_9b0df.dir/Debug/CMakeCCompilerABI.c.obj' '-c' '-mcpu=arm7tdmi' '-mfloat-abi=soft' '-marm' '-mlibarch=armv4t' '-march=armv4t' '-dumpdir' 'CMakeFiles/cmTC_9b0df.dir/Debug/'
-         /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/../../../../arm-none-eabi/bin/as -v -march=armv4t -mfloat-abi=soft -meabi=5 -o CMakeFiles/cmTC_9b0df.dir/Debug/CMakeCCompilerABI.c.obj /var/folders/b7/79zc9zgd6z79fcx57blsgdy80000gn/T//ccD0fRaO.s
+        COLLECT_GCC_OPTIONS='-D' 'CMAKE_INTDIR="Debug"' '-g' '-std=c17' '-v' '-o' 'CMakeFiles/cmTC_0a66e.dir/Debug/CMakeCCompilerABI.c.obj' '-c' '-mcpu=arm7tdmi' '-mfloat-abi=soft' '-marm' '-mlibarch=armv4t' '-march=armv4t' '-dumpdir' 'CMakeFiles/cmTC_0a66e.dir/Debug/'
+         /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/../../../../arm-none-eabi/bin/as -v -march=armv4t -mfloat-abi=soft -meabi=5 -o CMakeFiles/cmTC_0a66e.dir/Debug/CMakeCCompilerABI.c.obj /var/folders/b7/79zc9zgd6z79fcx57blsgdy80000gn/T//ccHDTELX.s
         GNU assembler version 2.39.0 (arm-none-eabi) using BFD version (Arm GNU Toolchain 12.2 (Build arm-12.24)) 2.39.0.20221210
         COMPILER_PATH=/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../libexec/gcc/arm-none-eabi/12.2.1/:/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../libexec/gcc/:/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/../../../../arm-none-eabi/bin/
         LIBRARY_PATH=/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/:/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/:/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/../../../../arm-none-eabi/lib/:/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../arm-none-eabi/lib/
-        COLLECT_GCC_OPTIONS='-D' 'CMAKE_INTDIR="Debug"' '-g' '-std=c17' '-v' '-o' 'CMakeFiles/cmTC_9b0df.dir/Debug/CMakeCCompilerABI.c.obj' '-c' '-mcpu=arm7tdmi' '-mfloat-abi=soft' '-marm' '-mlibarch=armv4t' '-march=armv4t' '-dumpdir' 'CMakeFiles/cmTC_9b0df.dir/Debug/CMakeCCompilerABI.c.'
-        [2/2] : && /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/bin/cmake -E rm -f Debug/libcmTC_9b0df.a && /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-ar qc Debug/libcmTC_9b0df.a  @CMakeFiles/cmTC_9b0df.Debug.rsp && /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-gcc-ranlib Debug/libcmTC_9b0df.a && /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/bin/cmake -E touch Debug/libcmTC_9b0df.a && :
+        COLLECT_GCC_OPTIONS='-D' 'CMAKE_INTDIR="Debug"' '-g' '-std=c17' '-v' '-o' 'CMakeFiles/cmTC_0a66e.dir/Debug/CMakeCCompilerABI.c.obj' '-c' '-mcpu=arm7tdmi' '-mfloat-abi=soft' '-marm' '-mlibarch=armv4t' '-march=armv4t' '-dumpdir' 'CMakeFiles/cmTC_0a66e.dir/Debug/CMakeCCompilerABI.c.'
+        [2/2] : && /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/bin/cmake -E rm -f Debug/libcmTC_0a66e.a && /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-ar qc Debug/libcmTC_0a66e.a  @CMakeFiles/cmTC_0a66e.Debug.rsp && /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-gcc-ranlib Debug/libcmTC_0a66e.a && /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/bin/cmake -E touch Debug/libcmTC_0a66e.a && :
         
       exitCode: 0
   -
@@ -217,10 +217,10 @@ events:
       Parsed C implicit link information:
         link line regex: [^( *|.*[/\\])(arm-none-eabi-gcc|;ld[0-9]*(\\.[a-z]+)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
         linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(arm-none-eabi-gcc|;ld[0-9]*(\\.[a-z]+)?))("|,| |$)]
-        ignore line: [Change Dir: '/Users/diegosmacbook/Documents/PyroNet/firmware/sensor_mcu/cmake_gcc/build/CMakeFiles/CMakeScratch/TryCompile-eEhSCX']
+        ignore line: [Change Dir: '/Users/diegosmacbook/Documents/PyroNet/firmware/sensor_mcu/cmake_gcc/build/CMakeFiles/CMakeScratch/TryCompile-xJs5Od']
         ignore line: []
-        ignore line: [Run Build Command(s): /Users/diegosmacbook/.silabs/slt/installs/conan/p/ninja48deaaf744f20/p/ninja -v cmTC_9b0df]
-        ignore line: [[1/2] /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-gcc @CMakeFiles/cmTC_9b0df.dir/Debug/CMakeCCompilerABI.c.obj.rsp -o CMakeFiles/cmTC_9b0df.dir/Debug/CMakeCCompilerABI.c.obj -c /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/share/cmake-3.30/Modules/CMakeCCompilerABI.c]
+        ignore line: [Run Build Command(s): /Users/diegosmacbook/.silabs/slt/installs/conan/p/ninja48deaaf744f20/p/ninja -v cmTC_0a66e]
+        ignore line: [[1/2] /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-gcc @CMakeFiles/cmTC_0a66e.dir/Debug/CMakeCCompilerABI.c.obj.rsp -o CMakeFiles/cmTC_0a66e.dir/Debug/CMakeCCompilerABI.c.obj -c /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/share/cmake-3.30/Modules/CMakeCCompilerABI.c]
         ignore line: [Using built-in specs.]
         ignore line: [COLLECT_GCC=/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-gcc]
         ignore line: [Target: arm-none-eabi]
@@ -228,8 +228,8 @@ events:
         ignore line: [Thread model: single]
         ignore line: [Supported LTO compression algorithms: zlib]
         ignore line: [gcc version 12.2.1 20221205 (Arm GNU Toolchain 12.2 (Build arm-12.24)) ]
-        ignore line: [COLLECT_GCC_OPTIONS='-D' 'CMAKE_INTDIR="Debug"' '-g' '-std=c17' '-v' '-o' 'CMakeFiles/cmTC_9b0df.dir/Debug/CMakeCCompilerABI.c.obj' '-c' '-mcpu=arm7tdmi' '-mfloat-abi=soft' '-marm' '-mlibarch=armv4t' '-march=armv4t' '-dumpdir' 'CMakeFiles/cmTC_9b0df.dir/Debug/']
-        ignore line: [ /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../libexec/gcc/arm-none-eabi/12.2.1/cc1 -quiet -v -iprefix /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/ -isysroot /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../arm-none-eabi -D__USES_INITFINI__ -D CMAKE_INTDIR="Debug" /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/share/cmake-3.30/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_9b0df.dir/Debug/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mcpu=arm7tdmi -mfloat-abi=soft -marm -mlibarch=armv4t -march=armv4t -g -std=c17 -version -o /var/folders/b7/79zc9zgd6z79fcx57blsgdy80000gn/T//ccD0fRaO.s]
+        ignore line: [COLLECT_GCC_OPTIONS='-D' 'CMAKE_INTDIR="Debug"' '-g' '-std=c17' '-v' '-o' 'CMakeFiles/cmTC_0a66e.dir/Debug/CMakeCCompilerABI.c.obj' '-c' '-mcpu=arm7tdmi' '-mfloat-abi=soft' '-marm' '-mlibarch=armv4t' '-march=armv4t' '-dumpdir' 'CMakeFiles/cmTC_0a66e.dir/Debug/']
+        ignore line: [ /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../libexec/gcc/arm-none-eabi/12.2.1/cc1 -quiet -v -iprefix /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/ -isysroot /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../arm-none-eabi -D__USES_INITFINI__ -D CMAKE_INTDIR="Debug" /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/share/cmake-3.30/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_0a66e.dir/Debug/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mcpu=arm7tdmi -mfloat-abi=soft -marm -mlibarch=armv4t -march=armv4t -g -std=c17 -version -o /var/folders/b7/79zc9zgd6z79fcx57blsgdy80000gn/T//ccHDTELX.s]
         ignore line: [GNU C17 (Arm GNU Toolchain 12.2 (Build arm-12.24)) version 12.2.1 20221205 (arm-none-eabi)]
         ignore line: [	compiled by GNU C version Apple LLVM 13.0.0 (clang-1300.0.29.30)  GMP version 6.2.1  MPFR version 3.1.6  MPC version 1.0.3  isl version isl-0.15-1-g835ea3a-GMP]
         ignore line: []
@@ -250,13 +250,13 @@ events:
         ignore line: []
         ignore line: [GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072]
         ignore line: [Compiler executable checksum: b051748e6cb8fe9cdcfb9cd31e398caa]
-        ignore line: [COLLECT_GCC_OPTIONS='-D' 'CMAKE_INTDIR="Debug"' '-g' '-std=c17' '-v' '-o' 'CMakeFiles/cmTC_9b0df.dir/Debug/CMakeCCompilerABI.c.obj' '-c' '-mcpu=arm7tdmi' '-mfloat-abi=soft' '-marm' '-mlibarch=armv4t' '-march=armv4t' '-dumpdir' 'CMakeFiles/cmTC_9b0df.dir/Debug/']
-        ignore line: [ /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/../../../../arm-none-eabi/bin/as -v -march=armv4t -mfloat-abi=soft -meabi=5 -o CMakeFiles/cmTC_9b0df.dir/Debug/CMakeCCompilerABI.c.obj /var/folders/b7/79zc9zgd6z79fcx57blsgdy80000gn/T//ccD0fRaO.s]
+        ignore line: [COLLECT_GCC_OPTIONS='-D' 'CMAKE_INTDIR="Debug"' '-g' '-std=c17' '-v' '-o' 'CMakeFiles/cmTC_0a66e.dir/Debug/CMakeCCompilerABI.c.obj' '-c' '-mcpu=arm7tdmi' '-mfloat-abi=soft' '-marm' '-mlibarch=armv4t' '-march=armv4t' '-dumpdir' 'CMakeFiles/cmTC_0a66e.dir/Debug/']
+        ignore line: [ /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/../../../../arm-none-eabi/bin/as -v -march=armv4t -mfloat-abi=soft -meabi=5 -o CMakeFiles/cmTC_0a66e.dir/Debug/CMakeCCompilerABI.c.obj /var/folders/b7/79zc9zgd6z79fcx57blsgdy80000gn/T//ccHDTELX.s]
         ignore line: [GNU assembler version 2.39.0 (arm-none-eabi) using BFD version (Arm GNU Toolchain 12.2 (Build arm-12.24)) 2.39.0.20221210]
         ignore line: [COMPILER_PATH=/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../libexec/gcc/arm-none-eabi/12.2.1/:/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../libexec/gcc/:/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/../../../../arm-none-eabi/bin/]
         ignore line: [LIBRARY_PATH=/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/:/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/:/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/../../../../arm-none-eabi/lib/:/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../arm-none-eabi/lib/]
-        ignore line: [COLLECT_GCC_OPTIONS='-D' 'CMAKE_INTDIR="Debug"' '-g' '-std=c17' '-v' '-o' 'CMakeFiles/cmTC_9b0df.dir/Debug/CMakeCCompilerABI.c.obj' '-c' '-mcpu=arm7tdmi' '-mfloat-abi=soft' '-marm' '-mlibarch=armv4t' '-march=armv4t' '-dumpdir' 'CMakeFiles/cmTC_9b0df.dir/Debug/CMakeCCompilerABI.c.']
-        ignore line: [[2/2] : && /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/bin/cmake -E rm -f Debug/libcmTC_9b0df.a && /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-ar qc Debug/libcmTC_9b0df.a  @CMakeFiles/cmTC_9b0df.Debug.rsp && /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-gcc-ranlib Debug/libcmTC_9b0df.a && /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/bin/cmake -E touch Debug/libcmTC_9b0df.a && :]
+        ignore line: [COLLECT_GCC_OPTIONS='-D' 'CMAKE_INTDIR="Debug"' '-g' '-std=c17' '-v' '-o' 'CMakeFiles/cmTC_0a66e.dir/Debug/CMakeCCompilerABI.c.obj' '-c' '-mcpu=arm7tdmi' '-mfloat-abi=soft' '-marm' '-mlibarch=armv4t' '-march=armv4t' '-dumpdir' 'CMakeFiles/cmTC_0a66e.dir/Debug/CMakeCCompilerABI.c.']
+        ignore line: [[2/2] : && /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/bin/cmake -E rm -f Debug/libcmTC_0a66e.a && /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-ar qc Debug/libcmTC_0a66e.a  @CMakeFiles/cmTC_0a66e.Debug.rsp && /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-gcc-ranlib Debug/libcmTC_0a66e.a && /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/bin/cmake -E touch Debug/libcmTC_0a66e.a && :]
         ignore line: []
         ignore line: []
         linker tool for 'C': [1/2] /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-gcc
@@ -305,8 +305,8 @@ events:
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "/Users/diegosmacbook/Documents/PyroNet/firmware/sensor_mcu/cmake_gcc/build/CMakeFiles/CMakeScratch/TryCompile-YTxucP"
-      binary: "/Users/diegosmacbook/Documents/PyroNet/firmware/sensor_mcu/cmake_gcc/build/CMakeFiles/CMakeScratch/TryCompile-YTxucP"
+      source: "/Users/diegosmacbook/Documents/PyroNet/firmware/sensor_mcu/cmake_gcc/build/CMakeFiles/CMakeScratch/TryCompile-c8jJ6Z"
+      binary: "/Users/diegosmacbook/Documents/PyroNet/firmware/sensor_mcu/cmake_gcc/build/CMakeFiles/CMakeScratch/TryCompile-c8jJ6Z"
     cmakeVariables:
       CMAKE_CXX_FLAGS: ""
       CMAKE_CXX_FLAGS_DEBUG: "-g"
@@ -316,10 +316,10 @@ events:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: '/Users/diegosmacbook/Documents/PyroNet/firmware/sensor_mcu/cmake_gcc/build/CMakeFiles/CMakeScratch/TryCompile-YTxucP'
+        Change Dir: '/Users/diegosmacbook/Documents/PyroNet/firmware/sensor_mcu/cmake_gcc/build/CMakeFiles/CMakeScratch/TryCompile-c8jJ6Z'
         
-        Run Build Command(s): /Users/diegosmacbook/.silabs/slt/installs/conan/p/ninja48deaaf744f20/p/ninja -v cmTC_9bf97
-        [1/2] /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-g++ @CMakeFiles/cmTC_9bf97.dir/Debug/CMakeCXXCompilerABI.cpp.obj.rsp -o CMakeFiles/cmTC_9bf97.dir/Debug/CMakeCXXCompilerABI.cpp.obj -c /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp
+        Run Build Command(s): /Users/diegosmacbook/.silabs/slt/installs/conan/p/ninja48deaaf744f20/p/ninja -v cmTC_84114
+        [1/2] /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-g++ @CMakeFiles/cmTC_84114.dir/Debug/CMakeCXXCompilerABI.cpp.obj.rsp -o CMakeFiles/cmTC_84114.dir/Debug/CMakeCXXCompilerABI.cpp.obj -c /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp
         Using built-in specs.
         COLLECT_GCC=/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-g++
         Target: arm-none-eabi
@@ -327,8 +327,8 @@ events:
         Thread model: single
         Supported LTO compression algorithms: zlib
         gcc version 12.2.1 20221205 (Arm GNU Toolchain 12.2 (Build arm-12.24)) 
-        COLLECT_GCC_OPTIONS='-D' 'CMAKE_INTDIR="Debug"' '-g' '-v' '-o' 'CMakeFiles/cmTC_9bf97.dir/Debug/CMakeCXXCompilerABI.cpp.obj' '-c' '-mcpu=arm7tdmi' '-mfloat-abi=soft' '-marm' '-mlibarch=armv4t' '-march=armv4t' '-dumpdir' 'CMakeFiles/cmTC_9bf97.dir/Debug/'
-         /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../libexec/gcc/arm-none-eabi/12.2.1/cc1plus -quiet -v -iprefix /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/ -isysroot /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../arm-none-eabi -D__USES_INITFINI__ -D CMAKE_INTDIR="Debug" /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_9bf97.dir/Debug/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mcpu=arm7tdmi -mfloat-abi=soft -marm -mlibarch=armv4t -march=armv4t -g -version -o /var/folders/b7/79zc9zgd6z79fcx57blsgdy80000gn/T//ccAL3zUL.s
+        COLLECT_GCC_OPTIONS='-D' 'CMAKE_INTDIR="Debug"' '-g' '-v' '-o' 'CMakeFiles/cmTC_84114.dir/Debug/CMakeCXXCompilerABI.cpp.obj' '-c' '-mcpu=arm7tdmi' '-mfloat-abi=soft' '-marm' '-mlibarch=armv4t' '-march=armv4t' '-dumpdir' 'CMakeFiles/cmTC_84114.dir/Debug/'
+         /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../libexec/gcc/arm-none-eabi/12.2.1/cc1plus -quiet -v -iprefix /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/ -isysroot /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../arm-none-eabi -D__USES_INITFINI__ -D CMAKE_INTDIR="Debug" /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_84114.dir/Debug/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mcpu=arm7tdmi -mfloat-abi=soft -marm -mlibarch=armv4t -march=armv4t -g -version -o /var/folders/b7/79zc9zgd6z79fcx57blsgdy80000gn/T//ccuxbMls.s
         GNU C++17 (Arm GNU Toolchain 12.2 (Build arm-12.24)) version 12.2.1 20221205 (arm-none-eabi)
         	compiled by GNU C version Apple LLVM 13.0.0 (clang-1300.0.29.30), GMP version 6.2.1, MPFR version 3.1.6, MPC version 1.0.3, isl version isl-0.15-1-g835ea3a-GMP
         
@@ -355,13 +355,13 @@ events:
         
         GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
         Compiler executable checksum: f0f3a7b1ef19c552eff395216faa1d26
-        COLLECT_GCC_OPTIONS='-D' 'CMAKE_INTDIR="Debug"' '-g' '-v' '-o' 'CMakeFiles/cmTC_9bf97.dir/Debug/CMakeCXXCompilerABI.cpp.obj' '-c' '-mcpu=arm7tdmi' '-mfloat-abi=soft' '-marm' '-mlibarch=armv4t' '-march=armv4t' '-dumpdir' 'CMakeFiles/cmTC_9bf97.dir/Debug/'
-         /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/../../../../arm-none-eabi/bin/as -v -march=armv4t -mfloat-abi=soft -meabi=5 -o CMakeFiles/cmTC_9bf97.dir/Debug/CMakeCXXCompilerABI.cpp.obj /var/folders/b7/79zc9zgd6z79fcx57blsgdy80000gn/T//ccAL3zUL.s
+        COLLECT_GCC_OPTIONS='-D' 'CMAKE_INTDIR="Debug"' '-g' '-v' '-o' 'CMakeFiles/cmTC_84114.dir/Debug/CMakeCXXCompilerABI.cpp.obj' '-c' '-mcpu=arm7tdmi' '-mfloat-abi=soft' '-marm' '-mlibarch=armv4t' '-march=armv4t' '-dumpdir' 'CMakeFiles/cmTC_84114.dir/Debug/'
+         /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/../../../../arm-none-eabi/bin/as -v -march=armv4t -mfloat-abi=soft -meabi=5 -o CMakeFiles/cmTC_84114.dir/Debug/CMakeCXXCompilerABI.cpp.obj /var/folders/b7/79zc9zgd6z79fcx57blsgdy80000gn/T//ccuxbMls.s
         GNU assembler version 2.39.0 (arm-none-eabi) using BFD version (Arm GNU Toolchain 12.2 (Build arm-12.24)) 2.39.0.20221210
         COMPILER_PATH=/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../libexec/gcc/arm-none-eabi/12.2.1/:/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../libexec/gcc/:/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/../../../../arm-none-eabi/bin/
         LIBRARY_PATH=/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/:/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/:/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/../../../../arm-none-eabi/lib/:/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../arm-none-eabi/lib/
-        COLLECT_GCC_OPTIONS='-D' 'CMAKE_INTDIR="Debug"' '-g' '-v' '-o' 'CMakeFiles/cmTC_9bf97.dir/Debug/CMakeCXXCompilerABI.cpp.obj' '-c' '-mcpu=arm7tdmi' '-mfloat-abi=soft' '-marm' '-mlibarch=armv4t' '-march=armv4t' '-dumpdir' 'CMakeFiles/cmTC_9bf97.dir/Debug/CMakeCXXCompilerABI.cpp.'
-        [2/2] : && /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/bin/cmake -E rm -f Debug/libcmTC_9bf97.a && /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-ar qc Debug/libcmTC_9bf97.a  @CMakeFiles/cmTC_9bf97.Debug.rsp && /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-gcc-ranlib Debug/libcmTC_9bf97.a && /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/bin/cmake -E touch Debug/libcmTC_9bf97.a && :
+        COLLECT_GCC_OPTIONS='-D' 'CMAKE_INTDIR="Debug"' '-g' '-v' '-o' 'CMakeFiles/cmTC_84114.dir/Debug/CMakeCXXCompilerABI.cpp.obj' '-c' '-mcpu=arm7tdmi' '-mfloat-abi=soft' '-marm' '-mlibarch=armv4t' '-march=armv4t' '-dumpdir' 'CMakeFiles/cmTC_84114.dir/Debug/CMakeCXXCompilerABI.cpp.'
+        [2/2] : && /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/bin/cmake -E rm -f Debug/libcmTC_84114.a && /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-ar qc Debug/libcmTC_84114.a  @CMakeFiles/cmTC_84114.Debug.rsp && /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-gcc-ranlib Debug/libcmTC_84114.a && /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/bin/cmake -E touch Debug/libcmTC_84114.a && :
         
       exitCode: 0
   -
@@ -400,10 +400,10 @@ events:
       Parsed CXX implicit link information:
         link line regex: [^( *|.*[/\\])(arm-none-eabi-gcc|;ld[0-9]*(\\.[a-z]+)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
         linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(arm-none-eabi-gcc|;ld[0-9]*(\\.[a-z]+)?))("|,| |$)]
-        ignore line: [Change Dir: '/Users/diegosmacbook/Documents/PyroNet/firmware/sensor_mcu/cmake_gcc/build/CMakeFiles/CMakeScratch/TryCompile-YTxucP']
+        ignore line: [Change Dir: '/Users/diegosmacbook/Documents/PyroNet/firmware/sensor_mcu/cmake_gcc/build/CMakeFiles/CMakeScratch/TryCompile-c8jJ6Z']
         ignore line: []
-        ignore line: [Run Build Command(s): /Users/diegosmacbook/.silabs/slt/installs/conan/p/ninja48deaaf744f20/p/ninja -v cmTC_9bf97]
-        ignore line: [[1/2] /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-g++ @CMakeFiles/cmTC_9bf97.dir/Debug/CMakeCXXCompilerABI.cpp.obj.rsp -o CMakeFiles/cmTC_9bf97.dir/Debug/CMakeCXXCompilerABI.cpp.obj -c /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [Run Build Command(s): /Users/diegosmacbook/.silabs/slt/installs/conan/p/ninja48deaaf744f20/p/ninja -v cmTC_84114]
+        ignore line: [[1/2] /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-g++ @CMakeFiles/cmTC_84114.dir/Debug/CMakeCXXCompilerABI.cpp.obj.rsp -o CMakeFiles/cmTC_84114.dir/Debug/CMakeCXXCompilerABI.cpp.obj -c /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp]
         ignore line: [Using built-in specs.]
         ignore line: [COLLECT_GCC=/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-g++]
         ignore line: [Target: arm-none-eabi]
@@ -411,8 +411,8 @@ events:
         ignore line: [Thread model: single]
         ignore line: [Supported LTO compression algorithms: zlib]
         ignore line: [gcc version 12.2.1 20221205 (Arm GNU Toolchain 12.2 (Build arm-12.24)) ]
-        ignore line: [COLLECT_GCC_OPTIONS='-D' 'CMAKE_INTDIR="Debug"' '-g' '-v' '-o' 'CMakeFiles/cmTC_9bf97.dir/Debug/CMakeCXXCompilerABI.cpp.obj' '-c' '-mcpu=arm7tdmi' '-mfloat-abi=soft' '-marm' '-mlibarch=armv4t' '-march=armv4t' '-dumpdir' 'CMakeFiles/cmTC_9bf97.dir/Debug/']
-        ignore line: [ /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../libexec/gcc/arm-none-eabi/12.2.1/cc1plus -quiet -v -iprefix /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/ -isysroot /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../arm-none-eabi -D__USES_INITFINI__ -D CMAKE_INTDIR="Debug" /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_9bf97.dir/Debug/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mcpu=arm7tdmi -mfloat-abi=soft -marm -mlibarch=armv4t -march=armv4t -g -version -o /var/folders/b7/79zc9zgd6z79fcx57blsgdy80000gn/T//ccAL3zUL.s]
+        ignore line: [COLLECT_GCC_OPTIONS='-D' 'CMAKE_INTDIR="Debug"' '-g' '-v' '-o' 'CMakeFiles/cmTC_84114.dir/Debug/CMakeCXXCompilerABI.cpp.obj' '-c' '-mcpu=arm7tdmi' '-mfloat-abi=soft' '-marm' '-mlibarch=armv4t' '-march=armv4t' '-dumpdir' 'CMakeFiles/cmTC_84114.dir/Debug/']
+        ignore line: [ /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../libexec/gcc/arm-none-eabi/12.2.1/cc1plus -quiet -v -iprefix /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/ -isysroot /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../arm-none-eabi -D__USES_INITFINI__ -D CMAKE_INTDIR="Debug" /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_84114.dir/Debug/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mcpu=arm7tdmi -mfloat-abi=soft -marm -mlibarch=armv4t -march=armv4t -g -version -o /var/folders/b7/79zc9zgd6z79fcx57blsgdy80000gn/T//ccuxbMls.s]
         ignore line: [GNU C++17 (Arm GNU Toolchain 12.2 (Build arm-12.24)) version 12.2.1 20221205 (arm-none-eabi)]
         ignore line: [	compiled by GNU C version Apple LLVM 13.0.0 (clang-1300.0.29.30)  GMP version 6.2.1  MPFR version 3.1.6  MPC version 1.0.3  isl version isl-0.15-1-g835ea3a-GMP]
         ignore line: []
@@ -439,13 +439,13 @@ events:
         ignore line: []
         ignore line: [GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072]
         ignore line: [Compiler executable checksum: f0f3a7b1ef19c552eff395216faa1d26]
-        ignore line: [COLLECT_GCC_OPTIONS='-D' 'CMAKE_INTDIR="Debug"' '-g' '-v' '-o' 'CMakeFiles/cmTC_9bf97.dir/Debug/CMakeCXXCompilerABI.cpp.obj' '-c' '-mcpu=arm7tdmi' '-mfloat-abi=soft' '-marm' '-mlibarch=armv4t' '-march=armv4t' '-dumpdir' 'CMakeFiles/cmTC_9bf97.dir/Debug/']
-        ignore line: [ /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/../../../../arm-none-eabi/bin/as -v -march=armv4t -mfloat-abi=soft -meabi=5 -o CMakeFiles/cmTC_9bf97.dir/Debug/CMakeCXXCompilerABI.cpp.obj /var/folders/b7/79zc9zgd6z79fcx57blsgdy80000gn/T//ccAL3zUL.s]
+        ignore line: [COLLECT_GCC_OPTIONS='-D' 'CMAKE_INTDIR="Debug"' '-g' '-v' '-o' 'CMakeFiles/cmTC_84114.dir/Debug/CMakeCXXCompilerABI.cpp.obj' '-c' '-mcpu=arm7tdmi' '-mfloat-abi=soft' '-marm' '-mlibarch=armv4t' '-march=armv4t' '-dumpdir' 'CMakeFiles/cmTC_84114.dir/Debug/']
+        ignore line: [ /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/../../../../arm-none-eabi/bin/as -v -march=armv4t -mfloat-abi=soft -meabi=5 -o CMakeFiles/cmTC_84114.dir/Debug/CMakeCXXCompilerABI.cpp.obj /var/folders/b7/79zc9zgd6z79fcx57blsgdy80000gn/T//ccuxbMls.s]
         ignore line: [GNU assembler version 2.39.0 (arm-none-eabi) using BFD version (Arm GNU Toolchain 12.2 (Build arm-12.24)) 2.39.0.20221210]
         ignore line: [COMPILER_PATH=/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../libexec/gcc/arm-none-eabi/12.2.1/:/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../libexec/gcc/:/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/../../../../arm-none-eabi/bin/]
         ignore line: [LIBRARY_PATH=/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/:/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/:/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../lib/gcc/arm-none-eabi/12.2.1/../../../../arm-none-eabi/lib/:/Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/../arm-none-eabi/lib/]
-        ignore line: [COLLECT_GCC_OPTIONS='-D' 'CMAKE_INTDIR="Debug"' '-g' '-v' '-o' 'CMakeFiles/cmTC_9bf97.dir/Debug/CMakeCXXCompilerABI.cpp.obj' '-c' '-mcpu=arm7tdmi' '-mfloat-abi=soft' '-marm' '-mlibarch=armv4t' '-march=armv4t' '-dumpdir' 'CMakeFiles/cmTC_9bf97.dir/Debug/CMakeCXXCompilerABI.cpp.']
-        ignore line: [[2/2] : && /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/bin/cmake -E rm -f Debug/libcmTC_9bf97.a && /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-ar qc Debug/libcmTC_9bf97.a  @CMakeFiles/cmTC_9bf97.Debug.rsp && /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-gcc-ranlib Debug/libcmTC_9bf97.a && /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/bin/cmake -E touch Debug/libcmTC_9bf97.a && :]
+        ignore line: [COLLECT_GCC_OPTIONS='-D' 'CMAKE_INTDIR="Debug"' '-g' '-v' '-o' 'CMakeFiles/cmTC_84114.dir/Debug/CMakeCXXCompilerABI.cpp.obj' '-c' '-mcpu=arm7tdmi' '-mfloat-abi=soft' '-marm' '-mlibarch=armv4t' '-march=armv4t' '-dumpdir' 'CMakeFiles/cmTC_84114.dir/Debug/CMakeCXXCompilerABI.cpp.']
+        ignore line: [[2/2] : && /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/bin/cmake -E rm -f Debug/libcmTC_84114.a && /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-ar qc Debug/libcmTC_84114.a  @CMakeFiles/cmTC_84114.Debug.rsp && /Users/diegosmacbook/.silabs/slt/installs/conan/p/gcc-af360b79bab9e3/p/bin/arm-none-eabi-gcc-ranlib Debug/libcmTC_84114.a && /Users/diegosmacbook/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/bin/cmake -E touch Debug/libcmTC_84114.a && :]
         ignore line: []
         ignore line: []
         implicit libs: []

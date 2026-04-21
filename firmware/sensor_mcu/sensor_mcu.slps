@@ -11,7 +11,7 @@
     <properties key="projectCommon.partId" value="mcu.arm.efr32.fg28.efr32fg28a122f1024gm48"/>
     <properties key="projectCommon.toolchainId" value="com.silabs.ss.framework.project.core.noToolChain:0.0.0"/>
     <properties key="universalConfig.projectTypeIds" value="visual-studio-code"/>
-    <properties key="projectCommon.importModeId" value="LINK_LIBRARIES"/>
-    <properties key="universalConfig.compSelProjInstanceId" value="1776202904979"/>
+    <properties key="projectCommon.importModeId" value="COPY"/>
+    <properties key="universalConfig.compSelProjInstanceId" value="1776798901445"/>
   </descriptors>
 </model:MDescriptors>
