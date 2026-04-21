@@ -10,7 +10,7 @@ SDK_WISUN_PROJECTSPEC := $(SDK_WISUN_EXAMPLE_DIR)/freertos/ticlang/ns_coap_node_
 SDK_WISUN_LINKER_CMD := $(SDK_WISUN_EXAMPLE_DIR)/freertos/ticlang/cc13x2x7_cc26x2x7.cmd
 
 LOCAL_APP_DIR := ../../application
-LOCAL_SRC_FILES := ../../freertos/main_freertos.c ../../sensor_ncp.c ../../uart_transport.c ../../diag/log.c ../../platform/trace_port.c
+LOCAL_SRC_FILES := ../../freertos/main_freertos.c ../../sensor_ncp.c ../../swo_debug.c ../../uart_transport.c
 LOCAL_TRACE_SRC := ../../wisun/platform/ns_trace.c
 LOCAL_EVENTLOOP_TIMER_SRC := $(SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR)/source/third_party/mbed/nanostack/sal-stack-nanostack-eventloop/source/ns_timer.cpp
 BUILD_DIR := build

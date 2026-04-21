@@ -42,10 +42,8 @@
 // #include <ti/drivers/SPI.h>
 // #include <ti/drivers/Watchdog.h>
 
-#include "diag/log.h"
+#include "swo_debug.h"
 #include "uart_transport.h"
-
-#define SWO_SELF_TEST_TOKEN "SWO_SELF_TEST: CC1352P7_DIO16_ITM_CH0"
 
 /*
  *  ======== mainThread ========
@@ -56,13 +54,8 @@ void *mainThread(void *arg0)
 
     /* Call driver init functions */
     GPIO_init();
-    if (false == diagLogInit())
-    {
-        /* DIO_16 is reserved for the debug header SWO/TDO path. */
-        while (1) {}
-    }
-
-    diagLogLine(SWO_SELF_TEST_TOKEN " phase=BOOT uart_transport=starting");
+    swoDebugInitOrDie();
+    swoDebugBootSelfTest("BOOT", "uart_transport=starting");
     // I2C_init();
     // SPI_init();
     // Watchdog_init();
