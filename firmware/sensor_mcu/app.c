@@ -17,7 +17,10 @@
 
 #include "app.h"
 
+#include <stdio.h>
+
 #include "debug_console.h"
+#include "sensor_bus.h"
 
 void app_init_early(void)
 {
@@ -29,6 +32,11 @@ void app_init_early(void)
  ******************************************************************************/
 void app_init(void)
 {
+  sensor_bus_state_t sensors = sensor_bus_init();
+
+  printf("SENSORS_READY bme68x=%u sps30=%u\r\n",
+         sensors.bme68x_present,
+         sensors.sps30_present);
   debug_console_emit_boot_markers();
 }
 

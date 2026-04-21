@@ -12,6 +12,16 @@ project(
 # which contains the content of the SLC project
 include(sensor_mcu.cmake)
 
+target_sources(slc PRIVATE
+    ${SDK_PATH}/platform/emlib/src/em_i2c.c
+    ../board_i2c.c
+    ../sensor_bus.c
+)
+
+target_include_directories(slc PUBLIC
+    ${SDK_PATH}/platform/emlib/inc
+)
+
 add_executable(sensor_mcu
     ../debug_console.c
 )
