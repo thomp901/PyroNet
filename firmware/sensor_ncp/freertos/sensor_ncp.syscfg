@@ -1,0 +1,110 @@
+/*
+ * Copyright (c) 2018-2024, Texas Instruments Incorporated
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+// @cliArgs --board /ti/boards/LP_CC1352P7_1 --rtos freertos
+
+/*
+ *  sensor_ncp.syscfg
+ */
+var CCFG = scripting.addModule("/ti/devices/CCFG");
+var Power = scripting.addModule("/ti/drivers/Power");
+var ITM = scripting.addModule("/ti/drivers/ITM");
+
+/*
+ * BDE-MB1352P71 module recommendation:
+ * Enable XOSC cap-array modification and use a delta of 0x00.
+ *
+ * This is the manual equivalent of changing:
+ * TI Devices -> Device Configuration -> XOSC Cap Array Delta = 0x00
+ * in the SysConfig GUI.
+ *
+ * This setting feeds the generated CCFG in ti_devices_config.c and changes:
+ *   SET_CCFG_MODE_CONF_XOSC_CAP_MOD
+ *   SET_CCFG_MODE_CONF_XOSC_CAPARRAY_DELTA
+ *
+ * Keep this in the .syscfg instead of editing generated files directly.
+ */
+CCFG.xoscCapArray = true;
+CCFG.xoscCapArrayDelta = 0x00;
+
+/* ======== Kernel Configuration ======== */
+system.getScript("kernel_config_release.syscfg.js");
+
+/* ======== GPIO ======== */
+var GPIO = scripting.addModule("/ti/drivers/GPIO");
+
+/*
+ * Custom-board pin map.
+ *
+ * This project now assigns pins explicitly instead of relying on LaunchPad
+ * aliases such as system.deviceData.board.components.LED0. That keeps the
+ * project usable on a custom carrier board while still letting SysConfig use
+ * the LP_CC1352P7_1 board metadata as a generic device context.
+ *
+ * BDE-MB1352P71 module constraints from the datasheet:
+ * - DIO_8, DIO_9, DIO_10, and DIO_20 are used by on-module SPI flash on XX32
+ *   variants and should be left unassigned when that flash is populated.
+ * - DIO_29 and DIO_30 are used internally for the RF switch and should not be
+ *   used as general-purpose GPIOs.
+ *
+ * DIO_6 is used here as a placeholder status LED pin because it is available
+ * on the module and was the original LaunchPad LED pin in the starter
+ * template. Change CUSTOM_BOARD_LED_DIO to match the actual pin used on the
+ * custom carrier board.
+ */
+var CUSTOM_BOARD_LED_DIO = "DIO_6";
+var CUSTOM_BOARD_SWO_DIO = "DIO_16";
+
+var gpio = GPIO.addInstance();
+gpio.$name = "CONFIG_GPIO_LED_0";
+gpio.mode = "Output";
+gpio.gpioPin.$assign = CUSTOM_BOARD_LED_DIO;
+
+/*
+ * SWO routing for the custom carrier board:
+ *
+ * - The Wi-SUN debug header pin 6 (SWO/TDO) is routed to the module's
+ *   JTAG_TDO net, which lands on DIO_16.
+ * - DIO_18 is *not* connected on this hardware, so the LaunchPad-style DIO_18
+ *   SWO route would not reach the XDS110.
+ * - DIO_16 should therefore be reserved for debug trace output whenever SWO is
+ *   enabled through the external XDS110 debug header.
+ */
+ITM.baudRate = 3000000;
+ITM.tpiuSerialFormat = "ITM_TPIU_SWO_UART";
+ITM.traceEnable = 0x80000001;
+ITM.swoPin.$assign = CUSTOM_BOARD_SWO_DIO;
+
+if(system.deviceData.deviceId.match(/CC35.*/)) {
+    var ActionReq = scripting.addModule("/sysconfig/cc35xx/Action/ActionReq");
+    ActionReq.primary_vendor_image = true;
+    ActionReq.primary_vendor_image_validate = false;
+}

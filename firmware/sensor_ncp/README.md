@@ -1,23 +1,41 @@
-TI Wi-SUN FAN CoAP Node Example Staging
-======================================
+## Example Summary
 
-This folder contains the TI `ns_coap_node_src` FreeRTOS example staged locally
-for CCS import on macOS.
+This example is intended to be a starting point for new development.
 
-Import this project from:
+## Peripherals & Pin Assignments
 
-- `freertos/ticlang/ns_coap_node_src_LP_CC1352P7_1_freertos_ticlang.projectspec`
+When this project is built, the SysConfig tool will generate the TI-Driver
+configurations into the __ti_drivers_config.c__ and __ti_drivers_config.h__
+files. Information on pins and resources used is present in both generated
+files. Additionally, the System Configuration file (\*.syscfg) present in the
+project may be opened with SysConfig's graphical user interface to determine
+pins and resources used.
 
-The project metadata is pinned to TI Arm Clang `3.2.1`, which is installed on
-this machine under:
+* `CONFIG_GPIO_LED_0`
 
-- `/Applications/ti/ti-cgt-armllvm_3.2.1.LTS`
+## BoosterPacks, Board Resources & Jumper Settings
 
-The editable application sources are copied into `application/` in this folder.
-Most TI Wi-SUN stack sources still come from the installed SimpleLink SDK:
+For board specific jumper settings, resources and BoosterPack modifications,
+refer to the __Board.html__ file.
 
-- `/Users/diegosmacbook/ti/simplelink_cc13xx_cc26xx_sdk_8_32_00_07`
+> If you're using an IDE such as Code Composer Studio (CCS) or IAR, please
+refer to Board.html in your project directory for resources used and
+board-specific jumper settings.
 
-The staged project still targets TI's `LP_CC1352P7_1` board configuration. For
-a custom CC1352P7 board, you will still need to adjust board, pin, and radio
-configuration after import.
+The Board.html can also be found in your SDK installation:
+
+```text
+<SDK_INSTALL_DIR>/source/ti/boards/<BOARD>
+```
+
+## Example Usage
+
+* The example lights `CONFIG_GPIO_LED_0` as part of the initialization in the
+`mainThread()`. This thread then toggles the LED at a 1 second rate.
+
+## Application Design Details
+
+FreeRTOS:
+
+* Please view the `FreeRTOSConfig.h` header file for example configuration
+information.

@@ -18,18 +18,6 @@
             </property>
             <platform XML_version="1.2" id="platform_0">
                 <instance XML_version="1.2" desc="CC1352P7_0" href="devices/cc1352p7.xml" id="CC1352P7_0" xml="cc1352p7.xml" xmlpath="devices"/>
-                <device HW_revision="1" XML_version="1.2" description="SimpleLink(TM) multi-protocol CC1352P7 wireless MCU" id="CC1352P7_0" partnum="CC1352P7">
-                    <router HW_revision="1.0" XML_version="1.2" description="ICEPick_C Router" id="IcePick_C_0" isa="ICEPICK_C">
-                        <subpath id="subpath_0">
-                            <property Type="choicelist" Value="1" id="Custom Configuration"/>
-                            <router HW_revision="1.0" XML_version="1.2" description="CS_DAP Router" id="CS_DAP_0" isa="CS_DAP">
-                                <subpath id="subpath_1">
-                                    <property Type="choicelist" Value="1" id="Custom Configuration"/>
-                                </subpath>
-                            </router>
-                        </subpath>
-                    </router>
-                </device>
             </platform>
         </connection>
     </configuration>

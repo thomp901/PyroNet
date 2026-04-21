@@ -49,8 +49,7 @@ GPIO_PinConfig gpioPinConfigs[31] = {
     GPIO_CFG_NO_DIR, /* DIO_13 */
     GPIO_CFG_NO_DIR, /* DIO_14 */
     GPIO_CFG_NO_DIR, /* DIO_15 */
-    /* Owned by /ti/drivers/ITM as SWO */
-    GPIO_CFG_OUTPUT_INTERNAL | GPIO_CFG_OUT_STR_MED | GPIO_CFG_OUT_LOW, /* CONFIG_GPIO_ITM_SWO */
+    GPIO_CFG_NO_DIR, /* DIO_16 */
     GPIO_CFG_NO_DIR, /* DIO_17 */
     GPIO_CFG_NO_DIR, /* DIO_18 */
     GPIO_CFG_NO_DIR, /* DIO_19 */
@@ -82,7 +81,6 @@ GPIO_CallbackFxn gpioCallbackFunctions[31];
  */
 void* gpioUserArgs[31];
 
-const uint_least8_t CONFIG_GPIO_ITM_SWO_CONST = CONFIG_GPIO_ITM_SWO;
 const uint_least8_t CONFIG_GPIO_LED_0_CONST = CONFIG_GPIO_LED_0;
 
 /*
@@ -94,55 +92,6 @@ const GPIO_Config GPIO_config = {
     .userArgs = gpioUserArgs,
     .intPriority = (~0)
 };
-
-/*
- *  =============================== ITM ===============================
- */
-#include <ti/drivers/ITM.h>
-#include <ti/drivers/itm/ITMCC26XX.h>
-#include DeviceFamily_constructPath(driverlib/ioc.h)
-
-/*
- *  ======== itmHWAttrs ========
- */
-static const ITMCC26XX_HWAttrs itmCC26XXHWAttrs = {
-    .format             = ITM_TPIU_SWO_UART,
-    .tpiuPrescaler      = 15,
-    .fullPacketInCycles = 512,
-    .traceEnable        = 0x80000001,
-    .swoPin             = CONFIG_GPIO_ITM_SWO,
-};
-
-void *itmHwAttrs = (void *)&itmCC26XXHWAttrs;
-
-extern void ITM_commonFlush(void);
-extern void ITM_commonRestore(void);
-extern void ITMCC26XX_flush(void);
-extern void ITMCC26XX_restore(void);
-
-/*
- *  ======== ITM_flush ========
- */
-void ITM_flush(void)
-{
-    /* First, call the common ITM flush */
-    ITM_commonFlush();
-
-    /* Then, do CC26XX specific pin muxing */
-    ITMCC26XX_flush();
-}
-
-/*
- *  ======== ITM_restore ========
- */
-void ITM_restore(void)
-{
-    /* First, call CC26XX specific function to remux pin */
-    ITM_commonRestore();
-
-    /* Then, do common restore */
-    ITMCC26XX_restore();
-}
 
 /*
  *  =============================== Power ===============================

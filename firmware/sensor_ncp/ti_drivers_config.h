@@ -41,10 +41,6 @@ extern "C" {
 /*
  *  ======== GPIO ========
  */
-/* Owned by /ti/drivers/ITM as  */
-extern const uint_least8_t CONFIG_GPIO_ITM_SWO_CONST;
-#define CONFIG_GPIO_ITM_SWO 16
-
 extern const uint_least8_t CONFIG_GPIO_LED_0_CONST;
 #define CONFIG_GPIO_LED_0 6
 

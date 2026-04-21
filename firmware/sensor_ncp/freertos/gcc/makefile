@@ -2,12 +2,12 @@ SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR ?= $(abspath ../../../../../../..)
 
 include $(SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR)/imports.mak
 
-CC = "$(TICLANG_ARMCOMPILER)/bin/tiarmclang"
-LNK = "$(TICLANG_ARMCOMPILER)/bin/tiarmclang"
+CC = "$(GCC_ARMCOMPILER)/bin/arm-none-eabi-gcc"
+LNK = "$(GCC_ARMCOMPILER)/bin/arm-none-eabi-gcc"
 
 SYSCONFIG_GUI_TOOL = $(dir $(SYSCONFIG_TOOL))sysconfig_gui$(suffix $(SYSCONFIG_TOOL))
-SYSCFG_CMD_STUB = $(SYSCONFIG_TOOL) --compiler ticlang --product $(SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR)/.metadata/product.json
-SYSCFG_GUI_CMD_STUB = $(SYSCONFIG_GUI_TOOL) --compiler ticlang --product $(SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR)/.metadata/product.json
+SYSCFG_CMD_STUB = $(SYSCONFIG_TOOL) --compiler gcc --product $(SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR)/.metadata/product.json
+SYSCFG_GUI_CMD_STUB = $(SYSCONFIG_GUI_TOOL) --compiler gcc --product $(SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR)/.metadata/product.json
 SYSCFG_FILES := $(shell $(SYSCFG_CMD_STUB) --listGeneratedFiles --listReferencedFiles --output . ../../freertos/sensor_ncp.syscfg)
 
 SYSCFG_C_FILES = $(filter %.c,$(SYSCFG_FILES))
@@ -20,27 +20,43 @@ NAME = sensor_ncp
 CFLAGS += -I../.. \
     -I. \
     $(addprefix @,$(SYSCFG_OPT_FILES)) \
-    -Oz \
+    -O3 \
     "-I$(SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR)/source" \
+    -D_REENT_SMALL \
     "-I$(SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR)/kernel/freertos" \
-    "-I$(SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR)/source/ti/posix/ticlang" \
+    "-I$(SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR)/source/ti/posix/gcc" \
     "-I$(SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR)/source/third_party/freertos/include" \
     "-I$(SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR)/source/third_party/freertos/portable/GCC/ARM_CM4F" \
-    -gdwarf-3 \
     -mcpu=cortex-m4 \
     -march=armv7e-m \
     -mthumb \
+    -std=c99 \
     -mfloat-abi=hard \
-    -mfpu=fpv4-sp-d16
+    -mfpu=fpv4-sp-d16 \
+    -ffunction-sections \
+    -fdata-sections \
+    -g \
+    -gstrict-dwarf \
+    -Wall \
+    "-I$(GCC_ARMCOMPILER)/arm-none-eabi/include/newlib-nano" \
+    "-I$(GCC_ARMCOMPILER)/arm-none-eabi/include"
 
-LFLAGS += "-L$(SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR)/source" \
+LFLAGS += -Wl,-T,../../freertos/gcc/cc13x2x7_cc26x2x7_freertos.lds \
+    "-Wl,-Map,$(NAME).map" \
+    "-L$(SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR)/source" \
     ti_utils_build_linker.cmd.genlibs \
-    ../../freertos/ticlang/cc13x2x7_cc26x2x7_freertos.cmd \
-    "-Wl,-m,$(NAME).map" \
-    -Wl,--rom_model \
-    -Wl,--warn_sections \
-    "-L$(TICLANG_ARMCOMPILER)/lib" \
-    -llibc.a
+    -march=armv7e-m \
+    -mthumb \
+    -mfloat-abi=hard \
+    -mfpu=fpv4-sp-d16 \
+    -nostartfiles \
+    -static \
+    -Wl,--gc-sections \
+    "-L$(GCC_ARMCOMPILER)/arm-none-eabi/lib/thumb/v7e-m/hard" \
+    -lgcc \
+    -lc \
+    -lm \
+    --specs=nano.specs
 
 all: $(NAME).out
 
@@ -67,22 +83,22 @@ syscfg-gui: ../../freertos/sensor_ncp.syscfg $(SYSCONFIG_GUI_TOOL)
 define C_RULE
 $(basename $(notdir $(1))).obj: $(1) $(SYSCFG_H_FILES)
 	@ echo Building $$@
-	@ $(CC) $(CFLAGS) -c $$< -o $$@
+	@ $(CC) $(CFLAGS) $$< -c -o $$@
 endef
 
 $(foreach c_file,$(SYSCFG_C_FILES),$(eval $(call C_RULE,$(c_file))))
 
 sensor_ncp.obj: ../../sensor_ncp.c $(SYSCFG_H_FILES)
 	@ echo Building $@
-	@ $(CC) $(CFLAGS) -c $< -o $@
+	@ $(CC) $(CFLAGS) $< -c -o $@
 
 freertos_main_freertos.obj: ../../freertos/main_freertos.c $(SYSCFG_H_FILES)
 	@ echo Building $@
-	@ $(CC) $(CFLAGS) -c $< -o $@
+	@ $(CC) $(CFLAGS) $< -c -o $@
 
 $(NAME).out: $(OBJECTS)
 	@ echo linking $@
-	@ $(LNK) -Wl,-u,_c_int00 $(OBJECTS)  $(LFLAGS) -o $(NAME).out
+	@ $(LNK)  $(OBJECTS)  $(LFLAGS) -o $(NAME).out
 
 clean:
 	@ echo Cleaning...
