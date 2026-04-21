@@ -14,6 +14,7 @@ include(sensor_mcu.cmake)
 
 target_sources(slc PRIVATE
     ${SDK_PATH}/platform/emlib/src/em_i2c.c
+    ${SDK_PATH}/platform/emlib/src/em_eusart.c
     ../board_i2c.c
     ../sensor_bus.c
 )
