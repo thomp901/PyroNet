@@ -11,22 +11,15 @@
 #include DeviceFamily_constructPath(driverlib/sys_ctrl.h)
 
 #include <ti_drivers_config.h>
+#include "diag/log.h"
 #include "uart_transport.h"
 
 #define UART_TX_DIO 28U
 #define UART_RX_DIO 27U
 #define UART_BAUD_RATE 115200U
 #define UART_LINE_BUFFER_SIZE 64U
-#define UART_LOG_BUFFER_SIZE 128U
+#define UART_RESPONSE_BUFFER_SIZE 128U
 #define SENSOR_NCP_VERSION "sensor_ncp uart-bootstrap v0.1"
-
-static void logLine(UartTransportLogFn logFn, const char *line)
-{
-    if (logFn != NULL)
-    {
-        logFn(line);
-    }
-}
 
 static void uartWrite(UART2_Handle uartHandle, const char *text)
 {
@@ -39,14 +32,11 @@ static void uartWriteLine(UART2_Handle uartHandle, const char *line)
     uartWrite(uartHandle, "\r\n");
 }
 
-static void processCommand(UART2_Handle uartHandle,
-                           const char *command,
-                           UartTransportLogFn logFn)
+static void processCommand(UART2_Handle uartHandle, const char *command)
 {
-    char lineBuffer[UART_LOG_BUFFER_SIZE];
+    char lineBuffer[UART_RESPONSE_BUFFER_SIZE];
 
-    snprintf(lineBuffer, sizeof(lineBuffer), "UART_CMD: %s", command);
-    logLine(logFn, lineBuffer);
+    diagLogf("UART_CMD", "%s", command);
 
     if (strcmp(command, "PING") == 0)
     {
@@ -78,13 +68,13 @@ static void processCommand(UART2_Handle uartHandle,
     }
 }
 
-void uartTransportRun(UartTransportLogFn logFn)
+void uartTransportRun(void)
 {
     UART2_Handle uartHandle;
     UART2_Params uartParams;
     char commandBuffer[UART_LINE_BUFFER_SIZE];
     size_t commandLength = 0;
-    char lineBuffer[UART_LOG_BUFFER_SIZE];
+    char lineBuffer[UART_RESPONSE_BUFFER_SIZE];
     uint8_t rxByte = 0;
 
     UART2_Params_init(&uartParams);
@@ -94,17 +84,17 @@ void uartTransportRun(UartTransportLogFn logFn)
     uartHandle = UART2_open(CONFIG_UART2_0, &uartParams);
     if (uartHandle == NULL)
     {
-        logLine(logFn, "UART_INIT: failed");
+        diagLogInfo("UART_INIT", "failed");
         while (1) {}
     }
 
     snprintf(lineBuffer,
              sizeof(lineBuffer),
-             "UART_INIT: ready baud=%lu tx_dio=%u rx_dio=%u",
+             "ready baud=%lu tx_dio=%u rx_dio=%u",
              (unsigned long)UART_BAUD_RATE,
              UART_TX_DIO,
              UART_RX_DIO);
-    logLine(logFn, lineBuffer);
+    diagLogInfo("UART_INIT", lineBuffer);
 
     uartWriteLine(uartHandle, "READY sensor_ncp uart-bootstrap");
     uartWriteLine(uartHandle, "CMDS PING GET_VERSION GET_STATUS RESET");
@@ -125,7 +115,7 @@ void uartTransportRun(UartTransportLogFn logFn)
         if (rxByte == '\n')
         {
             commandBuffer[commandLength] = '\0';
-            processCommand(uartHandle, commandBuffer, logFn);
+            processCommand(uartHandle, commandBuffer);
             commandLength = 0;
             continue;
         }

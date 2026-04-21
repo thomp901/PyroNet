@@ -34,49 +34,18 @@
  *  ======== sensor_ncp.c ========
  */
 
-#include <string.h>
+#include <stddef.h>
 
 /* Driver Header files */
 #include <ti/drivers/GPIO.h>
-#include <ti/drivers/ITM.h>
 // #include <ti/drivers/I2C.h>
 // #include <ti/drivers/SPI.h>
 // #include <ti/drivers/Watchdog.h>
 
-/* Driver configuration */
-#include <ti_drivers_config.h>
+#include "diag/log.h"
 #include "uart_transport.h"
 
-#define SWO_TRACE_PORT 0U
-#define SWO_RESET_PORT 31U
-#define SWO_RESET_FRAME 0xBBBBBBBBUL
 #define SWO_SELF_TEST_TOKEN "SWO_SELF_TEST: CC1352P7_DIO16_ITM_CH0"
-
-static void swoWriteLine(const char *line)
-{
-    ITM_sendBufferAtomic(SWO_TRACE_PORT, line, strlen(line));
-    ITM_send8Atomic(SWO_TRACE_PORT, '\r');
-    ITM_send8Atomic(SWO_TRACE_PORT, '\n');
-}
-
-static void swoInit(void)
-{
-    if (false == ITM_open())
-    {
-        /* DIO_16 is reserved for the debug header SWO/TDO path. */
-        while (1) {}
-    }
-
-    ITM_disableExceptionTrace();
-    ITM_disablePCAndEventSampling();
-
-    /*
-     * Host tooling waits for this parser reset token before consuming the
-     * software stimulus stream.
-     */
-    ITM_send32Atomic(SWO_RESET_PORT, SWO_RESET_FRAME);
-    swoWriteLine(SWO_SELF_TEST_TOKEN " phase=BOOT uart_transport=starting");
-}
 
 /*
  *  ======== mainThread ========
@@ -87,12 +56,18 @@ void *mainThread(void *arg0)
 
     /* Call driver init functions */
     GPIO_init();
-    swoInit();
+    if (false == diagLogInit())
+    {
+        /* DIO_16 is reserved for the debug header SWO/TDO path. */
+        while (1) {}
+    }
+
+    diagLogLine(SWO_SELF_TEST_TOKEN " phase=BOOT uart_transport=starting");
     // I2C_init();
     // SPI_init();
     // Watchdog_init();
 
-    uartTransportRun(swoWriteLine);
+    uartTransportRun();
 
     return NULL;
 }
