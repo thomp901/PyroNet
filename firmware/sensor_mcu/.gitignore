@@ -1,0 +1,12 @@
+# Local OS/editor noise
+.DS_Store
+
+# In-tree CMake/Ninja build output
+/cmake_gcc/build/
+
+# Common generated firmware artifacts when produced outside the normal build dir
+*.bin
+*.hex
+*.map
+*.out
+*.s37

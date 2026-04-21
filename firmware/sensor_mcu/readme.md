@@ -13,6 +13,22 @@ The firmware emits two boot lines during `app_init()`:
 - `SWO_BOOT backend=SWO port=0 speed=<actual>`
 - `SWO_BOOT_READY`
 
+The current sensor bring-up path also probes the shared I2C bus during `app_init()`:
+
+- SPS30 at address `0x69`
+- BME68x at address `0x76`
+
+Probe output is emitted over the same log path from [sensor_bus.c](./sensor_bus.c):
+
+- `SENSOR_FOUND name=SPS30 addr=0x69` when the SPS30 ACKs
+- `SENSOR_PROBE name=SPS30 addr=0x69 status=<status>` when the SPS30 does not ACK cleanly
+- `SENSORS_READY bme68x=<0|1> sps30=<0|1>` after both probes complete
+
+The staged Sensirion driver sources live under [third_party/sps30](./third_party/sps30),
+but those files are not currently linked by the generated target. The current build
+only performs presence probing through [sensor_bus.c](./sensor_bus.c) and
+[board_i2c.c](./board_i2c.c).
+
 Use the repo `Makefile` for the normal host workflow:
 
 ```sh

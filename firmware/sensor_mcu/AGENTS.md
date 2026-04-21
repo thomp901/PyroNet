@@ -20,6 +20,8 @@ Read these first when orienting yourself:
 - [sensor_mcu.slcp](./sensor_mcu.slcp): component selection, device target, SDK version.
 - [main.c](./main.c): control-flow entrypoint into `app_init()` and `app_process_action()`.
 - [app.c](./app.c): primary user-editable application logic.
+- [sensor_bus.c](./sensor_bus.c): current sensor-bus bring-up and SPS30/BME68x presence probe path.
+- [sensor_bus.h](./sensor_bus.h): sensor probe addresses and bus-state structure.
 - [debug_console.c](./debug_console.c): manual SWO/ITM backend and boot-marker implementation.
 - [debug_console.h](./debug_console.h): SWO marker names, port selection, and public API.
 - [autogen/sl_event_handler.c](./autogen/sl_event_handler.c): generated platform/service init chain.
@@ -39,6 +41,13 @@ If you are changing application behavior:
 
 - start in [app.c](./app.c)
 - then inspect [main.c](./main.c) to understand when the hook runs
+
+If you are changing sensor detection, I2C probe order, or SPS30/BME68x bring-up:
+
+- start in [sensor_bus.c](./sensor_bus.c)
+- inspect [sensor_bus.h](./sensor_bus.h) for the active probe addresses
+- inspect [board_i2c.c](./board_i2c.c) for low-level bus init and transfer behavior
+- then inspect [app.c](./app.c) to see how probe results are reported at boot
 
 If you are changing SWO logging, readback markers, or host-side SWO verification:
 
@@ -99,10 +108,18 @@ The repo contains staged sensor libraries:
 
 - `third_party/bme68x/`
 - `third_party/bsec2/`
+- `third_party/sps30/`
 
-Important detail: those sources are present in the tree, but they are not listed in
-the current generated source list in [cmake_gcc/sensor_mcu.cmake](./cmake_gcc/sensor_mcu.cmake).
-Do not assume they are active in the build until you confirm the target links them.
+Current firmware behavior:
+
+- the active boot path probes an SPS30 at `0x69` and a BME68x at `0x76` in [sensor_bus.c](./sensor_bus.c)
+- the probe result is summarized at boot as `SENSORS_READY bme68x=<0|1> sps30=<0|1>` from [app.c](./app.c)
+
+Important detail: the staged third-party sensor sources are present in the tree, but
+they are not listed in the current generated source list in
+[cmake_gcc/sensor_mcu.cmake](./cmake_gcc/sensor_mcu.cmake). Do not assume the
+vendor SPS30, BME68x, or BSEC code is active in the build until you confirm the
+target links it.
 
 ## Build Outputs
 
