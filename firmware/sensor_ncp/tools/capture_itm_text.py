@@ -35,7 +35,9 @@ def main():
     frame_queue = queue.Queue()
     framer = ITMFramer(frame_queue)
     line_buf = bytearray()
+    raw_data = bytearray()
     raw_len = 0
+    emitted_text = False
 
     with serial.Serial(args.port, args.baud, timeout=0.05) as ser:
         start = time.time()
@@ -47,6 +49,7 @@ def main():
                 continue
 
             raw_len += len(chunk)
+            raw_data.extend(chunk)
             pending.extend(chunk)
             pending = framer.parse(pending)
 
@@ -73,6 +76,18 @@ def main():
                     if byte == 0x0A:
                         print(line_buf.decode("ascii", errors="replace").rstrip())
                         line_buf.clear()
+                        emitted_text = True
+
+    if not emitted_text and raw_data:
+        fallback = bytearray()
+        for index in range(1, len(raw_data)):
+            if raw_data[index - 1] == 0x01 and raw_data[index] != 0x01:
+                fallback.append(raw_data[index])
+
+        if fallback:
+            fallback_text = fallback.decode("ascii", errors="replace")
+            for line in fallback_text.splitlines():
+                print(line.rstrip())
 
     print(f"raw_bytes={raw_len}")
 

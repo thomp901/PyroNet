@@ -18,6 +18,98 @@
 #include "ti_drivers_config.h"
 
 /*
+ *  =============================== AESCBC ===============================
+ */
+
+#include <ti/drivers/AESCBC.h>
+#include <ti/drivers/aescbc/AESCBCCC26XX.h>
+
+#define CONFIG_AESCBC_COUNT 1
+
+
+AESCBCCC26XX_Object aescbcCC26XXObjects[CONFIG_AESCBC_COUNT];
+
+/*
+ *  ======== aescbcCC26XXHWAttrs ========
+ */
+const AESCBCCC26XX_HWAttrs aescbcCC26XXHWAttrs[CONFIG_AESCBC_COUNT] = {
+    {
+        .intPriority = (~0),
+    },
+};
+
+const AESCBC_Config AESCBC_config[CONFIG_AESCBC_COUNT] = {
+    {   /* CONFIG_AESCBC_0 */
+        .object  = &aescbcCC26XXObjects[CONFIG_AESCBC_0],
+        .hwAttrs = &aescbcCC26XXHWAttrs[CONFIG_AESCBC_0]
+    },
+};
+
+const uint_least8_t CONFIG_AESCBC_0_CONST = CONFIG_AESCBC_0;
+const uint_least8_t AESCBC_count = CONFIG_AESCBC_COUNT;
+
+/*
+ *  =============================== AESCCM ===============================
+ */
+
+#include <ti/drivers/AESCCM.h>
+#include <ti/drivers/aesccm/AESCCMCC26XX.h>
+
+#define CONFIG_AESCCM_COUNT 1
+AESCCMCC26XX_Object aesccmCC26XXObjects[CONFIG_AESCCM_COUNT];
+
+/*
+ *  ======== aesccmCC26XXHWAttrs ========
+ */
+const AESCCMCC26XX_HWAttrs aesccmCC26XXHWAttrs[CONFIG_AESCCM_COUNT] = {
+    {
+        .intPriority = (~0),
+    },
+};
+
+const AESCCM_Config AESCCM_config[CONFIG_AESCCM_COUNT] = {
+    {   /* CONFIG_AESCCM_0 */
+        .object  = &aesccmCC26XXObjects[CONFIG_AESCCM_0],
+        .hwAttrs = &aesccmCC26XXHWAttrs[CONFIG_AESCCM_0]
+    },
+};
+
+const uint_least8_t CONFIG_AESCCM_0_CONST = CONFIG_AESCCM_0;
+const uint_least8_t AESCCM_count = CONFIG_AESCCM_COUNT;
+
+/*
+ *  =============================== AESECB ===============================
+ */
+
+#include <ti/drivers/AESECB.h>
+#include <ti/drivers/aesecb/AESECBCC26XX.h>
+
+#define CONFIG_AESECB_COUNT 1
+
+
+AESECBCC26XX_Object aesecbCC26XXObjects[CONFIG_AESECB_COUNT];
+
+/*
+ *  ======== aesecbCC26XXHWAttrs ========
+ */
+const AESECBCC26XX_HWAttrs aesecbCC26XXHWAttrs[CONFIG_AESECB_COUNT] = {
+    {
+        .intPriority = (~0),
+    },
+};
+
+const AESECB_Config AESECB_config[CONFIG_AESECB_COUNT] = {
+    {   /* CONFIG_AESECB_0 */
+        .object  = &aesecbCC26XXObjects[CONFIG_AESECB_0],
+        .hwAttrs = &aesecbCC26XXHWAttrs[CONFIG_AESECB_0]
+    },
+};
+
+
+const uint_least8_t CONFIG_AESECB_0_CONST = CONFIG_AESECB_0;
+const uint_least8_t AESECB_count = CONFIG_AESECB_COUNT;
+
+/*
  *  =============================== GPIO ===============================
  */
 
@@ -39,8 +131,8 @@ GPIO_PinConfig gpioPinConfigs[31] = {
     0, /* Pin is not available on this device */
     0, /* Pin is not available on this device */
     GPIO_CFG_NO_DIR, /* DIO_5 */
-    GPIO_CFG_OUTPUT_INTERNAL | GPIO_CFG_OUT_STR_MED | GPIO_CFG_OUT_LOW, /* CONFIG_GPIO_LED_0 */
-    GPIO_CFG_NO_DIR, /* DIO_7 */
+    GPIO_CFG_OUTPUT_INTERNAL | GPIO_CFG_OUT_STR_MED | GPIO_CFG_OUT_LOW, /* CONFIG_GPIO_RLED */
+    GPIO_CFG_OUTPUT_INTERNAL | GPIO_CFG_OUT_STR_MED | GPIO_CFG_OUT_LOW, /* CONFIG_GPIO_GLED */
     GPIO_CFG_NO_DIR, /* DIO_8 */
     GPIO_CFG_NO_DIR, /* DIO_9 */
     GPIO_CFG_NO_DIR, /* DIO_10 */
@@ -49,22 +141,24 @@ GPIO_PinConfig gpioPinConfigs[31] = {
     GPIO_CFG_NO_DIR, /* DIO_13 */
     GPIO_CFG_NO_DIR, /* DIO_14 */
     GPIO_CFG_NO_DIR, /* DIO_15 */
-    /* Owned by /ti/drivers/ITM as SWO */
-    GPIO_CFG_OUTPUT_INTERNAL | GPIO_CFG_OUT_STR_MED | GPIO_CFG_OUT_LOW, /* CONFIG_GPIO_ITM_SWO */
+    GPIO_CFG_NO_DIR, /* DIO_16 */
     GPIO_CFG_NO_DIR, /* DIO_17 */
     GPIO_CFG_NO_DIR, /* DIO_18 */
     GPIO_CFG_NO_DIR, /* DIO_19 */
     GPIO_CFG_NO_DIR, /* DIO_20 */
-    GPIO_CFG_NO_DIR, /* DIO_21 */
-    GPIO_CFG_NO_DIR, /* DIO_22 */
+    GPIO_CFG_INPUT_INTERNAL | GPIO_CFG_IN_INT_NONE | GPIO_CFG_PULL_UP_INTERNAL, /* CONFIG_GPIO_BTN1 */
+    GPIO_CFG_INPUT_INTERNAL | GPIO_CFG_IN_INT_NONE | GPIO_CFG_PULL_UP_INTERNAL, /* CONFIG_GPIO_BTN2 */
     GPIO_CFG_NO_DIR, /* DIO_23 */
     GPIO_CFG_NO_DIR, /* DIO_24 */
     GPIO_CFG_NO_DIR, /* DIO_25 */
     GPIO_CFG_NO_DIR, /* DIO_26 */
     GPIO_CFG_NO_DIR, /* DIO_27 */
-    GPIO_CFG_NO_DIR, /* DIO_28 */
-    GPIO_CFG_NO_DIR, /* DIO_29 */
-    GPIO_CFG_NO_DIR, /* DIO_30 */
+    /* Owned by /ti/drivers/RF as RF Antenna Pin 0 */
+    GPIO_CFG_OUTPUT_INTERNAL | GPIO_CFG_OUT_STR_HIGH | GPIO_CFG_OUT_LOW, /* CONFIG_RF_24GHZ */
+    /* Owned by /ti/drivers/RF as RF Antenna Pin 1 */
+    GPIO_CFG_OUTPUT_INTERNAL | GPIO_CFG_OUT_STR_HIGH | GPIO_CFG_OUT_LOW, /* CONFIG_RF_HIGH_PA */
+    /* Owned by /ti/drivers/RF as RF Antenna Pin 2 */
+    GPIO_CFG_OUTPUT_INTERNAL | GPIO_CFG_OUT_STR_HIGH | GPIO_CFG_OUT_LOW, /* CONFIG_RF_SUB1GHZ */
 };
 
 /*
@@ -82,8 +176,13 @@ GPIO_CallbackFxn gpioCallbackFunctions[31];
  */
 void* gpioUserArgs[31];
 
-const uint_least8_t CONFIG_GPIO_ITM_SWO_CONST = CONFIG_GPIO_ITM_SWO;
-const uint_least8_t CONFIG_GPIO_LED_0_CONST = CONFIG_GPIO_LED_0;
+const uint_least8_t CONFIG_RF_24GHZ_CONST = CONFIG_RF_24GHZ;
+const uint_least8_t CONFIG_RF_HIGH_PA_CONST = CONFIG_RF_HIGH_PA;
+const uint_least8_t CONFIG_RF_SUB1GHZ_CONST = CONFIG_RF_SUB1GHZ;
+const uint_least8_t CONFIG_GPIO_RLED_CONST = CONFIG_GPIO_RLED;
+const uint_least8_t CONFIG_GPIO_GLED_CONST = CONFIG_GPIO_GLED;
+const uint_least8_t CONFIG_GPIO_BTN1_CONST = CONFIG_GPIO_BTN1;
+const uint_least8_t CONFIG_GPIO_BTN2_CONST = CONFIG_GPIO_BTN2;
 
 /*
  *  ======== GPIO_config ========
@@ -96,53 +195,66 @@ const GPIO_Config GPIO_config = {
 };
 
 /*
- *  =============================== ITM ===============================
+ *  =============================== NVS ===============================
  */
-#include <ti/drivers/ITM.h>
-#include <ti/drivers/itm/ITMCC26XX.h>
-#include DeviceFamily_constructPath(driverlib/ioc.h)
+
+#include <ti/drivers/NVS.h>
+#include <ti/drivers/nvs/NVSCC26XX.h>
 
 /*
- *  ======== itmHWAttrs ========
+ *  NVSCC26XX Internal NVS flash region definitions
+ *
+ * Place uninitialized char arrays at addresses
+ * corresponding to the 'regionBase' addresses defined in
+ * the configured NVS regions. These arrays are used as
+ * place holders so that the linker will not place other
+ * content there.
+ *
+ * For GCC targets, the char arrays are each placed into
+ * the shared ".nvs" section. The user must add content to
+ * their GCC linker command file to place the .nvs section
+ * at the lowest 'regionBase' address specified in their NVS
+ * regions.
  */
-static const ITMCC26XX_HWAttrs itmCC26XXHWAttrs = {
-    .format             = ITM_TPIU_SWO_UART,
-    .tpiuPrescaler      = 15,
-    .fullPacketInCycles = 512,
-    .traceEnable        = 0x80000001,
-    .swoPin             = CONFIG_GPIO_ITM_SWO,
+
+#if defined(__TI_COMPILER_VERSION__) || defined(__clang__)
+
+static char flashBuf0[0x4000] __attribute__ ((retain, noinit, location(0xa8000)));
+
+#elif defined(__IAR_SYSTEMS_ICC__)
+
+__no_init static char flashBuf0[0x4000] @ 0xa8000;
+
+#elif defined(__GNUC__)
+
+__attribute__ ((section (".nvs")))
+static char flashBuf0[0x4000];
+
+#endif
+
+NVSCC26XX_Object nvsCC26XXObjects[1];
+
+static const NVSCC26XX_HWAttrs nvsCC26XXHWAttrs[1] = {
+    /* CONFIG_NVSINTERNAL */
+    {
+        .regionBase = (void *) flashBuf0,
+        .regionSize = 0x4000
+    },
 };
 
-void *itmHwAttrs = (void *)&itmCC26XXHWAttrs;
+#define CONFIG_NVS_COUNT 1
 
-extern void ITM_commonFlush(void);
-extern void ITM_commonRestore(void);
-extern void ITMCC26XX_flush(void);
-extern void ITMCC26XX_restore(void);
+const NVS_Config NVS_config[CONFIG_NVS_COUNT] = {
+    /* CONFIG_NVSINTERNAL */
+    {
+        .fxnTablePtr = &NVSCC26XX_fxnTable,
+        .object = &nvsCC26XXObjects[0],
+        .hwAttrs = &nvsCC26XXHWAttrs[0],
+    },
+};
 
-/*
- *  ======== ITM_flush ========
- */
-void ITM_flush(void)
-{
-    /* First, call the common ITM flush */
-    ITM_commonFlush();
-
-    /* Then, do CC26XX specific pin muxing */
-    ITMCC26XX_flush();
-}
-
-/*
- *  ======== ITM_restore ========
- */
-void ITM_restore(void)
-{
-    /* First, call CC26XX specific function to remux pin */
-    ITM_commonRestore();
-
-    /* Then, do common restore */
-    ITMCC26XX_restore();
-}
+const uint_least8_t CONFIG_NVSINTERNAL_CONST = CONFIG_NVSINTERNAL;
+const uint_least8_t NVS_count = CONFIG_NVS_COUNT;
 
 /*
  *  =============================== Power ===============================
@@ -164,6 +276,263 @@ const PowerCC26X2_Config PowerCC26X2_config = {
     .enableTCXOFxn            = NULL
 };
 
+
+
+/*
+ *  =============================== RF Driver ===============================
+ */
+#include <ti/drivers/GPIO.h>
+#include <ti/devices/DeviceFamily.h>
+#include DeviceFamily_constructPath(driverlib/ioc.h)
+#include <ti/drivers/rf/RF.h>
+
+/*
+ * RF driver callback function, called by the driver on global driver events.
+ */
+static void RF_globalCallbackFunction (RF_Handle client, RF_GlobalEvent events, void* arg);
+
+/*
+ * Callback function to handle custom / application specific behavior
+ */
+extern void __attribute__((weak)) rfDriverCallback (RF_Handle client, RF_GlobalEvent events, void *arg);
+
+/*
+ * Callback function to handle antenna switching
+ */
+extern void __attribute__((weak)) rfDriverCallbackAntennaSwitching (RF_Handle client, RF_GlobalEvent events, void *arg);
+
+/*
+ * Platform-specific driver configuration
+ */
+const RFCC26XX_HWAttrsV2 RFCC26XX_hwAttrs = {
+    .hwiPriority        = (~0),
+    .swiPriority        = (uint8_t)0,
+    .xoscHfAlwaysNeeded = true,
+    .globalCallback     = &RF_globalCallbackFunction,
+    .globalEventMask    = RF_GlobalEventInit | RF_GlobalEventRadioPowerDown | RF_GlobalEventRadioSetup
+};
+
+/*
+ *  ======== RF_globalCallbackFunction ========
+ *  This function is called by the driver on global driver events.
+ *  It will call specific callback functions to further handle the triggering events.
+ */
+static void RF_globalCallbackFunction(RF_Handle client, RF_GlobalEvent events, void *arg)
+{
+    rfDriverCallback(client, events, arg);
+    rfDriverCallbackAntennaSwitching(client, events, arg);
+}
+
+/*
+ *  ======== rfDriverCallback ========
+ *  Handle events triggered by the RF driver for custom / application specific behavior.
+ */
+void __attribute__((weak)) rfDriverCallback(RF_Handle client, RF_GlobalEvent events, void *arg)
+{
+    /* ======== PLEASE READ THIS ========
+    *
+    * This function is declared weak for the application to override it.
+    * A new definition of 'rfDriverCallback' is required if you want to
+    * handle the events listed in '.globalEventMask'.
+    *
+    * Please copy this function definition to create your own, but make
+    * sure to remove '__attribute__((weak))' for your definition.
+    *
+    * According to '.globalEventMask', this function will be triggered by:
+    *   - RF_GlobalEventInit
+    *   - RF_GlobalEventRadioPowerDown
+    *   - RF_GlobalEventRadioSetup
+    *
+    * An example of how to handle these events would be:
+    *
+    *   --- Code snippet begin ---
+    *
+    *   if(events & RF_GlobalEventInit) {
+    *       // Perform action for this event
+    *   }
+    *   else if (events & RF_GlobalEventRadioPowerDown) {
+    *       // Perform action for this event
+    *   }
+    *   else if (events & RF_GlobalEventRadioSetup) {
+    *       // Perform action for this event
+    *   }
+    *
+    *   --- Code snippet end ---
+    */
+}
+
+
+
+/*
+ * ======== Antenna switching ========
+ */
+/*
+ * ======== rfDriverCallbackAntennaSwitching ========
+ * Sets up the antenna switch depending on the current PHY configuration.
+ *
+ * Truth table:
+ *
+ * Path       DIO28 DIO29 DIO30
+ * ========== ===== ===== ===== 
+ * Off        0     0     0
+ * 2.4 GHZ    1     0     0
+ * HIGH PA    0     1     0
+ * SUB1 GHZ   0     0     1
+ */
+void __attribute__((weak)) rfDriverCallbackAntennaSwitching(RF_Handle client, RF_GlobalEvent events, void *arg)
+{
+
+    if (events & RF_GlobalEventRadioSetup) {
+        bool    sub1GHz   = false;
+        uint8_t loDivider = 0;
+
+        /* Switch off all paths. */
+        GPIO_write(CONFIG_RF_24GHZ, 0);
+        GPIO_write(CONFIG_RF_HIGH_PA, 0);
+        GPIO_write(CONFIG_RF_SUB1GHZ, 0);
+
+        /* Decode the current PA configuration. */
+        RF_TxPowerTable_PAType paType = (RF_TxPowerTable_PAType)RF_getTxPower(client).paType;
+
+        /* Decode the generic argument as a setup command. */
+        RF_RadioSetup* setupCommand = (RF_RadioSetup*)arg;
+
+        switch (setupCommand->common.commandNo) {
+            case (CMD_RADIO_SETUP):
+            case (CMD_BLE5_RADIO_SETUP):
+                    loDivider = RF_LODIVIDER_MASK & setupCommand->common.loDivider;
+
+                    /* Sub-1GHz front-end. */
+                    if (loDivider != 0) {
+                        sub1GHz = true;
+                    }
+                    break;
+            case (CMD_PROP_RADIO_DIV_SETUP):
+                    loDivider = RF_LODIVIDER_MASK & setupCommand->prop_div.loDivider;
+
+                    /* Sub-1GHz front-end. */
+                    if (loDivider != 0) {
+                        sub1GHz = true;
+                    }
+                    break;
+            default:break;
+        }
+
+        if (sub1GHz) {
+            /* Sub-1 GHz */
+            if (paType == RF_TxPowerTable_HighPA) {
+                /* PA enable --> HIGH PA
+                 * LNA enable --> Sub-1 GHz
+                 */
+                GPIO_setConfigAndMux(CONFIG_RF_24GHZ, GPIO_CFG_OUTPUT, IOC_PORT_GPIO);
+                /* Note: RFC_GPO3 is a work-around because the RFC_GPO1 (PA enable signal) is sometimes not
+                         de-asserted on CC1352 Rev A. */
+                GPIO_setConfigAndMux(CONFIG_RF_HIGH_PA, GPIO_CFG_OUTPUT, IOC_PORT_RFC_GPO3);
+                GPIO_setConfigAndMux(CONFIG_RF_SUB1GHZ, GPIO_CFG_OUTPUT, IOC_PORT_RFC_GPO0);
+            } else {
+                /* RF core active --> Sub-1 GHz */
+                GPIO_setConfigAndMux(CONFIG_RF_24GHZ, GPIO_CFG_OUTPUT, IOC_PORT_GPIO);
+                GPIO_setConfigAndMux(CONFIG_RF_HIGH_PA, GPIO_CFG_OUTPUT, IOC_PORT_GPIO);
+                GPIO_setConfigAndMux(CONFIG_RF_SUB1GHZ, GPIO_CFG_OUTPUT | GPIO_CFG_OUT_HIGH, IOC_PORT_GPIO);
+            }
+        } else {
+            /* 2.4 GHz */
+            if (paType == RF_TxPowerTable_HighPA)
+            {
+                /* PA enable --> HIGH PA
+                 * LNA enable --> 2.4 GHz
+                 */
+                GPIO_setConfigAndMux(CONFIG_RF_24GHZ, GPIO_CFG_OUTPUT, IOC_PORT_RFC_GPO0);
+                /* Note: RFC_GPO3 is a work-around because the RFC_GPO1 (PA enable signal) is sometimes not
+                         de-asserted on CC1352 Rev A. */
+                GPIO_setConfigAndMux(CONFIG_RF_HIGH_PA, GPIO_CFG_OUTPUT, IOC_PORT_RFC_GPO3);
+                GPIO_setConfigAndMux(CONFIG_RF_SUB1GHZ, GPIO_CFG_OUTPUT, IOC_PORT_GPIO);
+            } else {
+                /* RF core active --> 2.4 GHz */
+                GPIO_setConfigAndMux(CONFIG_RF_24GHZ, GPIO_CFG_OUTPUT | GPIO_CFG_OUT_HIGH, IOC_PORT_GPIO);
+                GPIO_setConfigAndMux(CONFIG_RF_HIGH_PA, GPIO_CFG_OUTPUT, IOC_PORT_GPIO);
+                GPIO_setConfigAndMux(CONFIG_RF_SUB1GHZ, GPIO_CFG_OUTPUT, IOC_PORT_GPIO);
+            }
+        }
+    }
+    else if (events & RF_GlobalEventRadioPowerDown) {
+        /* Switch off all paths. */
+        GPIO_write(CONFIG_RF_24GHZ, 0);
+        GPIO_write(CONFIG_RF_HIGH_PA, 0);
+        GPIO_write(CONFIG_RF_SUB1GHZ, 0);
+
+        /* Reset the IO multiplexer to GPIO functionality */
+        GPIO_setConfigAndMux(CONFIG_RF_24GHZ, GPIO_CFG_OUTPUT, IOC_PORT_GPIO);
+        GPIO_setConfigAndMux(CONFIG_RF_HIGH_PA, GPIO_CFG_OUTPUT, IOC_PORT_GPIO);
+        GPIO_setConfigAndMux(CONFIG_RF_SUB1GHZ, GPIO_CFG_OUTPUT, IOC_PORT_GPIO);
+    }
+}
+
+/*
+ *  =============================== TRNG ===============================
+ */
+
+#include <ti/drivers/TRNG.h>
+#include <ti/drivers/trng/TRNGCC26XX.h>
+
+#define CONFIG_TRNG_COUNT 1
+
+
+TRNGCC26XX_Object trngCC26XXObjects[CONFIG_TRNG_COUNT];
+
+/*
+ *  ======== trngCC26XXHWAttrs ========
+ */
+static const TRNGCC26XX_HWAttrs trngCC26XXHWAttrs[CONFIG_TRNG_COUNT] = {
+    {
+        .intPriority = (~0),
+        .swiPriority = 0,
+        .samplesPerCycle = 240000
+    },
+};
+
+const TRNG_Config TRNG_config[CONFIG_TRNG_COUNT] = {
+    {   /* NANOSTACK_TRNG */
+        .object         = &trngCC26XXObjects[NANOSTACK_TRNG],
+        .hwAttrs        = &trngCC26XXHWAttrs[NANOSTACK_TRNG]
+    },
+};
+
+const uint_least8_t NANOSTACK_TRNG_CONST = NANOSTACK_TRNG;
+const uint_least8_t TRNG_count = CONFIG_TRNG_COUNT;
+
+/*
+ *  =============================== Watchdog ===============================
+ */
+
+#include <ti/drivers/Watchdog.h>
+#include <ti/drivers/watchdog/WatchdogCC26XX.h>
+#include <ti/devices/cc13x2x7_cc26x2x7/inc/hw_memmap.h>
+
+#define CONFIG_WATCHDOG_COUNT 1
+
+
+WatchdogCC26XX_Object watchdogCC26XXObjects[CONFIG_WATCHDOG_COUNT];
+
+const WatchdogCC26XX_HWAttrs watchdogCC26XXHWAttrs[CONFIG_WATCHDOG_COUNT] = {
+    /* CONFIG_WATCHDOG_0: period = 1000 */
+    {
+        .baseAddr    = WDT_BASE,
+        .reloadValue = 1000
+    },
+};
+
+const Watchdog_Config Watchdog_config[CONFIG_WATCHDOG_COUNT] = {
+    /* CONFIG_WATCHDOG_0 */
+    {
+        .fxnTablePtr = &WatchdogCC26XX_fxnTable,
+        .object      = &watchdogCC26XXObjects[CONFIG_WATCHDOG_0],
+        .hwAttrs     = &watchdogCC26XXHWAttrs[CONFIG_WATCHDOG_0]
+    }
+};
+
+const uint_least8_t CONFIG_WATCHDOG_0_CONST = CONFIG_WATCHDOG_0;
+const uint_least8_t Watchdog_count = CONFIG_WATCHDOG_COUNT;
 
 #include <stdbool.h>
 
@@ -292,6 +661,9 @@ void Board_init(void)
     /* ==== /ti/drivers/GPIO initialization ==== */
     /* Setup GPIO module and default-initialise pins */
     GPIO_init();
+
+    /* ==== /ti/drivers/RF initialization ==== */
+
 
     Board_shutDownExtFlash();
 

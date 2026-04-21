@@ -18,12 +18,21 @@
  *                TICLANG C/C++ toolchain
  */
 
+/* libraries required for /third_party/spiffs */
+-l"third_party/spiffs/lib/ticlang/m4f/spiffs_cc26xx.a"
+
+/* libraries required for /ti/drivers/RF */
+-l"ti/drivers/rf/lib/ticlang/m4f/rf_multiMode_cc13x2.a"
+
 /* libraries required for /ti/drivers */
 -l"ti/drivers/lib/ticlang/m4f/drivers_cc13x2x7.a"
 -l"ti/grlib/lib/ticlang/m4f/grlib.a"
 
 /* libraries required for /ti/devices */
 -l"ti/devices/cc13x2x7_cc26x2x7/driverlib/bin/ticlang/driverlib.lib"
+
+/* libraries required for /ti/ti_wisunfan */
+-l"ti/ti_wisunfan/lib/ticlang/m4f/maclib_secure_cc13x2x7_freertos.a"
 
 /* libraries required for freertos */
 

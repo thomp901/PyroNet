@@ -36,6 +36,26 @@ cd /Users/diegosmacbook/Documents/PyroNet/firmware/sensor_ncp
   freertos/ticlang/sensor_ncp.out
 ```
 
+Verified SWO / ITM debug process:
+
+- Use SWO / ITM traces as a normal debugging tool when investigating firmware behavior on this target.
+- On this custom carrier board, the XDS110 debug header `SWO/TDO` signal is routed to the module's `JTAG_TDO`, which is `DIO_16`.
+- Do not assume LaunchPad-style SWO routing such as `DIO_18`; that is not the correct trace pin on this hardware.
+- The verified working debugger transport is XDS110 `2-pin cJTAG` with the aux COM port mapped to the target `TDO` pin, not a pure SWD attach.
+- The repo-local XDS110 config for this is `tools/cc1352p7_2pin_cJTAG_XDS110.ccxml`.
+- The repo-local ITM text capture helper is `tools/capture_itm_text.py`.
+
+Verified SWO / ITM capture example:
+
+```sh
+cd /Users/diegosmacbook/Documents/PyroNet/firmware/sensor_ncp
+python3 tools/capture_itm_text.py /dev/cu.usbmodemLS41069U4 3000000 --seconds 8
+```
+
+- The exact macOS device node may vary between hosts or reconnects; identify the XDS110 aux port before capture if needed.
+- A verified decoded boot trace from this firmware is:
+  `SWO_SELF_TEST: CC1352P7_DIO16_ITM_CH0 phase=BOOT pulse_dio=28`
+
 Reference:
 
 - If CoAP and Wi-SUN support are enabled later for this custom board, do not import LaunchPad files directly, but use the TI LaunchPad example here as a reference for the relevant pieces: `/Users/diegosmacbook/ti/simplelink_cc13xx_cc26xx_sdk_8_32_00_07/examples/rtos/LP_CC1352P7_1/ti_wisunfan/ns_coap_node_src`

@@ -39,14 +39,58 @@ extern "C" {
 
 
 /*
+ *  ======== AESCBC ========
+ */
+
+extern const uint_least8_t                  CONFIG_AESCBC_0_CONST;
+#define CONFIG_AESCBC_0                     0
+#define CONFIG_TI_DRIVERS_AESCBC_COUNT      1
+
+
+/*
+ *  ======== AESCCM ========
+ */
+
+extern const uint_least8_t                  CONFIG_AESCCM_0_CONST;
+#define CONFIG_AESCCM_0                     0
+#define CONFIG_TI_DRIVERS_AESCCM_COUNT      1
+
+
+/*
+ *  ======== AESECB ========
+ */
+
+extern const uint_least8_t                  CONFIG_AESECB_0_CONST;
+#define CONFIG_AESECB_0                     0
+#define CONFIG_TI_DRIVERS_AESECB_COUNT      1
+
+
+/*
  *  ======== GPIO ========
  */
-/* Owned by /ti/drivers/ITM as  */
-extern const uint_least8_t CONFIG_GPIO_ITM_SWO_CONST;
-#define CONFIG_GPIO_ITM_SWO 16
+/* Owned by /ti/drivers/RF as  */
+extern const uint_least8_t CONFIG_RF_24GHZ_CONST;
+#define CONFIG_RF_24GHZ 28
 
-extern const uint_least8_t CONFIG_GPIO_LED_0_CONST;
-#define CONFIG_GPIO_LED_0 6
+/* Owned by /ti/drivers/RF as  */
+extern const uint_least8_t CONFIG_RF_HIGH_PA_CONST;
+#define CONFIG_RF_HIGH_PA 29
+
+/* Owned by /ti/drivers/RF as  */
+extern const uint_least8_t CONFIG_RF_SUB1GHZ_CONST;
+#define CONFIG_RF_SUB1GHZ 30
+
+extern const uint_least8_t CONFIG_GPIO_RLED_CONST;
+#define CONFIG_GPIO_RLED 6
+
+extern const uint_least8_t CONFIG_GPIO_GLED_CONST;
+#define CONFIG_GPIO_GLED 7
+
+extern const uint_least8_t CONFIG_GPIO_BTN1_CONST;
+#define CONFIG_GPIO_BTN1 21
+
+extern const uint_least8_t CONFIG_GPIO_BTN2_CONST;
+#define CONFIG_GPIO_BTN2 22
 
 /* The range of pins available on this device */
 extern const uint_least8_t GPIO_pinLowerBound;
@@ -58,6 +102,39 @@ extern const uint_least8_t GPIO_pinUpperBound;
 
 #define CONFIG_LED_ON  (CONFIG_GPIO_LED_ON)
 #define CONFIG_LED_OFF (CONFIG_GPIO_LED_OFF)
+
+
+/*
+ *  ======== NVS ========
+ */
+
+extern const uint_least8_t              CONFIG_NVSINTERNAL_CONST;
+#define CONFIG_NVSINTERNAL              0
+#define CONFIG_TI_DRIVERS_NVS_COUNT     1
+
+
+/*
+ *  ======== RF ========
+ */
+#define Board_DIO_30_RFSW 0x0000001e
+
+
+/*
+ *  ======== TRNG ========
+ */
+
+extern const uint_least8_t              NANOSTACK_TRNG_CONST;
+#define NANOSTACK_TRNG                  0
+#define CONFIG_TI_DRIVERS_TRNG_COUNT    1
+
+
+/*
+ *  ======== Watchdog ========
+ */
+
+extern const uint_least8_t                  CONFIG_WATCHDOG_0_CONST;
+#define CONFIG_WATCHDOG_0                   0
+#define CONFIG_TI_DRIVERS_WATCHDOG_COUNT    1
 
 
 /*

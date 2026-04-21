@@ -32,79 +32,121 @@
 // @cliArgs --board /ti/boards/LP_CC1352P7_1 --rtos freertos
 
 /*
- *  sensor_ncp.syscfg
+ * sensor_ncp.syscfg
+ *
+ * This project uses the TI LP_CC1352P7_1 board metadata only as a SysConfig
+ * device context. Physical pin ownership follows the BDE-MB1352P71 module on
+ * the custom carrier board.
  */
+
+/* ======== Device / CCFG ======== */
 var CCFG = scripting.addModule("/ti/devices/CCFG");
-var Power = scripting.addModule("/ti/drivers/Power");
-var ITM = scripting.addModule("/ti/drivers/ITM");
+
+const ccfgSettings = system.getScript("/ti/common/lprf_ccfg_settings.js").ccfgSettings;
+for (var ccfgSetting in ccfgSettings)
+{
+    CCFG[ccfgSetting] = ccfgSettings[ccfgSetting];
+}
 
 /*
- * BDE-MB1352P71 module recommendation:
- * Enable XOSC cap-array modification and use a delta of 0x00.
- *
- * This is the manual equivalent of changing:
- * TI Devices -> Device Configuration -> XOSC Cap Array Delta = 0x00
- * in the SysConfig GUI.
- *
- * This setting feeds the generated CCFG in ti_devices_config.c and changes:
- *   SET_CCFG_MODE_CONF_XOSC_CAP_MOD
- *   SET_CCFG_MODE_CONF_XOSC_CAPARRAY_DELTA
- *
- * Keep this in the .syscfg instead of editing generated files directly.
+ * BDE-MB1352P71 module requirement:
+ * Enable XOSC cap-array modification and force a delta of 0x00.
  */
 CCFG.xoscCapArray = true;
 CCFG.xoscCapArrayDelta = 0x00;
 
-/* ======== Kernel Configuration ======== */
-system.getScript("kernel_config_release.syscfg.js");
+/* ======== RF Design ======== */
+var rfDesign = scripting.addModule("ti/devices/radioconfig/rfdesign");
+const rfDesignSettings = system.getScript("/ti/common/lprf_rf_design_settings.js").rfDesignSettings;
+for (var setting in rfDesignSettings)
+{
+    rfDesign[setting] = rfDesignSettings[setting];
+}
 
-/* ======== GPIO ======== */
+/* ======== Drivers ======== */
+var RF = scripting.addModule("/ti/drivers/RF");
+if (system.deviceData.board && system.deviceData.board.components.RF)
+{
+    RF.$hardware = system.deviceData.board.components.RF;
+}
+
+var TRNG = scripting.addModule("/ti/drivers/TRNG", {}, false);
+var trng = TRNG.addInstance();
+trng.$name = "NANOSTACK_TRNG";
+
+var Watchdog = scripting.addModule("/ti/drivers/Watchdog", {}, false);
+var watchdog = Watchdog.addInstance();
+watchdog.$name = "CONFIG_WATCHDOG_0";
+
+var NVS = scripting.addModule("/ti/drivers/NVS");
+var nvsInternal = NVS.addInstance();
+nvsInternal.$name = "CONFIG_NVSINTERNAL";
+nvsInternal.internalFlash.regionBase = 0xA8000;
+nvsInternal.internalFlash.regionSize = 0x4000;
+
 var GPIO = scripting.addModule("/ti/drivers/GPIO");
 
-/*
- * Custom-board pin map.
- *
- * This project now assigns pins explicitly instead of relying on LaunchPad
- * aliases such as system.deviceData.board.components.LED0. That keeps the
- * project usable on a custom carrier board while still letting SysConfig use
- * the LP_CC1352P7_1 board metadata as a generic device context.
- *
- * BDE-MB1352P71 module constraints from the datasheet:
- * - DIO_8, DIO_9, DIO_10, and DIO_20 are used by on-module SPI flash on XX32
- *   variants and should be left unassigned when that flash is populated.
- * - DIO_29 and DIO_30 are used internally for the RF switch and should not be
- *   used as general-purpose GPIOs.
- *
- * DIO_6 is used here as a placeholder status LED pin because it is available
- * on the module and was the original LaunchPad LED pin in the starter
- * template. Change CUSTOM_BOARD_LED_DIO to match the actual pin used on the
- * custom carrier board.
- */
-var CUSTOM_BOARD_LED_DIO = "DIO_6";
-var CUSTOM_BOARD_SWO_DIO = "DIO_16";
+var gpioRed = GPIO.addInstance();
+gpioRed.$name = "CONFIG_GPIO_RLED";
+gpioRed.mode = "Output";
+gpioRed.gpioPin.$assign = "DIO_6";
 
-var gpio = GPIO.addInstance();
-gpio.$name = "CONFIG_GPIO_LED_0";
-gpio.mode = "Output";
-gpio.gpioPin.$assign = CUSTOM_BOARD_LED_DIO;
+var gpioGreen = GPIO.addInstance();
+gpioGreen.$name = "CONFIG_GPIO_GLED";
+gpioGreen.mode = "Output";
+gpioGreen.gpioPin.$assign = "DIO_7";
 
-/*
- * SWO routing for the custom carrier board:
- *
- * - The Wi-SUN debug header pin 6 (SWO/TDO) is routed to the module's
- *   JTAG_TDO net, which lands on DIO_16.
- * - DIO_18 is *not* connected on this hardware, so the LaunchPad-style DIO_18
- *   SWO route would not reach the XDS110.
- * - DIO_16 should therefore be reserved for debug trace output whenever SWO is
- *   enabled through the external XDS110 debug header.
- */
-ITM.baudRate = 3000000;
-ITM.tpiuSerialFormat = "ITM_TPIU_SWO_UART";
-ITM.traceEnable = 0x80000001;
-ITM.swoPin.$assign = CUSTOM_BOARD_SWO_DIO;
+var gpioBtn1 = GPIO.addInstance();
+gpioBtn1.$name = "CONFIG_GPIO_BTN1";
+gpioBtn1.mode = "Input";
+gpioBtn1.pull = "Pull Up";
+gpioBtn1.gpioPin.$assign = "DIO_21";
 
-if(system.deviceData.deviceId.match(/CC35.*/)) {
-    var ActionReq = scripting.addModule("/sysconfig/cc35xx/Action/ActionReq");
-    ActionReq.primary_vendor_image = true;
-    ActionReq.primary_vendor_image_validate = false;
+var gpioBtn2 = GPIO.addInstance();
+gpioBtn2.$name = "CONFIG_GPIO_BTN2";
+gpioBtn2.mode = "Input";
+gpioBtn2.pull = "Pull Up";
+gpioBtn2.gpioPin.$assign = "DIO_22";
+
+/* ======== Wi-SUN ======== */
+var TI154Stack = scripting.addModule("/ti/ti_wisunfan/ti_wisunfan");
+if (rfDesignSettings.rfDesign !== undefined)
+{
+    TI154Stack.rfDesign = rfDesignSettings.rfDesign;
 }
+
+TI154Stack.project = "coapnode";
+TI154Stack.mode = "frequencyHopping";
+TI154Stack.lockProject = true;
+TI154Stack.rxOnIdle = true;
+TI154Stack.secureLevel = "macSecure";
+TI154Stack.genLibs = "macOnly";
+
+/*
+ * Border-router profile:
+ *   network_name = PyroNet
+ *   domain = NA
+ *   chan_plan_id = 1
+ *   phy_mode_id = 0x02 (Wi-SUN FAN 1.1, 50 kbps 2-GFSK)
+ */
+TI154Stack.region = "NA";
+TI154Stack.regDomain = "0x01";
+TI154Stack.phyModeID = "2";
+TI154Stack.ChanPlanID = "1";
+TI154Stack.opModeClass = "1";
+TI154Stack.opModeID = "1b";
+TI154Stack.customPhy = false;
+TI154Stack.centerFrequency = 902.2;
+TI154Stack.channelSpacing = 200;
+TI154Stack.totalChannels = 129;
+TI154Stack.fhNetname = "PyroNet";
+TI154Stack.panID = 0xFFFF;
+
+/* ======== FreeRTOS ======== */
+const FreeRTOS = scripting.addModule("/freertos/FreeRTOS");
+FreeRTOS.heapSize = 0x5000;
+FreeRTOS.posixThreadStackSize = 0x00000200;
+FreeRTOS.idleStackSize = 0x00000180;
+FreeRTOS.timerStackSize = 0x00000180;
+
+const POSIX = scripting.addModule("/ti/posix/freertos/Settings");
