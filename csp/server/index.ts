@@ -3460,8 +3460,6 @@ async function getConfigurationFromDb(): Promise<ConfigurationResponse> {
 }
 
 async function getNotificationsFromDb(): Promise<NotificationSettingsResponse> {
-  await syncConnectivityLossAlertsInDb();
-  await syncDownlinkFailureAlertsInDb();
   const [recipientsResult, deliveriesResult] = await Promise.all([
     query<{
       id: number;
