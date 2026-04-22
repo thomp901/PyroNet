@@ -28,6 +28,8 @@ target_sources(slc PRIVATE
     ../drivers/sps30/sps30_base.c
     ../services/air_quality/bsec_service.c
     ../services/particulate/sps30_pm25.c
+    ../services/risk/pyronet_risk_engine.c
+    ../services/risk/pyronet_risk_service.c
 )
 
 target_include_directories(slc PUBLIC

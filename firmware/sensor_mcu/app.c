@@ -28,6 +28,7 @@
 #include "sensor_bus.h"
 #include "services/air_quality/bsec_service.h"
 #include "services/particulate/sps30_pm25.h"
+#include "services/risk/pyronet_risk_service.h"
 
 #define APP_UART_PERIPHERAL            EUSART1
 #define APP_UART_BAUDRATE              115200U
@@ -40,6 +41,9 @@ static bsec_service_t app_bsec_service;
 static bool app_bsec_service_enabled = false;
 static sps30_pm25_t app_sps30_pm25;
 static bool app_sps30_service_enabled = false;
+static pyronet_risk_service_t app_risk_service;
+
+static long app_scale_float(float value, float scale);
 
 static long app_scale_float(float value, float scale)
 {
@@ -117,6 +121,7 @@ void app_init(void)
 
   app_uart_init();
   monotonic_time_init();
+  pyronet_risk_service_init(&app_risk_service, monotonic_time_now_ns());
 
   printf("SENSORS_READY bme68x=%u sps30=%u\r\n",
          sensors.bme68x_present,
@@ -141,6 +146,10 @@ void app_init(void)
            fw_minor);
   }
 
+  printf("RISK_INIT level=%u config_id=%lu\r\n",
+         (unsigned int)pyronet_risk_service_current_level(&app_risk_service),
+         (unsigned long)pyronet_risk_service_config(&app_risk_service)->config_id);
+
   debug_console_emit_boot_markers();
 }
 
@@ -151,12 +160,20 @@ void app_process_action(void)
 {
   air_quality_reading_t reading = { 0 };
   float pm25_ug_m3 = 0.0f;
+  int64_t now_ns;
 
   if (app_bsec_service_enabled && bsec_service_read(&app_bsec_service, &reading)) {
     app_log_air_quality_reading(&reading);
+    pyronet_risk_service_submit_air_quality(&app_risk_service, &reading);
   }
 
   if (app_sps30_service_enabled && sps30_pm25_read(&app_sps30_pm25, &pm25_ug_m3)) {
     app_log_pm25_reading(pm25_ug_m3);
+    pyronet_risk_service_submit_pm25(&app_risk_service,
+                                     monotonic_time_now_ns(),
+                                     pm25_ug_m3);
   }
+
+  now_ns = monotonic_time_now_ns();
+  pyronet_risk_service_tick(&app_risk_service, now_ns);
 }

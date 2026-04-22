@@ -18,7 +18,7 @@ SWOSPEED ?= 875000
 TIMEOUT ?= 5
 ENDMARKER ?= SWO_BOOT_READY
 
-.PHONY: build probe info flash swo swo-attach verify-swo clean
+.PHONY: build probe info flash swo swo-attach verify-swo test-risk clean
 
 build: check-cmake
 	cd $(CMAKE_DIR) && "$(CMAKE)" --workflow --preset project
@@ -40,6 +40,14 @@ swo-attach: check-commander
 
 verify-swo: flash
 	@$(MAKE) swo SERIALNO="$(SERIALNO)" SPEED="$(SPEED)" TIF="$(TIF)" SWOSPEED="$(SWOSPEED)" TIMEOUT="$(TIMEOUT)" ENDMARKER="$(ENDMARKER)"
+
+test-risk:
+	mkdir -p build_host
+	cc -std=c17 -Wall -Wextra -Werror -I. \
+		tests/pyronet_risk_engine_test.c \
+		services/risk/pyronet_risk_engine.c \
+		-o build_host/pyronet_risk_engine_test
+	./build_host/pyronet_risk_engine_test
 
 clean: check-cmake
 	cd $(CMAKE_DIR) && "$(CMAKE)" --build build --config "$(CONFIG)" --target clean
