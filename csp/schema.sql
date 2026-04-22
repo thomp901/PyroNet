@@ -9,6 +9,9 @@ CREATE TYPE alert_type AS ENUM (
     'critical_risk',
     'connectivity_loss',
     'battery_degradation',
+    'time_sync_failure',
+    'nn_update_failure',
+    'config_update_failure',
     'system'
 );
 
@@ -63,9 +66,9 @@ CREATE TYPE config_deployment_status AS ENUM (
 
 CREATE TYPE notification_event_type AS ENUM (
     'critical_risk',
+    'node_registration',
     'connectivity_loss',
     'battery_degradation',
-    'system',
     'time_sync_failure',
     'nn_update_failure',
     'config_update_failure'
@@ -73,6 +76,7 @@ CREATE TYPE notification_event_type AS ENUM (
 
 CREATE TYPE notification_delivery_status AS ENUM (
     'queued',
+    'accepted',
     'sent',
     'failed',
     'skipped'
@@ -866,7 +870,7 @@ COMMENT ON TABLE time_sync_events IS
 'Per-device log of daily time synchronization attempts, sent time values, and acknowledgement status.';
 
 COMMENT ON TABLE notification_recipients IS
-'Email recipients eligible to receive alert or system event notifications.';
+'Recipients eligible to receive configured alert notifications by email or SMS.';
 
 COMMENT ON TABLE notification_preferences IS
 'Per-recipient enable/disable settings for each notification event type.';

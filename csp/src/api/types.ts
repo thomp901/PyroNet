@@ -2,18 +2,34 @@ export type ConnectivityStatus = "online" | "degraded" | "offline";
 export type SensorReadingSource = "periodic_report" | "critical_alert";
 export type AlertSeverity = "info" | "warning" | "critical";
 export type AlertStatus = "open" | "acknowledged" | "cleared" | "derived";
-export type AlertIncidentType = "critical_alert" | "battery_health_low" | "offline";
-export type DownlinkStatus = "pending" | "sent" | "acknowledged" | "failed" | "timed_out";
-export type NeighborRevisionSource = "automatic" | "manual" | "imported";
-export type NotificationEventType =
-  | "critical_risk"
-  | "connectivity_loss"
-  | "battery_degradation"
-  | "system"
+export type AlertIncidentType =
+  | "critical_alert"
+  | "battery_health_low"
+  | "offline"
   | "time_sync_failure"
   | "nn_update_failure"
   | "config_update_failure";
+<<<<<<< HEAD
 export type DeviceEventCode = "0x01" | "0x02" | "0x03" | "0x04" | "0x05" | "0x06" | "0x07";
+=======
+export type DownlinkStatus = "pending" | "sent" | "acknowledged" | "failed" | "timed_out";
+export type NeighborRevisionSource = "automatic" | "manual" | "imported";
+export const notificationEventTypes = [
+  "critical_risk",
+  "node_registration",
+  "connectivity_loss",
+  "battery_degradation",
+  "time_sync_failure",
+  "nn_update_failure",
+  "config_update_failure",
+] as const;
+export type NotificationEventType = (typeof notificationEventTypes)[number];
+export function isNotificationEventType(value: string): value is NotificationEventType {
+  return (notificationEventTypes as readonly string[]).includes(value);
+}
+export type NotificationChannel = "email" | "sms";
+export type DeviceEventCode = "0x01" | "0x02" | "0x03" | "0x04" | "0x05" | "0x06" | "0x07" | "0x08";
+>>>>>>> 8ed2bba (notifications)
 export type HistoryWindow = "24h" | "7d" | "30d";
 export type NodeId = number;
 export const packetDirections = ["uplink", "downlink"] as const;
@@ -101,7 +117,7 @@ export interface MeshLink {
 export interface AlertIncident {
   id: string;
   incidentType: AlertIncidentType;
-  eventCode: "0x03" | "battery-health-low" | "derived-offline";
+  eventCode: DeviceEventCode | "battery-health-low" | "derived-offline";
   nodeId: NodeId;
   nodeName: string;
   severity: AlertSeverity;
@@ -119,7 +135,7 @@ export interface AlertIncident {
 
 export interface AlertTimelineEntry {
   id: string;
-  eventCode: DeviceEventCode | "derived-offline";
+  eventCode: DeviceEventCode | "battery-health-low" | "derived-offline";
   title: string;
   summary: string;
   occurredAt: string;
@@ -332,7 +348,7 @@ export interface NotificationDelivery {
   recipientName: string;
   eventType: NotificationEventType;
   subject: string;
-  status: "queued" | "sent" | "failed" | "skipped";
+  status: "queued" | "accepted" | "sent" | "failed" | "skipped";
   occurredAt: string;
   deliveredAt: string | null;
   nodeId: NodeId | null;

@@ -143,8 +143,7 @@ export function ConfigurationPage() {
 
   return (
     <PageContainer
-      title="Configuration And Downlinks"
-      description="Manage threshold revisions, inspect recent config revisions, and trigger CSP-originated downlink commands."
+      description="Manage threshold revisions, inspect deployment history, and trigger CSP-originated downlink commands."
     >
       {statusMessage ? <div className="inline-status">{statusMessage}</div> : null}
 

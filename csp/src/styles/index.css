@@ -69,7 +69,7 @@ a {
 }
 
 button,
-input,
+input:not([type="checkbox"]):not([type="radio"]),
 select,
 textarea {
   font: inherit;
@@ -203,6 +203,139 @@ table {
   gap: 22px;
 }
 
+<<<<<<< HEAD
+=======
+.notification-banner {
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+}
+
+.notification-banner-error {
+  background: rgba(203, 58, 40, 0.12);
+  border-color: rgba(203, 58, 40, 0.32);
+}
+
+.notification-recipient-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+}
+
+.notification-recipient-card {
+  display: grid;
+  gap: 18px;
+}
+
+.notification-recipient-status-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.notification-contact-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.notification-field {
+  display: grid;
+  gap: 8px;
+}
+
+.notification-field span {
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.notification-field input {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(10, 16, 21, 0.72);
+  color: var(--text);
+  padding: 12px 14px;
+}
+
+.notification-field input:focus {
+  outline: 1px solid rgba(216, 106, 52, 0.45);
+  border-color: rgba(216, 106, 52, 0.45);
+}
+
+.notification-switch,
+.notification-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.notification-switch input,
+.notification-checkbox input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.notification-switch-card {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  white-space: normal;
+}
+
+.notification-checkbox-compact {
+  width: 100%;
+  justify-content: center;
+}
+
+.notification-preference-table th:nth-child(2),
+.notification-preference-table th:nth-child(3),
+.notification-preference-table td:nth-child(2),
+.notification-preference-table td:nth-child(3) {
+  text-align: center;
+}
+
+.notification-preference-table td,
+.notification-delivery-table td {
+  vertical-align: top;
+}
+
+.notification-card-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.notification-delivery-subject {
+  font-weight: 600;
+}
+
+.notification-delivery-error {
+  margin-top: 4px;
+  color: #f3a39a;
+  font-size: 0.88rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+>>>>>>> 8ed2bba (notifications)
 .page-heading,
 .section-heading {
   display: flex;
