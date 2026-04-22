@@ -13,31 +13,16 @@ project(
 include(sensor_mcu.cmake)
 
 target_sources(slc PRIVATE
-    ${SDK_PATH}/platform/emlib/src/em_i2c.c
     ${SDK_PATH}/platform/emlib/src/em_eusart.c
-    ../board_i2c.c
     ../platform/monotonic_time.c
-    ../sensor_bus.c
-    ../third_party/sps30/sensirion_common.c
-    ../third_party/sps30/sensirion_i2c.c
-    ../third_party/sps30/sps30_i2c.c
-    ../third_party/bme68x/bme68x.c
-    ../drivers/bme688/bme68x_port.c
-    ../drivers/bme688/bme688_base.c
-    ../drivers/sps30/sps30_port.c
-    ../drivers/sps30/sps30_base.c
-    ../services/air_quality/bsec_service.c
-    ../services/particulate/sps30_pm25.c
-    ../services/risk/pyronet_risk_engine.c
-    ../services/risk/pyronet_risk_service.c
+    ../transport/host_proto.c
+    ../transport/host_uart.c
+    ../transport/host_link.c
 )
 
 target_include_directories(slc PUBLIC
     ${SDK_PATH}/platform/emlib/inc
     ..
-    ../third_party/sps30
-    ../third_party/bme68x
-    ../third_party/bsec2/inc
 )
 
 add_executable(sensor_mcu
@@ -63,7 +48,6 @@ target_link_options(sensor_mcu PUBLIC
 # Link with the content defined in the SLC project
 target_link_libraries(sensor_mcu PRIVATE
     slc
-    ${CMAKE_CURRENT_LIST_DIR}/../third_party/bsec2/lib/libalgobsec.a
 )
 
 # Include managed project content if available
