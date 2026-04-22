@@ -27,6 +27,7 @@
 #include "platform/monotonic_time.h"
 #include "sensor_bus.h"
 #include "services/air_quality/bsec_service.h"
+#include "services/particulate/sps30_pm25.h"
 
 #define APP_UART_PERIPHERAL            EUSART1
 #define APP_UART_BAUDRATE              115200U
@@ -37,6 +38,8 @@
 
 static bsec_service_t app_bsec_service;
 static bool app_bsec_service_enabled = false;
+static sps30_pm25_t app_sps30_pm25;
+static bool app_sps30_service_enabled = false;
 
 static long app_scale_float(float value, float scale)
 {
@@ -64,6 +67,15 @@ static void app_log_air_quality_reading(const air_quality_reading_t *reading)
          labs(humidity_centi % 100L),
          bvoc_milli / 1000L,
          labs(bvoc_milli % 1000L));
+}
+
+static void app_log_pm25_reading(float pm25_ug_m3)
+{
+  long pm25_milli = app_scale_float(pm25_ug_m3, 1000.0f);
+
+  printf("PM25 ug_m3=%ld.%03ld\r\n",
+         pm25_milli / 1000L,
+         labs(pm25_milli % 1000L));
 }
 
 static void app_uart_init(void)
@@ -117,6 +129,18 @@ void app_init(void)
            bme688_base_status_name(app_bsec_service.last_bme68x_status));
   }
 
+  if (sensors.sps30_present) {
+    uint8_t fw_major = 0U;
+    uint8_t fw_minor = 0U;
+
+    app_sps30_service_enabled = sps30_pm25_init(&app_sps30_pm25, SENSOR_BUS_SPS30_ADDRESS);
+    sps30_pm25_get_firmware_version(&app_sps30_pm25, &fw_major, &fw_minor);
+    printf("SPS30_INIT status=%s fw=%u.%u\r\n",
+           sps30_base_status_name(sps30_pm25_last_status(&app_sps30_pm25)),
+           fw_major,
+           fw_minor);
+  }
+
   debug_console_emit_boot_markers();
 }
 
@@ -126,14 +150,13 @@ void app_init(void)
 void app_process_action(void)
 {
   air_quality_reading_t reading = { 0 };
+  float pm25_ug_m3 = 0.0f;
 
-  if (!app_bsec_service_enabled) {
-    return;
+  if (app_bsec_service_enabled && bsec_service_read(&app_bsec_service, &reading)) {
+    app_log_air_quality_reading(&reading);
   }
 
-  if (!bsec_service_read(&app_bsec_service, &reading)) {
-    return;
+  if (app_sps30_service_enabled && sps30_pm25_read(&app_sps30_pm25, &pm25_ug_m3)) {
+    app_log_pm25_reading(pm25_ug_m3);
   }
-
-  app_log_air_quality_reading(&reading);
 }

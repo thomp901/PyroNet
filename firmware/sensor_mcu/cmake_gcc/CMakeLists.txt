@@ -18,14 +18,22 @@ target_sources(slc PRIVATE
     ../board_i2c.c
     ../platform/monotonic_time.c
     ../sensor_bus.c
+    ../third_party/sps30/sensirion_common.c
+    ../third_party/sps30/sensirion_i2c.c
+    ../third_party/sps30/sps30_i2c.c
     ../third_party/bme68x/bme68x.c
     ../drivers/bme688/bme68x_port.c
     ../drivers/bme688/bme688_base.c
+    ../drivers/sps30/sps30_port.c
+    ../drivers/sps30/sps30_base.c
     ../services/air_quality/bsec_service.c
+    ../services/particulate/sps30_pm25.c
 )
 
 target_include_directories(slc PUBLIC
     ${SDK_PATH}/platform/emlib/inc
+    ..
+    ../third_party/sps30
     ../third_party/bme68x
     ../third_party/bsec2/inc
 )
