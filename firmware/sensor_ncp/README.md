@@ -1,6 +1,23 @@
 ## sensor_ncp
 
-This project now builds a TI Wi-SUN FAN client image for the custom `BDE-MB1352P71` carrier-board target in this repository. It is not a LaunchPad project, even though SysConfig still uses `LP_CC1352P7_1` as the generic device context.
+This project builds the `sensor_ncp` firmware for the custom `BDE-MB1352P71` carrier-board target in this repository. It is not a LaunchPad project, even though SysConfig still uses `LP_CC1352P7_1` as the generic device context.
+
+The current host boundary is a phase-1 binary UART protocol on `UART0`:
+
+- UART pins: TX=`DIO_28`, RX=`DIO_27`
+- UART settings: `115200 8N1`, no flow control
+- Framing: `0xA5 0x5A`, version `0x01`, CRC-16/CCITT-FALSE
+- Implemented message types: `HELLO`, `HELLO_ACK`, `PING`, `PONG`, `GET_STATUS`, `STATUS`, `ERROR`
+
+The NCP owns only the link skeleton in this phase:
+
+- waits for `HELLO`
+- replies with `HELLO_ACK`
+- enters `LINK_READY`
+- responds to `PING` with `PONG`
+- responds to `GET_STATUS` with placeholder `STATUS`
+
+The production UART boundary is binary only. The earlier ASCII command bootstrap path is no longer the active transport.
 
 ## Hardware Notes
 

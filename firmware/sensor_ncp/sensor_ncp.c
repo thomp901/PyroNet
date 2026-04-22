@@ -55,7 +55,7 @@ void *mainThread(void *arg0)
     /* Call driver init functions */
     GPIO_init();
     swoDebugInitOrDie();
-    swoDebugBootSelfTest("BOOT", "uart_transport=starting");
+    swoDebugBootSelfTest("BOOT", "host_link=starting");
     // I2C_init();
     // SPI_init();
     // Watchdog_init();

@@ -55,6 +55,18 @@
         <property name="isHybrid" value="true"/>
         <file path="../../sensor_ncp.c" openOnCreation="false" excludeFromBuild="false" action="copy">
         </file>
+        <file path="../../host/host_proto.c" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+        <file path="../../host/host_proto.h" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+        <file path="../../host/host_uart.c" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+        <file path="../../host/host_uart.h" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+        <file path="../../host/host_link.c" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
+        <file path="../../host/host_link.h" openOnCreation="false" excludeFromBuild="false" action="copy">
+        </file>
         <file path="../../uart_transport.c" openOnCreation="false" excludeFromBuild="false" action="copy">
         </file>
         <file path="../../uart_transport.h" openOnCreation="false" excludeFromBuild="false" action="copy">
