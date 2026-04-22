@@ -57,6 +57,12 @@ export function AlertsPage() {
   const criticalAlerts = data.filter((alert) => alert.incidentType === "critical_alert");
   const batteryHealthAlerts = data.filter((alert) => alert.incidentType === "battery_health_low");
   const offlineAlerts = data.filter((alert) => alert.incidentType === "offline");
+  const operationalFailureAlerts = data.filter(
+    (alert) =>
+      alert.incidentType === "time_sync_failure" ||
+      alert.incidentType === "nn_update_failure" ||
+      alert.incidentType === "config_update_failure",
+  );
 
   return (
     <PageContainer>
@@ -146,6 +152,34 @@ export function AlertsPage() {
                 >
                   <td>{alert.nodeId}</td>
                   <td>{formatTimestamp(alert.lastSeenAt ?? null)}</td>
+                </tr>
+              ))}
+            </TableShell>
+          )}
+        </div>
+
+        <div className="card">
+          <div className="section-heading">
+            <div>
+              <h2>Operational Failures</h2>
+              <p>Observed downlink failures and timeouts for neighbor updates, time sync, and config pushes.</p>
+            </div>
+          </div>
+          {operationalFailureAlerts.length === 0 ? (
+            <EmptyState title="No operational failures" message="Downlink-related failures will appear here when commands miss acknowledgements or fail." />
+          ) : (
+            <TableShell columns={["Node", "Type", "Status", "Notifications", "Detected"]}>
+              {operationalFailureAlerts.map((alert) => (
+                <tr key={alert.id}>
+                  <td>
+                    <Link className="table-link" to={`/nodes/${alert.nodeId}`}>
+                      {alert.nodeId}
+                    </Link>
+                  </td>
+                  <td>{alert.title}</td>
+                  <td>{alert.status}</td>
+                  <td>{alert.notificationStatus}</td>
+                  <td>{formatTimestamp(alert.detectedAt)}</td>
                 </tr>
               ))}
             </TableShell>

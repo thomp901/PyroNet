@@ -8,11 +8,7 @@ export async function getNotificationSettings() {
     return getMockNotificationSettings();
   }
 
-  try {
-    return await apiGet<NotificationSettingsResponse>("/notifications");
-  } catch {
-    return getMockNotificationSettings();
-  }
+  return apiGet<NotificationSettingsResponse>("/notifications");
 }
 
 export async function updateNotificationRecipient(recipientId: string, update: NotificationRecipientUpdate) {
@@ -20,12 +16,8 @@ export async function updateNotificationRecipient(recipientId: string, update: N
     return updateMockNotificationRecipient(recipientId, update);
   }
 
-  try {
-    return await apiPut<NotificationSettingsResponse, NotificationRecipientUpdate>(
-      `/notifications/recipients/${encodeURIComponent(recipientId)}`,
-      update,
-    );
-  } catch {
-    return updateMockNotificationRecipient(recipientId, update);
-  }
+  return apiPut<NotificationSettingsResponse, NotificationRecipientUpdate>(
+    `/notifications/recipients/${encodeURIComponent(recipientId)}`,
+    update,
+  );
 }

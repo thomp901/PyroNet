@@ -88,5 +88,11 @@ export function incidentTypeLabel(value: AlertIncidentType) {
       return "Battery Health Low";
     case "offline":
       return "Offline";
+    case "time_sync_failure":
+      return "Time Sync Failure";
+    case "nn_update_failure":
+      return "Neighbor Update Failure";
+    case "config_update_failure":
+      return "Config Update Failure";
   }
 }

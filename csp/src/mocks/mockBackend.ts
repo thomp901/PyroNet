@@ -34,7 +34,12 @@ import type {
   ReadingHistoryPoint,
   TelemetrySnapshot,
 } from "../api/types";
+<<<<<<< HEAD
 import { packetDirections, packetEventTypes, packetLogCodes } from "../api/types";
+=======
+import type { DecodedPacket } from "../api/packetIngest";
+import { notificationEventTypes, packetDirections, packetEventTypes, packetLogCodes } from "../api/types";
+>>>>>>> 8ed2bba (notifications)
 
 interface DeviceRecord {
   id: string;
@@ -674,9 +679,31 @@ const notificationRecipients: RecipientRecord[] = [
   },
 ];
 
+<<<<<<< HEAD
 const notificationPreferences = new Map<string, NotificationEventType[]>([
   ["rec-001", ["critical_risk", "connectivity_loss", "system", "config_update_failure"]],
   ["rec-002", ["critical_risk", "connectivity_loss"]],
+=======
+const notificationPreferences = new Map<string, NotificationPreference[]>([
+  [
+    "rec-001",
+    [
+      { eventType: "critical_risk", emailEnabled: true, smsEnabled: true },
+      { eventType: "connectivity_loss", emailEnabled: true, smsEnabled: true },
+      { eventType: "battery_degradation", emailEnabled: true, smsEnabled: false },
+      { eventType: "time_sync_failure", emailEnabled: true, smsEnabled: false },
+      { eventType: "nn_update_failure", emailEnabled: true, smsEnabled: false },
+      { eventType: "config_update_failure", emailEnabled: true, smsEnabled: false },
+    ],
+  ],
+  [
+    "rec-002",
+    [
+      { eventType: "critical_risk", emailEnabled: true, smsEnabled: false },
+      { eventType: "connectivity_loss", emailEnabled: true, smsEnabled: false },
+    ],
+  ],
+>>>>>>> 8ed2bba (notifications)
 ]);
 
 const deliveries: DeliveryRecord[] = [
@@ -699,7 +726,7 @@ const deliveries: DeliveryRecord[] = [
     recipientName: "Fire Analyst",
     eventType: "critical_risk",
     subject: "Critical risk detected at node 2",
-    status: "queued",
+    status: "accepted",
     occurredAt: "2026-04-14T19:52:00Z",
     deliveredAt: null,
     nodeId: 2,
@@ -827,7 +854,7 @@ function getNotificationStatusForAlert(alertId: string, nodeId: NodeId) {
     return "sent" as const;
   }
 
-  if (alertDeliveries.some((delivery) => delivery.status === "sent")) {
+  if (alertDeliveries.some((delivery) => delivery.status === "sent" || delivery.status === "accepted")) {
     return "partial" as const;
   }
 
@@ -1121,6 +1148,7 @@ function filterPacketLogEntries(entries: PacketLogEntry[], query: PacketHistoryQ
 }
 
 function toRecipient(record: RecipientRecord): NotificationRecipient {
+<<<<<<< HEAD
   const enabled = new Set(notificationPreferences.get(record.id) ?? []);
   const eventTypes: NotificationEventType[] = [
     "critical_risk",
@@ -1131,16 +1159,30 @@ function toRecipient(record: RecipientRecord): NotificationRecipient {
     "nn_update_failure",
     "config_update_failure",
   ];
+=======
+  const configuredPreferences = notificationPreferences.get(record.id) ?? [];
+>>>>>>> 8ed2bba (notifications)
 
   return {
     id: record.id,
     displayName: record.displayName,
     emailAddress: record.emailAddress,
     isEnabled: record.isEnabled,
+<<<<<<< HEAD
     preferences: eventTypes.map((eventType) => ({
       eventType,
       isEnabled: enabled.has(eventType),
     })),
+=======
+    preferences: notificationEventTypes.map((eventType) => {
+      const configured = configuredPreferences.find((preference) => preference.eventType === eventType);
+      return {
+        eventType,
+        emailEnabled: configured?.emailEnabled ?? false,
+        smsEnabled: configured?.smsEnabled ?? false,
+      };
+    }),
+>>>>>>> 8ed2bba (notifications)
   };
 }
 
