@@ -18,12 +18,15 @@
 #include "app.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "debug_console.h"
 #include "em_cmu.h"
 #include "em_eusart.h"
 #include "em_gpio.h"
+#include "platform/monotonic_time.h"
 #include "sensor_bus.h"
+#include "services/air_quality/bsec_service.h"
 
 #define APP_UART_PERIPHERAL            EUSART1
 #define APP_UART_BAUDRATE              115200U
@@ -31,6 +34,37 @@
 #define APP_UART_RX_PIN                0U
 #define APP_UART_TX_PORT               gpioPortC
 #define APP_UART_TX_PIN                1U
+
+static bsec_service_t app_bsec_service;
+static bool app_bsec_service_enabled = false;
+
+static long app_scale_float(float value, float scale)
+{
+  float scaled_value = value * scale;
+
+  if (scaled_value >= 0.0f) {
+    scaled_value += 0.5f;
+  } else {
+    scaled_value -= 0.5f;
+  }
+
+  return (long)scaled_value;
+}
+
+static void app_log_air_quality_reading(const air_quality_reading_t *reading)
+{
+  long temperature_centi = app_scale_float(reading->temperature_c, 100.0f);
+  long humidity_centi = app_scale_float(reading->humidity_percent, 100.0f);
+  long bvoc_milli = app_scale_float(reading->breath_voc_equivalent_ppm, 1000.0f);
+
+  printf("AIR_QUALITY temp_c=%ld.%02ld rh_pct=%ld.%02ld bvoc_ppm=%ld.%03ld\r\n",
+         temperature_centi / 100L,
+         labs(temperature_centi % 100L),
+         humidity_centi / 100L,
+         labs(humidity_centi % 100L),
+         bvoc_milli / 1000L,
+         labs(bvoc_milli % 1000L));
+}
 
 static void app_uart_init(void)
 {
@@ -70,10 +104,19 @@ void app_init(void)
   sensor_bus_state_t sensors = sensor_bus_init();
 
   app_uart_init();
+  monotonic_time_init();
 
   printf("SENSORS_READY bme68x=%u sps30=%u\r\n",
          sensors.bme68x_present,
          sensors.sps30_present);
+
+  if (sensors.bme68x_present) {
+    app_bsec_service_enabled = bsec_service_init(&app_bsec_service, SENSOR_BUS_BME68X_ADDRESS);
+    printf("BSEC_INIT status=%s bme68x=%s mode=ULP interval_s=300\r\n",
+           bsec_service_status_name(app_bsec_service.last_bsec_status),
+           bme688_base_status_name(app_bsec_service.last_bme68x_status));
+  }
+
   debug_console_emit_boot_markers();
 }
 
@@ -82,4 +125,15 @@ void app_init(void)
  ******************************************************************************/
 void app_process_action(void)
 {
+  air_quality_reading_t reading = { 0 };
+
+  if (!app_bsec_service_enabled) {
+    return;
+  }
+
+  if (!bsec_service_read(&app_bsec_service, &reading)) {
+    return;
+  }
+
+  app_log_air_quality_reading(&reading);
 }

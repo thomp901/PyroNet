@@ -23,5 +23,24 @@ typedef enum {
 
 board_i2c_init_result_t board_i2c_init(void);
 board_i2c_transfer_status_t board_i2c_probe(uint8_t address);
+board_i2c_transfer_status_t board_i2c_write(uint8_t address,
+                                            const uint8_t *data,
+                                            uint16_t length);
+board_i2c_transfer_status_t board_i2c_read(uint8_t address,
+                                           uint8_t *data,
+                                           uint16_t length);
+board_i2c_transfer_status_t board_i2c_write_read(uint8_t address,
+                                                 const uint8_t *write_data,
+                                                 uint16_t write_length,
+                                                 uint8_t *read_data,
+                                                 uint16_t read_length);
+board_i2c_transfer_status_t board_i2c_write_register(uint8_t address,
+                                                     uint8_t register_address,
+                                                     const uint8_t *data,
+                                                     uint16_t length);
+board_i2c_transfer_status_t board_i2c_read_register(uint8_t address,
+                                                    uint8_t register_address,
+                                                    uint8_t *data,
+                                                    uint16_t length);
 
 #endif
