@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from collections import OrderedDict
 import socket
 import socketserver
 import threading
 import time
+from collections import OrderedDict
 from dataclasses import dataclass
 
-from .protocol.node_packets import PacketParseError, TYPE_NEIGHBOR_ALERT, packet_type
+from .protocol.node_packets import TYPE_NEIGHBOR_ALERT, PacketParseError, packet_type
 
 COAP_TYPE_CON = 0
 COAP_TYPE_NON = 1

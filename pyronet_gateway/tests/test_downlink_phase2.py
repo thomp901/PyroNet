@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import socket
 import tempfile
 import unittest
@@ -17,12 +16,17 @@ from pyronet_gateway.downlink_packet_codec import (
     encode_config_update,
     encode_nn_table_update,
     encode_time_sync,
+    validate_node_downlink_payload,
 )
-from pyronet_gateway.downlink_request_validation import (
-    DownlinkValidationError,
-    validate_config_update_request,
-    validate_nn_table_request,
-    validate_time_sync_request,
+from pyronet_gateway.downlink_request_validation import validate_config_update_request
+from pyronet_gateway.protocol.backhaul import (
+    DOWNLINK_STATUS_DELIVERED,
+    DOWNLINK_STATUS_MESH_DELIVERY_FAILED,
+    DOWNLINK_STATUS_PERMANENT_REJECT,
+    DOWNLINK_STATUS_UNKNOWN_NODE,
+    DownlinkRequest,
+    DownlinkResult,
+    downlink_request_header_size,
 )
 from pyronet_gateway.service import GatewayService
 
@@ -108,37 +112,36 @@ class DownlinkCodecTests(unittest.TestCase):
         self.assertEqual(CONFIG_UPDATE.size, len(payload))
         self.assertEqual(0x06, payload[0])
 
-
-class DownlinkValidationTests(unittest.TestCase):
-    def test_validate_nn_table_request(self) -> None:
-        request = validate_nn_table_request({"target_node_id": 9, "neighbor_node_ids": [1, 2, 3]})
-        self.assertEqual([1, 2, 3], request.neighbor_node_ids)
-
-    def test_validate_time_sync_request(self) -> None:
-        request = validate_time_sync_request({"target_node_id": 9, "epoch": 123})
-        self.assertEqual(123, request.epoch)
-
-    def test_validate_config_update_request(self) -> None:
-        request = validate_config_update_request(
-            {
-                "target_node_id": 9,
-                "config_id": 1,
-                "l2_temp_thresh": 0,
-                "l2_humidity_thresh": 0,
-                "l2_voc_thresh": 0,
-                "l3_temp_thresh": 0,
-                "l3_humidity_thresh": 0,
-                "l3_voc_thresh": 0,
-                "l4_voc_thresh": 0,
-                "l5_voc_thresh": 0,
-                "l5_pm25_thresh": 0,
-            }
+    def test_downlink_request_round_trip(self) -> None:
+        original = DownlinkRequest(
+            version=1,
+            gateway_id=7,
+            downlink_id=9,
+            target_node_id=42,
+            created_at=123,
+            payload=encode_time_sync(version=1, epoch=55),
         )
-        self.assertEqual(1, request.config_id)
+        decoded = DownlinkRequest.from_bytes(original.to_bytes())
+        self.assertEqual(original, decoded)
 
-    def test_invalid_neighbor_request_raises(self) -> None:
-        with self.assertRaises(DownlinkValidationError):
-            validate_nn_table_request({"target_node_id": 9, "neighbor_node_ids": ["bad"]})
+    def test_downlink_result_round_trip(self) -> None:
+        original = DownlinkResult(
+            version=1,
+            gateway_id=7,
+            downlink_id=9,
+            target_node_id=42,
+            status=DOWNLINK_STATUS_DELIVERED,
+            completed_at=456,
+        )
+        decoded = DownlinkResult.from_bytes(original.to_bytes())
+        self.assertEqual(original, decoded)
+
+    def test_downlink_request_header_size_is_20_bytes(self) -> None:
+        self.assertEqual(20, downlink_request_header_size())
+
+    def test_validate_node_downlink_payload_rejects_bad_nn_length(self) -> None:
+        with self.assertRaises(ValueError):
+            validate_node_downlink_payload(b"\x04\x01\x2a\x00\x02" + (b"\x00" * 16))
 
 
 class CoapDownlinkClientTests(unittest.TestCase):
@@ -196,7 +199,7 @@ class DownlinkServiceIntegrationTests(unittest.TestCase):
             longitude=-86.1581,
             sw_version=0x0102,
             coap=CoapConfig(bind_host="::", port=5683, resource_path="/uplink"),
-            backhaul=BackhaulConfig(base_url="http://csp.example"),
+            backhaul=BackhaulConfig(base_url="http://backhaul.example"),
             runtime=RuntimeConfig(db_path=self.db_path),
             http_api=HttpApiConfig(bind_host="::1", port=8081, max_request_body_bytes=65536),
         )
@@ -213,132 +216,231 @@ class DownlinkServiceIntegrationTests(unittest.TestCase):
             received_at=1_700_000_000,
         )
 
-    def test_target_mapping_lookup_and_success_delivery(self) -> None:
-        self._register_node(10, "fd12:3456::10")
-        coap = FakeCoapClient()
-        delivery = DownlinkDeliveryService(
+    def _delivery_service(self, coap_client) -> DownlinkDeliveryService:
+        return DownlinkDeliveryService(
+            gateway_id=self.config.gateway_id,
+            backhaul_version=self.config.backhaul_version,
             node_state_store=self.service.node_state_store,
-            audit_store=self.service.downlink_audit_store,
-            coap_downlink_client=coap,
-            node_packet_version=1,
+            result_store=self.service.downlink_audit_store,
+            coap_downlink_client=coap_client,
         )
-        api = DownlinkHttpApi(delivery_service=delivery, max_request_body_bytes=4096)
-        status, _headers, body = api.handle_request(
+
+    def _api(self, coap_client) -> DownlinkHttpApi:
+        return DownlinkHttpApi(delivery_service=self._delivery_service(coap_client), max_request_body_bytes=4096)
+
+    def test_successful_delivery_returns_terminal_0x85(self) -> None:
+        self._register_node(10, "fd12:3456::10")
+        payload = encode_time_sync(version=1, epoch=1234)
+        request = DownlinkRequest(
+            version=1,
+            gateway_id=7,
+            downlink_id=100,
+            target_node_id=10,
+            created_at=1_700_000_001,
+            payload=payload,
+        )
+        coap = FakeCoapClient()
+        api = self._api(coap)
+
+        status, headers, body = api.handle_request(
             method="POST",
-            path="/api/v1/downlinks/time-sync",
-            body=json.dumps({"target_node_id": 10, "epoch": 1234}).encode("utf-8"),
-            now=1_700_000_001,
+            path="/api/v1/downlinks",
+            content_type="application/octet-stream",
+            body=request.to_bytes(),
+            now=1_700_000_002,
         )
-        payload = json.loads(body)
+
+        result = DownlinkResult.from_bytes(body)
         self.assertEqual(200, status)
-        self.assertEqual("accepted_and_delivered", payload["delivery_result"])
-        self.assertEqual("fd12:3456::10", payload["target_ipv6"])
+        self.assertEqual("application/octet-stream", headers["Content-Type"])
+        self.assertEqual(DOWNLINK_STATUS_DELIVERED, result.status)
         self.assertEqual("fd12:3456::10", coap.calls[0][0])
-        self.assertEqual(1, len(self.service.downlink_audit_store.list_attempts()))
+        self.assertEqual(payload, coap.calls[0][1])
+        stored = self.service.downlink_audit_store.list_terminal_results()
+        self.assertEqual(1, len(stored))
+        self.assertEqual(body, stored[0].result_body)
 
-    def test_unknown_target_returns_404(self) -> None:
-        coap = FakeCoapClient()
-        delivery = DownlinkDeliveryService(
-            node_state_store=self.service.node_state_store,
-            audit_store=self.service.downlink_audit_store,
-            coap_downlink_client=coap,
-            node_packet_version=1,
+    def test_unknown_target_returns_terminal_unknown_node(self) -> None:
+        request = DownlinkRequest(
+            version=1,
+            gateway_id=7,
+            downlink_id=101,
+            target_node_id=77,
+            created_at=1_700_000_001,
+            payload=encode_time_sync(version=1, epoch=1234),
         )
-        api = DownlinkHttpApi(delivery_service=delivery, max_request_body_bytes=4096)
+        api = self._api(FakeCoapClient())
+
         status, _headers, body = api.handle_request(
             method="POST",
-            path="/api/v1/downlinks/time-sync",
-            body=json.dumps({"target_node_id": 77, "epoch": 1234}).encode("utf-8"),
-            now=1_700_000_001,
+            path="/api/v1/downlinks",
+            content_type="application/octet-stream",
+            body=request.to_bytes(),
+            now=1_700_000_002,
         )
-        payload = json.loads(body)
-        self.assertEqual(404, status)
-        self.assertEqual("target_unknown", payload["delivery_result"])
 
-    def test_neighbor_resolution_failure_returns_409(self) -> None:
+        result = DownlinkResult.from_bytes(body)
+        self.assertEqual(200, status)
+        self.assertEqual(DOWNLINK_STATUS_UNKNOWN_NODE, result.status)
+
+    def test_nn_table_target_mismatch_returns_permanent_reject(self) -> None:
         self._register_node(10, "fd12:3456::10")
-        self._register_node(11, "fd12:3456::11")
-        delivery = DownlinkDeliveryService(
-            node_state_store=self.service.node_state_store,
-            audit_store=self.service.downlink_audit_store,
-            coap_downlink_client=FakeCoapClient(),
-            node_packet_version=1,
+        payload = encode_nn_table_update(version=1, target_node_id=11, neighbor_ipv6s=[])
+        request = DownlinkRequest(
+            version=1,
+            gateway_id=7,
+            downlink_id=102,
+            target_node_id=10,
+            created_at=1_700_000_001,
+            payload=payload,
         )
-        api = DownlinkHttpApi(delivery_service=delivery, max_request_body_bytes=4096)
+        api = self._api(FakeCoapClient())
+
         status, _headers, body = api.handle_request(
             method="POST",
-            path="/api/v1/downlinks/nn-table",
-            body=json.dumps({"target_node_id": 10, "neighbor_node_ids": [11, 12]}).encode("utf-8"),
-            now=1_700_000_001,
+            path="/api/v1/downlinks",
+            content_type="application/octet-stream",
+            body=request.to_bytes(),
+            now=1_700_000_002,
         )
-        payload = json.loads(body)
-        self.assertEqual(409, status)
-        self.assertEqual("stale_precondition", payload["delivery_result"])
-        self.assertEqual([12], payload["missing_neighbor_node_ids"])
 
-    def test_fresh_registration_changes_delivery_ipv6_immediately(self) -> None:
-        self._register_node(10, "fd12:3456::10")
-        self.service.handle_node_packet(
-            observed_src_ipv6="fd12:3456::99",
-            raw_node_packet=build_registration_packet(10),
-            received_at=1_700_000_100,
-        )
-        coap = FakeCoapClient()
-        delivery = DownlinkDeliveryService(
-            node_state_store=self.service.node_state_store,
-            audit_store=self.service.downlink_audit_store,
-            coap_downlink_client=coap,
-            node_packet_version=1,
-        )
-        result = delivery.handle_request(
-            request_type="time-sync",
-            request_body=json.dumps({"target_node_id": 10, "epoch": 55}).encode("utf-8"),
-            now=1_700_000_101,
-        )
-        self.assertEqual(200, result.status_code)
-        self.assertEqual("fd12:3456::99", result.body["target_ipv6"])
-        self.assertEqual("fd12:3456::99", coap.calls[0][0])
+        result = DownlinkResult.from_bytes(body)
+        self.assertEqual(200, status)
+        self.assertEqual(DOWNLINK_STATUS_PERMANENT_REJECT, result.status)
 
-    def test_coap_delivery_failure_becomes_502_and_audit_row(self) -> None:
+    def test_mesh_delivery_failure_returns_terminal_failure(self) -> None:
         self._register_node(10, "fd12:3456::10")
         failure = type(
             "Result",
             (),
             {"success": False, "error_category": "target_stale_or_unreachable", "error_detail": "timeout"},
         )()
-        delivery = DownlinkDeliveryService(
-            node_state_store=self.service.node_state_store,
-            audit_store=self.service.downlink_audit_store,
-            coap_downlink_client=FakeCoapClient([failure]),
-            node_packet_version=1,
+        request = DownlinkRequest(
+            version=1,
+            gateway_id=7,
+            downlink_id=103,
+            target_node_id=10,
+            created_at=1_700_000_001,
+            payload=encode_time_sync(version=1, epoch=55),
         )
-        result = delivery.handle_request(
-            request_type="time-sync",
-            request_body=json.dumps({"target_node_id": 10, "epoch": 55}).encode("utf-8"),
-            now=1_700_000_101,
-        )
-        self.assertEqual(502, result.status_code)
-        attempts = self.service.downlink_audit_store.list_attempts()
-        self.assertEqual(1, len(attempts))
-        self.assertEqual("target_stale_or_unreachable", attempts[0].status)
+        api = self._api(FakeCoapClient([failure]))
 
-    def test_invalid_request_returns_400(self) -> None:
-        delivery = DownlinkDeliveryService(
-            node_state_store=self.service.node_state_store,
-            audit_store=self.service.downlink_audit_store,
-            coap_downlink_client=FakeCoapClient(),
-            node_packet_version=1,
-        )
-        api = DownlinkHttpApi(delivery_service=delivery, max_request_body_bytes=4096)
         status, _headers, body = api.handle_request(
             method="POST",
-            path="/api/v1/downlinks/config",
-            body=b"[]",
-            now=1_700_000_001,
+            path="/api/v1/downlinks",
+            content_type="application/octet-stream",
+            body=request.to_bytes(),
+            now=1_700_000_002,
         )
-        payload = json.loads(body)
+
+        result = DownlinkResult.from_bytes(body)
+        self.assertEqual(200, status)
+        self.assertEqual(DOWNLINK_STATUS_MESH_DELIVERY_FAILED, result.status)
+
+    def test_internal_gateway_failure_is_non_terminal_and_retryable(self) -> None:
+        self._register_node(10, "fd12:3456::10")
+        request = DownlinkRequest(
+            version=1,
+            gateway_id=7,
+            downlink_id=104,
+            target_node_id=10,
+            created_at=1_700_000_001,
+            payload=encode_time_sync(version=1, epoch=55),
+        )
+        coap = FakeCoapClient([RuntimeError("socket setup failed"), None])
+        api = self._api(coap)
+
+        first_status, _headers, first_body = api.handle_request(
+            method="POST",
+            path="/api/v1/downlinks",
+            content_type="application/octet-stream",
+            body=request.to_bytes(),
+            now=1_700_000_002,
+        )
+        second_status, _headers, second_body = api.handle_request(
+            method="POST",
+            path="/api/v1/downlinks",
+            content_type="application/octet-stream",
+            body=request.to_bytes(),
+            now=1_700_000_003,
+        )
+
+        result = DownlinkResult.from_bytes(second_body)
+        self.assertEqual(503, first_status)
+        self.assertEqual(b"", first_body)
+        self.assertEqual(200, second_status)
+        self.assertEqual(DOWNLINK_STATUS_DELIVERED, result.status)
+        self.assertEqual(2, len(coap.calls))
+
+    def test_duplicate_terminal_retry_replays_same_0x85_without_resending(self) -> None:
+        self._register_node(10, "fd12:3456::10")
+        request = DownlinkRequest(
+            version=1,
+            gateway_id=7,
+            downlink_id=105,
+            target_node_id=10,
+            created_at=1_700_000_001,
+            payload=encode_time_sync(version=1, epoch=55),
+        )
+        coap = FakeCoapClient()
+        api = self._api(coap)
+
+        first_status, _headers, first_body = api.handle_request(
+            method="POST",
+            path="/api/v1/downlinks",
+            content_type="application/octet-stream",
+            body=request.to_bytes(),
+            now=1_700_000_002,
+        )
+        second_status, _headers, second_body = api.handle_request(
+            method="POST",
+            path="/api/v1/downlinks",
+            content_type="application/octet-stream",
+            body=request.to_bytes(),
+            now=1_700_000_099,
+        )
+
+        self.assertEqual(200, first_status)
+        self.assertEqual(200, second_status)
+        self.assertEqual(first_body, second_body)
+        self.assertEqual(1, len(coap.calls))
+
+    def test_wrong_content_type_returns_415(self) -> None:
+        request = DownlinkRequest(
+            version=1,
+            gateway_id=7,
+            downlink_id=106,
+            target_node_id=10,
+            created_at=1_700_000_001,
+            payload=encode_time_sync(version=1, epoch=55),
+        )
+        api = self._api(FakeCoapClient())
+
+        status, _headers, body = api.handle_request(
+            method="POST",
+            path="/api/v1/downlinks",
+            content_type="application/json",
+            body=request.to_bytes(),
+            now=1_700_000_002,
+        )
+
+        self.assertEqual(415, status)
+        self.assertEqual(b"", body)
+
+    def test_malformed_request_header_returns_400_without_terminal_result(self) -> None:
+        api = self._api(FakeCoapClient())
+
+        status, _headers, body = api.handle_request(
+            method="POST",
+            path="/api/v1/downlinks",
+            content_type="application/octet-stream",
+            body=b"\x84\x01\x07",
+            now=1_700_000_002,
+        )
+
         self.assertEqual(400, status)
-        self.assertEqual("invalid_request", payload["delivery_result"])
+        self.assertEqual(b"", body)
+        self.assertEqual([], self.service.downlink_audit_store.list_terminal_results())
 
 
 class DeterministicClock:

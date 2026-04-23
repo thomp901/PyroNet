@@ -3,9 +3,9 @@ from __future__ import annotations
 import ipaddress
 import struct
 import tempfile
+import unittest
 import urllib.error
 import urllib.request
-import unittest
 from pathlib import Path
 
 from pyronet_gateway.backhaul_client import HTTPBackhaulClient, PermanentBackhaulError, TransientBackhaulError
@@ -26,7 +26,6 @@ from pyronet_gateway.protocol.backhaul import (
 from pyronet_gateway.registration_worker import RegistrationWorker
 from pyronet_gateway.retry_worker import OutboxRetryWorker, RetryPolicy
 from pyronet_gateway.service import GatewayService
-
 
 REGISTRATION_STRUCT = struct.Struct("<BBHffHB16s")
 REPORT_STRUCT = struct.Struct("<BBHIBhHHHB")
@@ -135,7 +134,7 @@ class GatewayServiceTests(unittest.TestCase):
             sw_version=0x0102,
             coap=CoapConfig(bind_host="::", port=5683, resource_path="/uplink"),
             backhaul=BackhaulConfig(
-                base_url="http://csp.example",
+                base_url="http://backhaul.example",
                 http_timeout_seconds=5.0,
                 registration_retry_base_delay_seconds=1,
                 registration_retry_max_delay_seconds=10,
@@ -488,16 +487,156 @@ class GatewayServiceTests(unittest.TestCase):
 
 class HTTPBackhaulClientClassificationTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.client = HTTPBackhaulClient(base_url="http://csp.example", timeout_seconds=5.0)
+        self.client = HTTPBackhaulClient(base_url="http://backhaul.example", timeout_seconds=5.0)
         self.original_urlopen = urllib.request.urlopen
 
     def tearDown(self) -> None:
         urllib.request.urlopen = self.original_urlopen
 
+    def test_registration_success_posts_expected_request(self) -> None:
+        seen = {}
+
+        def fake_urlopen(request, timeout=None):
+            seen["request"] = request
+            seen["timeout"] = timeout
+            return FakeHTTPResponse(status=204, body=b"")
+
+        urllib.request.urlopen = fake_urlopen
+        registration = GatewayRegistration(
+            version=1,
+            gateway_id=7,
+            timestamp=1,
+            latitude=0.0,
+            longitude=0.0,
+            sw_version=0x0102,
+        )
+
+        self.client.send_gateway_registration(registration)
+
+        request = seen["request"]
+        self.assertEqual("http://backhaul.example/api/v1/gateways/register", request.full_url)
+        self.assertEqual("POST", request.get_method())
+        self.assertEqual("application/octet-stream", request.get_header("Content-type"))
+        self.assertEqual(registration.to_bytes(), request.data)
+        self.assertEqual(5.0, seen["timeout"])
+
+    def test_uplink_success_returns_receipt(self) -> None:
+        envelope = NodeUplinkEnvelope(
+            version=1,
+            gateway_id=7,
+            uplink_id=42,
+            received_at=1_700_000_001,
+            observed_src_ipv6="fd12:3456::abcd",
+            payload=build_report_packet(node_id=1001),
+        )
+        receipt = UplinkReceipt(
+            version=envelope.version,
+            gateway_id=envelope.gateway_id,
+            uplink_id=envelope.uplink_id,
+            status=RECEIPT_DURABLE_INGEST,
+        )
+
+        urllib.request.urlopen = lambda _request, timeout=None: FakeHTTPResponse(status=200, body=receipt.to_bytes())
+
+        actual = self.client.send_uplink(envelope)
+
+        self.assertEqual(receipt, actual)
+
+    def test_connection_failure_is_transient(self) -> None:
+        def fake_urlopen(_request, timeout=None):
+            raise urllib.error.URLError("dns failure")
+
+        urllib.request.urlopen = fake_urlopen
+
+        with self.assertRaisesRegex(TransientBackhaulError, "connection failure: dns failure"):
+            self.client.send_gateway_registration(
+                GatewayRegistration(
+                    version=1,
+                    gateway_id=7,
+                    timestamp=1,
+                    latitude=0.0,
+                    longitude=0.0,
+                    sw_version=0x0102,
+                )
+            )
+
+    def test_timeout_is_transient(self) -> None:
+        def fake_urlopen(_request, timeout=None):
+            raise TimeoutError()
+
+        urllib.request.urlopen = fake_urlopen
+
+        with self.assertRaisesRegex(TransientBackhaulError, "network timeout"):
+            self.client.send_gateway_registration(
+                GatewayRegistration(
+                    version=1,
+                    gateway_id=7,
+                    timestamp=1,
+                    latitude=0.0,
+                    longitude=0.0,
+                    sw_version=0x0102,
+                )
+            )
+
+    def test_missing_uplink_receipt_body_is_transient(self) -> None:
+        envelope = NodeUplinkEnvelope(
+            version=1,
+            gateway_id=7,
+            uplink_id=42,
+            received_at=1_700_000_001,
+            observed_src_ipv6="fd12:3456::abcd",
+            payload=build_report_packet(node_id=1001),
+        )
+
+        urllib.request.urlopen = lambda _request, timeout=None: FakeHTTPResponse(status=200, body=b"")
+
+        with self.assertRaisesRegex(TransientBackhaulError, "missing uplink receipt body"):
+            self.client.send_uplink(envelope)
+
+    def test_malformed_uplink_receipt_is_transient(self) -> None:
+        envelope = NodeUplinkEnvelope(
+            version=1,
+            gateway_id=7,
+            uplink_id=42,
+            received_at=1_700_000_001,
+            observed_src_ipv6="fd12:3456::abcd",
+            payload=build_report_packet(node_id=1001),
+        )
+
+        urllib.request.urlopen = lambda _request, timeout=None: FakeHTTPResponse(status=200, body=b"\x00")
+
+        with self.assertRaisesRegex(TransientBackhaulError, "invalid uplink receipt"):
+            self.client.send_uplink(envelope)
+
+    def test_mismatched_uplink_receipt_is_transient(self) -> None:
+        envelope = NodeUplinkEnvelope(
+            version=1,
+            gateway_id=7,
+            uplink_id=42,
+            received_at=1_700_000_001,
+            observed_src_ipv6="fd12:3456::abcd",
+            payload=build_report_packet(node_id=1001),
+        )
+        mismatched = UplinkReceipt(
+            version=envelope.version,
+            gateway_id=envelope.gateway_id,
+            uplink_id=envelope.uplink_id + 1,
+            status=RECEIPT_DURABLE_INGEST,
+        )
+
+        urllib.request.urlopen = lambda _request, timeout=None: FakeHTTPResponse(
+            status=200, body=mismatched.to_bytes()
+        )
+
+        with self.assertRaisesRegex(
+            TransientBackhaulError, "uplink receipt does not match the posted envelope"
+        ):
+            self.client.send_uplink(envelope)
+
     def test_http_500_is_transient(self) -> None:
         def fake_urlopen(_request, timeout=None):
             raise urllib.error.HTTPError(
-                url="http://csp.example/api/v1/uplinks",
+                url="http://backhaul.example/api/v1/uplinks",
                 code=500,
                 msg="server error",
                 hdrs=None,
@@ -520,7 +659,7 @@ class HTTPBackhaulClientClassificationTests(unittest.TestCase):
     def test_http_400_is_permanent(self) -> None:
         def fake_urlopen(_request, timeout=None):
             raise urllib.error.HTTPError(
-                url="http://csp.example/api/v1/uplinks",
+                url="http://backhaul.example/api/v1/uplinks",
                 code=400,
                 msg="bad request",
                 hdrs=None,
@@ -539,6 +678,24 @@ class HTTPBackhaulClientClassificationTests(unittest.TestCase):
                     sw_version=0x0102,
                 )
             )
+
+
+class FakeHTTPResponse:
+    def __init__(self, *, status: int, body: bytes) -> None:
+        self.status = status
+        self._body = body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> None:
+        return None
+
+    def getcode(self) -> int:
+        return self.status
+
+    def read(self) -> bytes:
+        return self._body
 
 
 def build_registration_packet(*, node_id: int, parent_ipv6: str | None) -> bytes:

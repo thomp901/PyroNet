@@ -1,17 +1,11 @@
 from __future__ import annotations
 
 import http.server
-import json
 import socket
 import threading
 import time
 
-
-ROUTES = {
-    "/api/v1/downlinks/nn-table": "nn-table",
-    "/api/v1/downlinks/time-sync": "time-sync",
-    "/api/v1/downlinks/config": "config",
-}
+ROUTE = "/api/v1/downlinks"
 
 
 class DownlinkHttpApi:
@@ -19,23 +13,39 @@ class DownlinkHttpApi:
         self._delivery_service = delivery_service
         self._max_request_body_bytes = max_request_body_bytes
 
-    def handle_request(self, *, method: str, path: str, body: bytes, now: int) -> tuple[int, dict[str, str], bytes]:
+    def handle_request(
+        self,
+        *,
+        method: str,
+        path: str,
+        content_type: str | None,
+        body: bytes,
+        now: int,
+    ) -> tuple[int, dict[str, str], bytes]:
         if method != "POST":
-            return self._json_response(405, {"delivery_result": "invalid_request", "error_detail": "method not allowed"})
-        if path not in ROUTES:
-            return self._json_response(404, {"delivery_result": "invalid_request", "error_detail": "unknown endpoint"})
+            return self._response(405, None, b"")
+        if path != ROUTE:
+            return self._response(404, None, b"")
         if len(body) > self._max_request_body_bytes:
-            return self._json_response(400, {"delivery_result": "invalid_request", "error_detail": "request body too large"})
-        result = self._delivery_service.handle_request(
-            request_type=ROUTES[path],
-            request_body=body,
-            now=now,
-        )
-        return self._json_response(result.status_code, result.body)
+            return self._response(413, None, b"")
+        if self._normalize_content_type(content_type) != "application/octet-stream":
+            return self._response(415, None, b"")
 
-    def _json_response(self, status_code: int, body: dict) -> tuple[int, dict[str, str], bytes]:
-        encoded = json.dumps(body, sort_keys=True).encode("utf-8")
-        return status_code, {"Content-Type": "application/json", "Content-Length": str(len(encoded))}, encoded
+        status_code, response_body = self._delivery_service.handle_request(request_body=body, now=now)
+        if status_code == 200:
+            return self._response(200, "application/octet-stream", response_body)
+        return self._response(status_code, None, response_body)
+
+    def _normalize_content_type(self, content_type: str | None) -> str:
+        if content_type is None:
+            return ""
+        return content_type.split(";", 1)[0].strip().lower()
+
+    def _response(self, status_code: int, content_type: str | None, body: bytes) -> tuple[int, dict[str, str], bytes]:
+        headers = {"Content-Length": str(len(body))}
+        if content_type is not None:
+            headers["Content-Type"] = content_type
+        return status_code, headers, body
 
 
 class _ThreadingHttpServer(http.server.ThreadingHTTPServer):
@@ -59,6 +69,7 @@ class _DownlinkRequestHandler(http.server.BaseHTTPRequestHandler):
         status, headers, response_body = self.server.downlink_http_api.handle_request(
             method=self.command,
             path=self.path,
+            content_type=self.headers.get("Content-Type"),
             body=body,
             now=int(time.time()),
         )

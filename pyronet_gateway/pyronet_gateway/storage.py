@@ -11,7 +11,6 @@ from .interfaces import OutboxRecord
 from .protocol.backhaul import NodeUplinkEnvelope
 from .protocol.node_packets import NodePacket, ParentUpdatePacket, RegistrationPacket
 
-
 MIGRATIONS = {
     1: """
     CREATE TABLE IF NOT EXISTS schema_meta (
@@ -95,6 +94,20 @@ MIGRATIONS = {
         completed_at INTEGER
     );
     """,
+    3: """
+    CREATE TABLE IF NOT EXISTS downlink_terminal_results (
+        gateway_id INTEGER NOT NULL,
+        downlink_id INTEGER NOT NULL,
+        request_version INTEGER NOT NULL,
+        target_node_id INTEGER NOT NULL,
+        request_body BLOB NOT NULL,
+        status INTEGER NOT NULL,
+        result_body BLOB NOT NULL,
+        created_at INTEGER NOT NULL,
+        completed_at INTEGER NOT NULL,
+        PRIMARY KEY (gateway_id, downlink_id)
+    );
+    """,
 }
 
 LATEST_SCHEMA_VERSION = max(MIGRATIONS)
@@ -132,6 +145,19 @@ class DownlinkAttemptRecord:
     error_detail: str | None
     created_at: int
     completed_at: int | None
+
+
+@dataclass(frozen=True)
+class DownlinkTerminalResultRecord:
+    gateway_id: int
+    downlink_id: int
+    request_version: int
+    target_node_id: int
+    request_body: bytes
+    status: int
+    result_body: bytes
+    created_at: int
+    completed_at: int
 
 
 class SQLiteDatabase:
@@ -686,6 +712,140 @@ class SQLiteDownlinkAuditStore:
                 status=row["status"],
                 error_category=row["error_category"],
                 error_detail=row["error_detail"],
+                created_at=row["created_at"],
+                completed_at=row["completed_at"],
+            )
+            for row in rows
+        ]
+
+    def get_terminal_result(self, *, gateway_id: int, downlink_id: int) -> DownlinkTerminalResultRecord | None:
+        row = self._database.connection.execute(
+            """
+            SELECT
+                gateway_id,
+                downlink_id,
+                request_version,
+                target_node_id,
+                request_body,
+                status,
+                result_body,
+                created_at,
+                completed_at
+            FROM downlink_terminal_results
+            WHERE gateway_id = ? AND downlink_id = ?
+            """,
+            (gateway_id, downlink_id),
+        ).fetchone()
+        if row is None:
+            return None
+        return DownlinkTerminalResultRecord(
+            gateway_id=row["gateway_id"],
+            downlink_id=row["downlink_id"],
+            request_version=row["request_version"],
+            target_node_id=row["target_node_id"],
+            request_body=row["request_body"],
+            status=row["status"],
+            result_body=row["result_body"],
+            created_at=row["created_at"],
+            completed_at=row["completed_at"],
+        )
+
+    def store_terminal_result(
+        self,
+        *,
+        gateway_id: int,
+        downlink_id: int,
+        request_version: int,
+        target_node_id: int,
+        request_body: bytes,
+        status: int,
+        result_body: bytes,
+        created_at: int,
+        completed_at: int,
+    ) -> DownlinkTerminalResultRecord:
+        with self._database.transaction() as conn:
+            conn.execute(
+                """
+                INSERT OR IGNORE INTO downlink_terminal_results(
+                    gateway_id,
+                    downlink_id,
+                    request_version,
+                    target_node_id,
+                    request_body,
+                    status,
+                    result_body,
+                    created_at,
+                    completed_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    gateway_id,
+                    downlink_id,
+                    request_version,
+                    target_node_id,
+                    request_body,
+                    status,
+                    result_body,
+                    created_at,
+                    completed_at,
+                ),
+            )
+            row = conn.execute(
+                """
+                SELECT
+                    gateway_id,
+                    downlink_id,
+                    request_version,
+                    target_node_id,
+                    request_body,
+                    status,
+                    result_body,
+                    created_at,
+                    completed_at
+                FROM downlink_terminal_results
+                WHERE gateway_id = ? AND downlink_id = ?
+                """,
+                (gateway_id, downlink_id),
+            ).fetchone()
+        return DownlinkTerminalResultRecord(
+            gateway_id=row["gateway_id"],
+            downlink_id=row["downlink_id"],
+            request_version=row["request_version"],
+            target_node_id=row["target_node_id"],
+            request_body=row["request_body"],
+            status=row["status"],
+            result_body=row["result_body"],
+            created_at=row["created_at"],
+            completed_at=row["completed_at"],
+        )
+
+    def list_terminal_results(self) -> list[DownlinkTerminalResultRecord]:
+        rows = self._database.connection.execute(
+            """
+            SELECT
+                gateway_id,
+                downlink_id,
+                request_version,
+                target_node_id,
+                request_body,
+                status,
+                result_body,
+                created_at,
+                completed_at
+            FROM downlink_terminal_results
+            ORDER BY gateway_id ASC, downlink_id ASC
+            """
+        ).fetchall()
+        return [
+            DownlinkTerminalResultRecord(
+                gateway_id=row["gateway_id"],
+                downlink_id=row["downlink_id"],
+                request_version=row["request_version"],
+                target_node_id=row["target_node_id"],
+                request_body=row["request_body"],
+                status=row["status"],
+                result_body=row["result_body"],
                 created_at=row["created_at"],
                 completed_at=row["completed_at"],
             )

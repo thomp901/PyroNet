@@ -62,7 +62,7 @@ class OutboxRetryWorker:
                 self._outbox_store.move_to_dead_letter(
                     record.envelope.uplink_id,
                     receipt_status=receipt.status,
-                    reason="permanent reject from CSP",
+                    reason="permanent reject from backhaul",
                     finalized_at=now,
                 )
             else:

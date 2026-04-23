@@ -1,262 +1,196 @@
 from __future__ import annotations
 
-import json
-from dataclasses import dataclass
+import threading
 
-from .downlink_packet_codec import encode_config_update, encode_nn_table_update, encode_time_sync
-from .downlink_request_validation import (
-    DownlinkValidationError,
-    validate_config_update_request,
-    validate_nn_table_request,
-    validate_time_sync_request,
+from .downlink_packet_codec import validate_node_downlink_payload
+from .protocol.backhaul import (
+    DOWNLINK_STATUS_DELIVERED,
+    DOWNLINK_STATUS_MESH_DELIVERY_FAILED,
+    DOWNLINK_STATUS_PERMANENT_REJECT,
+    DOWNLINK_STATUS_UNKNOWN_NODE,
+    BackhaulParseError,
+    DownlinkRequest,
+    DownlinkRequestIdentity,
+    DownlinkResult,
+    decode_downlink_request_identity,
 )
-
-
-@dataclass(frozen=True)
-class DownlinkHttpResult:
-    status_code: int
-    body: dict
 
 
 class DownlinkDeliveryService:
     def __init__(
         self,
         *,
+        gateway_id: int,
+        backhaul_version: int,
         node_state_store,
-        audit_store,
+        result_store,
         coap_downlink_client,
-        node_packet_version: int,
     ) -> None:
+        self._gateway_id = gateway_id
+        self._backhaul_version = backhaul_version
         self._node_state_store = node_state_store
-        self._audit_store = audit_store
+        self._result_store = result_store
         self._coap_downlink_client = coap_downlink_client
-        self._node_packet_version = node_packet_version
+        self._inflight_lock = threading.Lock()
+        self._inflight: dict[tuple[int, int], threading.Event] = {}
 
-    def handle_request(self, *, request_type: str, request_body: bytes, now: int) -> DownlinkHttpResult:
-        try:
-            decoded = json.loads(request_body.decode("utf-8"))
-        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-            attempt_id = self._audit_store.create_attempt(
-                request_type=request_type,
-                target_node_id=None,
-                target_ipv6=None,
-                request_body=request_body,
-                encoded_payload=None,
-                status="invalid_request",
-                error_category="invalid_request",
-                error_detail=str(exc),
-                created_at=now,
-                completed_at=now,
-            )
-            return DownlinkHttpResult(
-                400,
-                {
-                    "attempt_id": attempt_id,
-                    "request_type": request_type,
-                    "delivery_result": "invalid_request",
-                    "error_detail": str(exc),
-                },
-            )
-        if not isinstance(decoded, dict):
-            attempt_id = self._audit_store.create_attempt(
-                request_type=request_type,
-                target_node_id=None,
-                target_ipv6=None,
-                request_body=request_body,
-                encoded_payload=None,
-                status="invalid_request",
-                error_category="invalid_request",
-                error_detail="request body must be a JSON object",
-                created_at=now,
-                completed_at=now,
-            )
-            return DownlinkHttpResult(
-                400,
-                {
-                    "attempt_id": attempt_id,
-                    "request_type": request_type,
-                    "delivery_result": "invalid_request",
-                    "error_detail": "request body must be a JSON object",
-                },
-            )
+    def handle_request(self, *, request_body: bytes, now: int) -> tuple[int, bytes]:
+        identity = decode_downlink_request_identity(request_body)
+        if identity is None:
+            return 400, b""
 
-        try:
-            if request_type == "nn-table":
-                validated = validate_nn_table_request(decoded)
-            elif request_type == "time-sync":
-                validated = validate_time_sync_request(decoded)
-            elif request_type == "config":
-                validated = validate_config_update_request(decoded)
-            else:
-                raise DownlinkValidationError(f"unsupported request type {request_type}")
-        except DownlinkValidationError as exc:
-            attempt_id = self._audit_store.create_attempt(
-                request_type=request_type,
-                target_node_id=decoded.get("target_node_id") if isinstance(decoded, dict) else None,
-                target_ipv6=None,
-                request_body=request_body,
-                encoded_payload=None,
-                status="invalid_request",
-                error_category="invalid_request",
-                error_detail=str(exc),
-                created_at=now,
-                completed_at=now,
-            )
-            return DownlinkHttpResult(
-                400,
-                {
-                    "attempt_id": attempt_id,
-                    "request_type": request_type,
-                    "target_node_id": decoded.get("target_node_id") if isinstance(decoded, dict) else None,
-                    "delivery_result": "invalid_request",
-                    "error_detail": str(exc),
-                },
-            )
-
-        target = self._node_state_store.get(validated.target_node_id)
-        if target is None:
-            attempt_id = self._audit_store.create_attempt(
-                request_type=request_type,
-                target_node_id=validated.target_node_id,
-                target_ipv6=None,
-                request_body=request_body,
-                encoded_payload=None,
-                status="target_unknown",
-                error_category="target_unknown",
-                error_detail="no current IPv6 mapping for target node",
-                created_at=now,
-                completed_at=now,
-            )
-            return DownlinkHttpResult(
-                404,
-                {
-                    "attempt_id": attempt_id,
-                    "request_type": request_type,
-                    "target_node_id": validated.target_node_id,
-                    "delivery_result": "target_unknown",
-                },
-            )
-
-        if request_type == "nn-table":
-            neighbor_records = self._node_state_store.get_many(validated.neighbor_node_ids)
-            missing = [node_id for node_id in validated.neighbor_node_ids if node_id not in neighbor_records]
-            if missing:
-                attempt_id = self._audit_store.create_attempt(
-                    request_type=request_type,
-                    target_node_id=validated.target_node_id,
-                    target_ipv6=target.current_ipv6,
-                    request_body=request_body,
-                    encoded_payload=None,
-                    status="stale_precondition",
-                    error_category="unresolved_neighbor_set",
-                    error_detail=f"missing neighbor mappings: {missing}",
-                    created_at=now,
-                    completed_at=now,
-                )
-                return DownlinkHttpResult(
-                    409,
-                    {
-                        "attempt_id": attempt_id,
-                        "request_type": request_type,
-                        "target_node_id": validated.target_node_id,
-                        "target_ipv6": target.current_ipv6,
-                        "delivery_result": "stale_precondition",
-                        "missing_neighbor_node_ids": missing,
-                    },
-                )
-            payload = encode_nn_table_update(
-                version=self._node_packet_version,
-                target_node_id=validated.target_node_id,
-                neighbor_ipv6s=[neighbor_records[node_id].current_ipv6 for node_id in validated.neighbor_node_ids],
-            )
-        elif request_type == "time-sync":
-            payload = encode_time_sync(version=self._node_packet_version, epoch=validated.epoch)
-        else:
-            payload = encode_config_update(version=self._node_packet_version, request=validated)
-
-        attempt_id = self._audit_store.create_attempt(
-            request_type=request_type,
-            target_node_id=validated.target_node_id,
-            target_ipv6=target.current_ipv6,
-            request_body=request_body,
-            encoded_payload=payload,
-            status="in_progress",
-            error_category=None,
-            error_detail=None,
-            created_at=now,
+        cached = self._result_store.get_terminal_result(
+            gateway_id=identity.gateway_id,
+            downlink_id=identity.downlink_id,
         )
+        if cached is not None:
+            return 200, cached.result_body
+
+        owner, event = self._acquire_owner(identity)
+        if not owner:
+            event.wait()
+            cached = self._result_store.get_terminal_result(
+                gateway_id=identity.gateway_id,
+                downlink_id=identity.downlink_id,
+            )
+            if cached is not None:
+                return 200, cached.result_body
+            return self.handle_request(request_body=request_body, now=now)
+
+        try:
+            cached = self._result_store.get_terminal_result(
+                gateway_id=identity.gateway_id,
+                downlink_id=identity.downlink_id,
+            )
+            if cached is not None:
+                return 200, cached.result_body
+            return self._process_request(identity=identity, request_body=request_body, now=now)
+        finally:
+            self._release_owner(identity, event)
+
+    def _process_request(self, *, identity: DownlinkRequestIdentity, request_body: bytes, now: int) -> tuple[int, bytes]:
+        try:
+            request = DownlinkRequest.from_bytes(request_body)
+        except BackhaulParseError:
+            return self._terminal_response(
+                identity=identity,
+                request_body=request_body,
+                status=DOWNLINK_STATUS_PERMANENT_REJECT,
+                now=now,
+            )
+
+        if request.version != self._backhaul_version:
+            return self._terminal_response(
+                identity=identity,
+                request_body=request_body,
+                status=DOWNLINK_STATUS_PERMANENT_REJECT,
+                now=now,
+            )
+
+        if request.gateway_id != self._gateway_id:
+            return self._terminal_response(
+                identity=identity,
+                request_body=request_body,
+                status=DOWNLINK_STATUS_PERMANENT_REJECT,
+                now=now,
+            )
+
+        try:
+            payload_info = validate_node_downlink_payload(request.payload)
+        except ValueError:
+            return self._terminal_response(
+                identity=identity,
+                request_body=request_body,
+                status=DOWNLINK_STATUS_PERMANENT_REJECT,
+                now=now,
+            )
+
+        if payload_info.target_node_id is not None and payload_info.target_node_id != request.target_node_id:
+            return self._terminal_response(
+                identity=identity,
+                request_body=request_body,
+                status=DOWNLINK_STATUS_PERMANENT_REJECT,
+                now=now,
+            )
+
+        target = self._node_state_store.get(request.target_node_id)
+        if target is None:
+            return self._terminal_response(
+                identity=identity,
+                request_body=request_body,
+                status=DOWNLINK_STATUS_UNKNOWN_NODE,
+                now=now,
+            )
 
         try:
             result = self._coap_downlink_client.send_confirmable(
                 target_ipv6=target.current_ipv6,
-                payload=payload,
+                payload=request.payload,
             )
-        except Exception as exc:
-            self._audit_store.complete_attempt(
-                attempt_id,
-                target_ipv6=target.current_ipv6,
-                encoded_payload=payload,
-                status="gateway_failure",
-                error_category="internal_gateway_failure",
-                error_detail=str(exc),
-                completed_at=now,
-            )
-            return DownlinkHttpResult(
-                503,
-                {
-                    "attempt_id": attempt_id,
-                    "request_type": request_type,
-                    "target_node_id": validated.target_node_id,
-                    "target_ipv6": target.current_ipv6,
-                    "delivery_result": "transient_gateway_internal_failure",
-                },
-            )
+        except Exception:
+            return 503, b""
 
         if result.success:
-            self._audit_store.complete_attempt(
-                attempt_id,
-                target_ipv6=target.current_ipv6,
-                encoded_payload=payload,
-                status="accepted_and_delivered",
-                error_category=None,
-                error_detail=None,
-                completed_at=now,
-            )
-            return DownlinkHttpResult(
-                200,
-                {
-                    "attempt_id": attempt_id,
-                    "request_type": request_type,
-                    "target_node_id": validated.target_node_id,
-                    "target_ipv6": target.current_ipv6,
-                    "delivery_result": "accepted_and_delivered",
-                },
+            return self._terminal_response(
+                identity=identity,
+                request_body=request_body,
+                status=DOWNLINK_STATUS_DELIVERED,
+                now=now,
             )
 
-        status_code = 503 if result.error_category == "internal_gateway_failure" else 502
-        delivery_result = (
-            "transient_gateway_internal_failure"
-            if status_code == 503
-            else "target_stale_or_unreachable"
+        if result.error_category == "internal_gateway_failure":
+            return 503, b""
+
+        return self._terminal_response(
+            identity=identity,
+            request_body=request_body,
+            status=DOWNLINK_STATUS_MESH_DELIVERY_FAILED,
+            now=now,
         )
-        self._audit_store.complete_attempt(
-            attempt_id,
-            target_ipv6=target.current_ipv6,
-            encoded_payload=payload,
-            status=delivery_result,
-            error_category=result.error_category,
-            error_detail=result.error_detail,
+
+    def _terminal_response(
+        self,
+        *,
+        identity: DownlinkRequestIdentity,
+        request_body: bytes,
+        status: int,
+        now: int,
+    ) -> tuple[int, bytes]:
+        result = DownlinkResult(
+            version=identity.version,
+            gateway_id=identity.gateway_id,
+            downlink_id=identity.downlink_id,
+            target_node_id=identity.target_node_id,
+            status=status,
             completed_at=now,
         )
-        return DownlinkHttpResult(
-            status_code,
-            {
-                "attempt_id": attempt_id,
-                "request_type": request_type,
-                "target_node_id": validated.target_node_id,
-                "target_ipv6": target.current_ipv6,
-                "delivery_result": delivery_result,
-                "error_category": result.error_category,
-                "error_detail": result.error_detail,
-            },
+        record = self._result_store.store_terminal_result(
+            gateway_id=identity.gateway_id,
+            downlink_id=identity.downlink_id,
+            request_version=identity.version,
+            target_node_id=identity.target_node_id,
+            request_body=request_body,
+            status=status,
+            result_body=result.to_bytes(),
+            created_at=identity.created_at,
+            completed_at=now,
         )
+        return 200, record.result_body
+
+    def _acquire_owner(self, identity: DownlinkRequestIdentity) -> tuple[bool, threading.Event]:
+        key = (identity.gateway_id, identity.downlink_id)
+        with self._inflight_lock:
+            event = self._inflight.get(key)
+            if event is not None:
+                return False, event
+            event = threading.Event()
+            self._inflight[key] = event
+            return True, event
+
+    def _release_owner(self, identity: DownlinkRequestIdentity, event: threading.Event) -> None:
+        key = (identity.gateway_id, identity.downlink_id)
+        with self._inflight_lock:
+            current = self._inflight.get(key)
+            if current is event:
+                self._inflight.pop(key, None)
+                event.set()

@@ -19,17 +19,14 @@ from .protocol.backhaul import (
     node_uplink_header_size,
 )
 from .protocol.node_packets import (
-    ACCEPTED_UPLINK_TYPES,
     PacketParseError,
     ParentUpdatePacket,
     RegistrationPacket,
     SensorPacket,
-    is_csp_bound,
     parse_node_packet,
 )
 
 __all__ = [
-    "ACCEPTED_UPLINK_TYPES",
     "BackhaulParseError",
     "GatewayRegistration",
     "NodeUplinkEnvelope",
@@ -45,7 +42,6 @@ __all__ = [
     "encode_config_update",
     "encode_nn_table_update",
     "encode_time_sync",
-    "is_csp_bound",
     "node_uplink_header_size",
     "pack_sw_version",
     "parse_node_packet",

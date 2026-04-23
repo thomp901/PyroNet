@@ -5,7 +5,6 @@ import socket
 import time
 from dataclasses import dataclass
 
-
 COAP_TYPE_CON = 0
 COAP_TYPE_ACK = 2
 COAP_CODE_EMPTY = 0

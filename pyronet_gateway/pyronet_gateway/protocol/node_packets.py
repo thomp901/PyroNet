@@ -10,13 +10,6 @@ TYPE_SENSOR_ALERT = 0x03
 TYPE_NEIGHBOR_ALERT = 0x07
 TYPE_PARENT_UPDATE = 0x08
 
-ACCEPTED_UPLINK_TYPES = {
-    TYPE_REGISTRATION,
-    TYPE_SENSOR_REPORT,
-    TYPE_SENSOR_ALERT,
-    TYPE_PARENT_UPDATE,
-}
-
 _REGISTRATION = struct.Struct("<BBHffHB16s")
 _REPORT = struct.Struct("<BBHIBhHHHB")
 _PARENT_UPDATE = struct.Struct("<BBHI16s")
@@ -63,15 +56,6 @@ def packet_type(raw_packet: bytes) -> int:
     if len(raw_packet) < 1:
         raise PacketParseError("packet is empty")
     return raw_packet[0]
-
-
-def is_csp_bound(raw_packet: bytes) -> bool:
-    try:
-        return packet_type(raw_packet) in ACCEPTED_UPLINK_TYPES
-    except PacketParseError:
-        return False
-
-
 def parse_node_packet(raw_packet: bytes) -> NodePacket:
     msg_type = packet_type(raw_packet)
 
