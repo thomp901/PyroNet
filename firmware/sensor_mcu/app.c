@@ -17,9 +17,15 @@
 
 #include "app.h"
 
+#include "app/app_host_events.h"
+#include "app/app_provisioning.h"
+#include "app/app_state.h"
+#include "app/app_time_anchor.h"
 #include "debug_console.h"
 #include "platform/monotonic_time.h"
 #include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 #include <stdio.h>
 
 #include "transport/host_link.h"
@@ -33,6 +39,39 @@ typedef enum {
 
 static app_phase_t app_phase = APP_PHASE_WAIT_LINK;
 
+static app_context_t app_context;
+
+static bool app_resolve_unix_time_s(void *context,
+                                    int64_t monotonic_timestamp_ns,
+                                    uint32_t *out_unix_time_s)
+{
+  const app_context_t *app = (const app_context_t *)context;
+  if (app == NULL) {
+    return false;
+  }
+
+  return app_time_anchor_resolve(&app->time_anchor,
+                                 monotonic_timestamp_ns,
+                                 out_unix_time_s);
+}
+
+app_context_t *app_context_get(void)
+{
+  return &app_context;
+}
+
+static void app_retry_ready_work(app_context_t *app)
+{
+  if (app == NULL) {
+    return;
+  }
+
+  app_boundary_tx_flush(&app->boundary_tx,
+                        app_provisioning_identity(),
+                        &app->time_anchor);
+  pyronet_risk_service_retry_pending(&app->risk_service);
+}
+
 void app_init_early(void)
 {
   debug_console_init();
@@ -43,10 +82,37 @@ void app_init_early(void)
  ******************************************************************************/
 void app_init(void)
 {
-  monotonic_time_init();
-  app_phase = APP_PHASE_WAIT_LINK;
+  const app_registration_identity_t *identity = app_provisioning_identity();
+  host_link_event_handlers_t handlers;
 
-  if (!host_link_init()) {
+  monotonic_time_init();
+  memset(&app_context, 0, sizeof(app_context));
+  app_phase = APP_PHASE_WAIT_LINK;
+  app_time_anchor_init(&app_context.time_anchor);
+  app_boundary_tx_init(&app_context.boundary_tx);
+
+  if (app_provisioning_boot_unix_time_valid()) {
+    app_time_anchor_set(&app_context.time_anchor,
+                        monotonic_time_now_ns(),
+                        app_provisioning_boot_unix_time_s());
+  }
+
+  pyronet_risk_service_init(&app_context.risk_service,
+                            monotonic_time_now_ns(),
+                            &app_context,
+                            app_resolve_unix_time_s);
+
+  if (app_provisioning_identity_valid(identity)) {
+    pyronet_risk_service_set_node_id(&app_context.risk_service,
+                                     identity->node_id);
+  }
+
+  pyronet_risk_service_set_battery_pct(&app_context.risk_service,
+                                       app_provisioning_battery_pct(identity));
+
+  app_host_events_init_handlers(&handlers, &app_context);
+
+  if (!host_link_init(&handlers)) {
     printf("HOST_INIT_FAILED\r\n");
   }
 
@@ -59,8 +125,11 @@ void app_init(void)
 void app_process_action(void)
 {
   host_status_v1_t status;
+  int64_t now_ns;
 
   host_link_poll();
+  now_ns = monotonic_time_now_ns();
+  pyronet_risk_service_tick(&app_context.risk_service, now_ns);
 
   if (!host_link_is_ready()) {
     if (app_phase != APP_PHASE_WAIT_LINK) {
@@ -68,6 +137,8 @@ void app_process_action(void)
     }
     return;
   }
+
+  app_retry_ready_work(&app_context);
 
   if (app_phase == APP_PHASE_WAIT_LINK) {
     app_phase = APP_PHASE_RUN_PING;

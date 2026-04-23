@@ -20,6 +20,7 @@ typedef enum {
 typedef struct {
   bool initialized;
   host_link_state_t state;
+  host_link_event_handlers_t event_handlers;
   host_proto_parser_t parser;
   uint8_t next_tx_seq;
   uint64_t hello_deadline_us;
@@ -37,12 +38,16 @@ static host_link_context_t host_link_ctx;
 
 static void host_link_send_hello(void);
 static void host_link_handle_frame(const host_frame_t *frame);
+static bool host_link_handle_event_frame(const host_frame_t *frame);
 static bool host_link_send_frame(uint8_t type,
                                  uint8_t flags,
                                  uint8_t seq,
                                  const void *payload,
                                  uint16_t payload_length);
 static void host_link_restart_handshake(const char *reason);
+static bool host_link_send_command(uint8_t type,
+                                   const void *payload,
+                                   uint16_t payload_length);
 
 static bool host_link_send_frame(uint8_t type,
                                  uint8_t flags,
@@ -83,7 +88,7 @@ static void host_link_send_hello(void)
   };
   uint8_t seq = host_link_ctx.next_tx_seq++;
 
-  host_link_send_frame(HOST_MSG_HELLO, 0U, seq, &hello, sizeof(hello));
+  host_link_send_frame(PYRONET_HOST_MSG_HELLO, 0U, seq, &hello, sizeof(hello));
   host_link_ctx.state = HOST_LINK_STATE_WAIT_HELLO_ACK;
   host_link_ctx.hello_deadline_us = monotonic_time_now_us() + HOST_LINK_HELLO_ACK_TIMEOUT_US;
 }
@@ -113,6 +118,92 @@ static void host_link_complete_request(const host_frame_t *frame, bool ok)
   }
 }
 
+static bool host_link_handle_event_frame(const host_frame_t *frame)
+{
+  switch (frame->type) {
+    case PYRONET_HOST_MSG_REGISTRATION_NEEDED:
+      if (frame->payload_length == sizeof(pyronet_host_registration_needed_v1_t)) {
+        pyronet_host_registration_needed_v1_t event;
+
+        memcpy(&event, frame->payload, sizeof(event));
+        if (host_link_ctx.event_handlers.on_registration_needed != NULL) {
+          host_link_ctx.event_handlers.on_registration_needed(
+            host_link_ctx.event_handlers.context,
+            &event);
+        }
+      }
+      return true;
+
+    case PYRONET_HOST_MSG_PARENT_CHANGED:
+      if (frame->payload_length == sizeof(pyronet_host_parent_changed_v1_t)) {
+        pyronet_host_parent_changed_v1_t event;
+
+        memcpy(&event, frame->payload, sizeof(event));
+        if (host_link_ctx.event_handlers.on_parent_changed != NULL) {
+          host_link_ctx.event_handlers.on_parent_changed(
+            host_link_ctx.event_handlers.context,
+            &event);
+        }
+      }
+      return true;
+
+    case PYRONET_HOST_MSG_TX_RESULT:
+      if (frame->payload_length == sizeof(pyronet_host_tx_result_v1_t)) {
+        pyronet_host_tx_result_v1_t event;
+
+        memcpy(&event, frame->payload, sizeof(event));
+        if (host_link_ctx.event_handlers.on_tx_result != NULL) {
+          host_link_ctx.event_handlers.on_tx_result(
+            host_link_ctx.event_handlers.context,
+            &event);
+        }
+      }
+      return true;
+
+    case PYRONET_HOST_MSG_TIME_SYNC_UPDATE:
+      if (frame->payload_length == sizeof(pyronet_host_time_sync_update_v1_t)) {
+        pyronet_host_time_sync_update_v1_t event;
+
+        memcpy(&event, frame->payload, sizeof(event));
+        if (host_link_ctx.event_handlers.on_time_sync_update != NULL) {
+          host_link_ctx.event_handlers.on_time_sync_update(
+            host_link_ctx.event_handlers.context,
+            &event);
+        }
+      }
+      return true;
+
+    case PYRONET_HOST_MSG_NEIGHBOR_ALERT_RX:
+      if (frame->payload_length == sizeof(pyronet_host_neighbor_alert_received_v1_t)) {
+        pyronet_host_neighbor_alert_received_v1_t event;
+
+        memcpy(&event, frame->payload, sizeof(event));
+        if (host_link_ctx.event_handlers.on_neighbor_alert_rx != NULL) {
+          host_link_ctx.event_handlers.on_neighbor_alert_rx(
+            host_link_ctx.event_handlers.context,
+            &event);
+        }
+      }
+      return true;
+
+    case PYRONET_HOST_MSG_CONFIG_UPDATE_RX:
+      if (frame->payload_length == sizeof(pyronet_host_config_update_received_v1_t)) {
+        pyronet_host_config_update_received_v1_t event;
+
+        memcpy(&event, frame->payload, sizeof(event));
+        if (host_link_ctx.event_handlers.on_config_update_rx != NULL) {
+          host_link_ctx.event_handlers.on_config_update_rx(
+            host_link_ctx.event_handlers.context,
+            &event);
+        }
+      }
+      return true;
+
+    default:
+      return false;
+  }
+}
+
 static void host_link_handle_frame(const host_frame_t *frame)
 {
   printf("HOST_RX type=%s seq=%u len=%u\r\n",
@@ -120,7 +211,7 @@ static void host_link_handle_frame(const host_frame_t *frame)
          frame->seq,
          frame->payload_length);
 
-  if (frame->type == HOST_MSG_HELLO_ACK) {
+  if (frame->type == PYRONET_HOST_MSG_HELLO_ACK) {
     host_hello_ack_v1_t hello_ack;
 
     if (((frame->flags & HOST_FRAME_FLAG_RESPONSE) == 0U)
@@ -144,6 +235,10 @@ static void host_link_handle_frame(const host_frame_t *frame)
     return;
   }
 
+  if (host_link_handle_event_frame(frame)) {
+    return;
+  }
+
   if (host_link_ctx.state != HOST_LINK_STATE_READY) {
     return;
   }
@@ -153,7 +248,7 @@ static void host_link_handle_frame(const host_frame_t *frame)
     return;
   }
 
-  if (frame->type == HOST_MSG_ERROR) {
+  if (frame->type == PYRONET_HOST_MSG_ERROR) {
     host_error_v1_t error;
 
     if (frame->payload_length == sizeof(error)) {
@@ -172,6 +267,21 @@ static void host_link_handle_frame(const host_frame_t *frame)
   }
 
   host_link_complete_request(frame, true);
+}
+
+static bool host_link_send_command(uint8_t type,
+                                   const void *payload,
+                                   uint16_t payload_length)
+{
+  uint8_t seq;
+
+  if ((host_link_ctx.state != HOST_LINK_STATE_READY)
+      || ((payload_length > 0U) && (payload == NULL))) {
+    return false;
+  }
+
+  seq = host_link_ctx.next_tx_seq++;
+  return host_link_send_frame(type, 0U, seq, payload, payload_length);
 }
 
 static bool host_link_wait_for_response(uint8_t request_type,
@@ -222,10 +332,13 @@ static bool host_link_wait_for_response(uint8_t request_type,
   return false;
 }
 
-bool host_link_init(void)
+bool host_link_init(const host_link_event_handlers_t *event_handlers)
 {
   memset(&host_link_ctx, 0, sizeof(host_link_ctx));
   host_proto_parser_init(&host_link_ctx.parser);
+  if (event_handlers != NULL) {
+    host_link_ctx.event_handlers = *event_handlers;
+  }
 
   if (!host_uart_init()) {
     return false;
@@ -269,8 +382,8 @@ bool host_link_ping(uint32_t token)
   host_ping_v1_t ping = { .token = token };
   host_pong_v1_t pong;
 
-  if (!host_link_wait_for_response(HOST_MSG_PING,
-                                   HOST_MSG_PONG,
+  if (!host_link_wait_for_response(PYRONET_HOST_MSG_PING,
+                                   PYRONET_HOST_MSG_PONG,
                                    &ping,
                                    sizeof(ping),
                                    HOST_LINK_PING_TIMEOUT_US)) {
@@ -303,8 +416,8 @@ bool host_link_get_status(host_status_v1_t *out_status)
     return false;
   }
 
-  if (!host_link_wait_for_response(HOST_MSG_GET_STATUS,
-                                   HOST_MSG_STATUS,
+  if (!host_link_wait_for_response(PYRONET_HOST_MSG_GET_STATUS,
+                                   PYRONET_HOST_MSG_STATUS,
                                    NULL,
                                    0U,
                                    HOST_LINK_STATUS_TIMEOUT_US)) {
@@ -319,4 +432,54 @@ bool host_link_get_status(host_status_v1_t *out_status)
 
   memcpy(out_status, host_link_ctx.response_payload, sizeof(*out_status));
   return true;
+}
+
+bool host_link_send_registration(
+  const pyronet_host_send_registration_v1_t *payload)
+{
+  return (payload != NULL)
+           ? host_link_send_command(PYRONET_HOST_MSG_SEND_REGISTRATION,
+                                    payload,
+                                    sizeof(*payload))
+           : false;
+}
+
+bool host_link_send_sensor_report(
+  const pyronet_host_send_sensor_report_v1_t *payload)
+{
+  return (payload != NULL)
+           ? host_link_send_command(PYRONET_HOST_MSG_SEND_SENSOR_REPORT,
+                                    payload,
+                                    sizeof(*payload))
+           : false;
+}
+
+bool host_link_send_sensor_alert(
+  const pyronet_host_send_sensor_alert_v1_t *payload)
+{
+  return (payload != NULL)
+           ? host_link_send_command(PYRONET_HOST_MSG_SEND_SENSOR_ALERT,
+                                    payload,
+                                    sizeof(*payload))
+           : false;
+}
+
+bool host_link_send_neighbor_alert(
+  const pyronet_host_send_neighbor_alert_v1_t *payload)
+{
+  return (payload != NULL)
+           ? host_link_send_command(PYRONET_HOST_MSG_SEND_NEIGHBOR_ALERT,
+                                    payload,
+                                    sizeof(*payload))
+           : false;
+}
+
+bool host_link_request_parent_update(
+  const pyronet_host_request_parent_update_v1_t *payload)
+{
+  return (payload != NULL)
+           ? host_link_send_command(PYRONET_HOST_MSG_REQUEST_PARENT_UPDATE,
+                                    payload,
+                                    sizeof(*payload))
+           : false;
 }

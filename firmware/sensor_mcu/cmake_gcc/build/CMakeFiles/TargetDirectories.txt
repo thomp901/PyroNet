@@ -1,4 +1,0 @@
-/Users/diegosmacbook/Documents/PyroNet/firmware/sensor_mcu/cmake_gcc/build/CMakeFiles/slc.dir
-/Users/diegosmacbook/Documents/PyroNet/firmware/sensor_mcu/cmake_gcc/build/CMakeFiles/sensor_mcu.dir
-/Users/diegosmacbook/Documents/PyroNet/firmware/sensor_mcu/cmake_gcc/build/CMakeFiles/edit_cache.dir
-/Users/diegosmacbook/Documents/PyroNet/firmware/sensor_mcu/cmake_gcc/build/CMakeFiles/rebuild_cache.dir

@@ -13,8 +13,14 @@ project(
 include(sensor_mcu.cmake)
 
 target_sources(slc PRIVATE
+    ../app/app_boundary_tx.c
+    ../app/app_host_events.c
+    ../app/app_provisioning.c
+    ../app/app_time_anchor.c
     ${SDK_PATH}/platform/emlib/src/em_eusart.c
     ../platform/monotonic_time.c
+    ../services/risk/pyronet_risk_engine.c
+    ../services/risk/pyronet_risk_service.c
     ../transport/host_proto.c
     ../transport/host_uart.c
     ../transport/host_link.c

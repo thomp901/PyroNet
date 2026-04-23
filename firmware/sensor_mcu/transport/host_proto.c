@@ -217,21 +217,61 @@ bool host_proto_parser_consume(host_proto_parser_t *parser,
 const char *host_proto_type_name(uint8_t type)
 {
   switch (type) {
-    case HOST_MSG_HELLO:
+    case PYRONET_HOST_MSG_HELLO:
       return "HELLO";
-    case HOST_MSG_HELLO_ACK:
+    case PYRONET_HOST_MSG_HELLO_ACK:
       return "HELLO_ACK";
-    case HOST_MSG_PING:
+    case PYRONET_HOST_MSG_PING:
       return "PING";
-    case HOST_MSG_PONG:
+    case PYRONET_HOST_MSG_PONG:
       return "PONG";
-    case HOST_MSG_GET_STATUS:
+    case PYRONET_HOST_MSG_GET_STATUS:
       return "GET_STATUS";
-    case HOST_MSG_STATUS:
+    case PYRONET_HOST_MSG_STATUS:
       return "STATUS";
-    case HOST_MSG_ERROR:
+    case PYRONET_HOST_MSG_SEND_REGISTRATION:
+      return "SEND_REGISTRATION";
+    case PYRONET_HOST_MSG_SEND_SENSOR_REPORT:
+      return "SEND_SENSOR_REPORT";
+    case PYRONET_HOST_MSG_SEND_SENSOR_ALERT:
+      return "SEND_SENSOR_ALERT";
+    case PYRONET_HOST_MSG_SEND_NEIGHBOR_ALERT:
+      return "SEND_NEIGHBOR_ALERT";
+    case PYRONET_HOST_MSG_REQUEST_PARENT_UPDATE:
+      return "REQUEST_PARENT_UPDATE";
+    case PYRONET_HOST_MSG_REGISTRATION_NEEDED:
+      return "REGISTRATION_NEEDED";
+    case PYRONET_HOST_MSG_PARENT_CHANGED:
+      return "PARENT_CHANGED";
+    case PYRONET_HOST_MSG_TX_RESULT:
+      return "TX_RESULT";
+    case PYRONET_HOST_MSG_TIME_SYNC_UPDATE:
+      return "TIME_SYNC_UPDATE";
+    case PYRONET_HOST_MSG_NEIGHBOR_ALERT_RX:
+      return "NEIGHBOR_ALERT_RX";
+    case PYRONET_HOST_MSG_CONFIG_UPDATE_RX:
+      return "CONFIG_UPDATE_RX";
+    case PYRONET_HOST_MSG_ERROR:
       return "ERROR";
     default:
       return "UNKNOWN";
+  }
+}
+
+const char *host_proto_tx_status_name(uint8_t status)
+{
+  switch (status) {
+    case PYRONET_TX_STATUS_ACCEPTED:
+      return "accepted";
+    case PYRONET_TX_STATUS_SENT:
+      return "sent";
+    case PYRONET_TX_STATUS_ACKED:
+      return "acked";
+    case PYRONET_TX_STATUS_TIMEOUT:
+      return "timeout";
+    case PYRONET_TX_STATUS_FAILED:
+      return "failed";
+    default:
+      return "unknown";
   }
 }
