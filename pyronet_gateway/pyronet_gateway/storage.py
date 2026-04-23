@@ -79,20 +79,6 @@ MIGRATIONS = {
     2: """
     ALTER TABLE gateway_runtime ADD COLUMN http_api_bind_host TEXT NOT NULL DEFAULT '::';
     ALTER TABLE gateway_runtime ADD COLUMN http_api_port INTEGER NOT NULL DEFAULT 8081;
-
-    CREATE TABLE IF NOT EXISTS downlink_attempts (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        request_type TEXT NOT NULL,
-        target_node_id INTEGER,
-        target_ipv6 TEXT,
-        request_body BLOB NOT NULL,
-        encoded_payload BLOB,
-        status TEXT NOT NULL,
-        error_category TEXT,
-        error_detail TEXT,
-        created_at INTEGER NOT NULL,
-        completed_at INTEGER
-    );
     """,
     3: """
     CREATE TABLE IF NOT EXISTS downlink_terminal_results (
@@ -133,21 +119,6 @@ class DeadLetterRecord:
 
 
 @dataclass(frozen=True)
-class DownlinkAttemptRecord:
-    id: int
-    request_type: str
-    target_node_id: int | None
-    target_ipv6: str | None
-    request_body: bytes
-    encoded_payload: bytes | None
-    status: str
-    error_category: str | None
-    error_detail: str | None
-    created_at: int
-    completed_at: int | None
-
-
-@dataclass(frozen=True)
 class DownlinkTerminalResultRecord:
     gateway_id: int
     downlink_id: int
@@ -169,9 +140,7 @@ class SQLiteDatabase:
         self._connection.execute("PRAGMA journal_mode=WAL")
         self._connection.execute("PRAGMA foreign_keys=ON")
         self._apply_migrations()
-        self._connection.execute(
-            "INSERT OR IGNORE INTO sequences(name, next_value) VALUES ('uplink_id', 1)"
-        )
+        self._connection.execute("INSERT OR IGNORE INTO sequences(name, next_value) VALUES ('uplink_id', 1)")
         self._connection.commit()
 
     @property
@@ -587,9 +556,7 @@ class SQLiteOutboxStore:
             conn.execute("DELETE FROM outbox WHERE uplink_id = ?", (uplink_id,))
 
     def _allocate_uplink_id(self, conn: sqlite3.Connection) -> int:
-        row = conn.execute(
-            "SELECT next_value FROM sequences WHERE name = 'uplink_id'"
-        ).fetchone()
+        row = conn.execute("SELECT next_value FROM sequences WHERE name = 'uplink_id'").fetchone()
         uplink_id = int(row["next_value"])
         conn.execute(
             "UPDATE sequences SET next_value = ? WHERE name = 'uplink_id'",
@@ -601,122 +568,6 @@ class SQLiteOutboxStore:
 class SQLiteDownlinkAuditStore:
     def __init__(self, database: SQLiteDatabase) -> None:
         self._database = database
-
-    def create_attempt(
-        self,
-        *,
-        request_type: str,
-        target_node_id: int | None,
-        target_ipv6: str | None,
-        request_body: bytes,
-        encoded_payload: bytes | None,
-        status: str,
-        error_category: str | None,
-        error_detail: str | None,
-        created_at: int,
-        completed_at: int | None = None,
-    ) -> int:
-        cursor = self._database.connection.execute(
-            """
-            INSERT INTO downlink_attempts(
-                request_type,
-                target_node_id,
-                target_ipv6,
-                request_body,
-                encoded_payload,
-                status,
-                error_category,
-                error_detail,
-                created_at,
-                completed_at
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                request_type,
-                target_node_id,
-                target_ipv6,
-                request_body,
-                encoded_payload,
-                status,
-                error_category,
-                error_detail,
-                created_at,
-                completed_at,
-            ),
-        )
-        self._database.connection.commit()
-        return int(cursor.lastrowid)
-
-    def complete_attempt(
-        self,
-        attempt_id: int,
-        *,
-        target_ipv6: str | None,
-        encoded_payload: bytes | None,
-        status: str,
-        error_category: str | None,
-        error_detail: str | None,
-        completed_at: int,
-    ) -> None:
-        self._database.connection.execute(
-            """
-            UPDATE downlink_attempts
-            SET target_ipv6 = COALESCE(?, target_ipv6),
-                encoded_payload = COALESCE(?, encoded_payload),
-                status = ?,
-                error_category = ?,
-                error_detail = ?,
-                completed_at = ?
-            WHERE id = ?
-            """,
-            (
-                target_ipv6,
-                encoded_payload,
-                status,
-                error_category,
-                error_detail,
-                completed_at,
-                attempt_id,
-            ),
-        )
-        self._database.connection.commit()
-
-    def list_attempts(self) -> list[DownlinkAttemptRecord]:
-        rows = self._database.connection.execute(
-            """
-            SELECT
-                id,
-                request_type,
-                target_node_id,
-                target_ipv6,
-                request_body,
-                encoded_payload,
-                status,
-                error_category,
-                error_detail,
-                created_at,
-                completed_at
-            FROM downlink_attempts
-            ORDER BY id ASC
-            """
-        ).fetchall()
-        return [
-            DownlinkAttemptRecord(
-                id=row["id"],
-                request_type=row["request_type"],
-                target_node_id=row["target_node_id"],
-                target_ipv6=row["target_ipv6"],
-                request_body=row["request_body"],
-                encoded_payload=row["encoded_payload"],
-                status=row["status"],
-                error_category=row["error_category"],
-                error_detail=row["error_detail"],
-                created_at=row["created_at"],
-                completed_at=row["completed_at"],
-            )
-            for row in rows
-        ]
 
     def get_terminal_result(self, *, gateway_id: int, downlink_id: int) -> DownlinkTerminalResultRecord | None:
         row = self._database.connection.execute(

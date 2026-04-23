@@ -4,8 +4,6 @@ import ipaddress
 import struct
 from dataclasses import dataclass
 
-from .downlink_request_validation import ConfigUpdateRequest
-
 TYPE_NN_TABLE_UPDATE = 0x04
 TYPE_TIME_SYNC = 0x05
 TYPE_CONFIG_UPDATE = 0x06
@@ -22,6 +20,20 @@ class NodeDownlinkPayloadInfo:
     target_node_id: int | None = None
 
 
+@dataclass(frozen=True)
+class ConfigUpdate:
+    config_id: int
+    l2_temp_thresh: int
+    l2_humidity_thresh: int
+    l2_voc_thresh: int
+    l3_temp_thresh: int
+    l3_humidity_thresh: int
+    l3_voc_thresh: int
+    l4_voc_thresh: int
+    l5_voc_thresh: int
+    l5_pm25_thresh: int
+
+
 def encode_nn_table_update(*, version: int, target_node_id: int, neighbor_ipv6s: list[str]) -> bytes:
     header = NN_TABLE_HEADER.pack(TYPE_NN_TABLE_UPDATE, version, target_node_id, len(neighbor_ipv6s))
     addresses = b"".join(ipaddress.IPv6Address(ipv6).packed for ipv6 in neighbor_ipv6s)
@@ -32,7 +44,7 @@ def encode_time_sync(*, version: int, epoch: int) -> bytes:
     return TIME_SYNC.pack(TYPE_TIME_SYNC, version, epoch)
 
 
-def encode_config_update(*, version: int, request: ConfigUpdateRequest) -> bytes:
+def encode_config_update(*, version: int, request: ConfigUpdate) -> bytes:
     return CONFIG_UPDATE.pack(
         TYPE_CONFIG_UPDATE,
         version,
@@ -60,9 +72,7 @@ def validate_node_downlink_payload(payload: bytes) -> NodeDownlinkPayloadInfo:
         decoded_type, version, target_node_id, nn_count = NN_TABLE_HEADER.unpack(payload[: NN_TABLE_HEADER.size])
         expected_len = NN_TABLE_HEADER.size + (16 * nn_count)
         if len(payload) != expected_len:
-            raise ValueError(
-                f"NN table payload length {len(payload)} != {expected_len}"
-            )
+            raise ValueError(f"NN table payload length {len(payload)} != {expected_len}")
         return NodeDownlinkPayloadInfo(payload_type=decoded_type, version=version, target_node_id=target_node_id)
 
     if payload_type == TYPE_TIME_SYNC:

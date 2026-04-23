@@ -20,6 +20,7 @@ from .coap_intake import (
     parse_coap_message,
 )
 from .config import CoapConfig, load_config
+from .protocol.backhaul import RECEIPT_PERMANENT_REJECT
 from .protocol.node_packets import (
     TYPE_NEIGHBOR_ALERT,
     TYPE_SENSOR_ALERT,
@@ -30,7 +31,6 @@ from .protocol.node_packets import (
     packet_type,
     parse_node_packet,
 )
-from .protocol.backhaul import RECEIPT_PERMANENT_REJECT
 
 ETH_P_ALL = 0x0003
 ETHERTYPE_IPV6 = 0x86DD

@@ -13,12 +13,12 @@ from pyronet_gateway.downlink_packet_codec import (
     CONFIG_UPDATE,
     NN_TABLE_HEADER,
     TIME_SYNC,
+    ConfigUpdate,
     encode_config_update,
     encode_nn_table_update,
     encode_time_sync,
     validate_node_downlink_payload,
 )
-from pyronet_gateway.downlink_request_validation import validate_config_update_request
 from pyronet_gateway.protocol.backhaul import (
     DOWNLINK_STATUS_DELIVERED,
     DOWNLINK_STATUS_MESH_DELIVERY_FAILED,
@@ -93,20 +93,17 @@ class DownlinkCodecTests(unittest.TestCase):
         self.assertEqual((0x05, 1, 1234), TIME_SYNC.unpack(payload))
 
     def test_encode_config_update(self) -> None:
-        request = validate_config_update_request(
-            {
-                "target_node_id": 10,
-                "config_id": 77,
-                "l2_temp_thresh": -100,
-                "l2_humidity_thresh": 1,
-                "l2_voc_thresh": 2,
-                "l3_temp_thresh": -200,
-                "l3_humidity_thresh": 3,
-                "l3_voc_thresh": 4,
-                "l4_voc_thresh": 5,
-                "l5_voc_thresh": 6,
-                "l5_pm25_thresh": 7,
-            }
+        request = ConfigUpdate(
+            config_id=77,
+            l2_temp_thresh=-100,
+            l2_humidity_thresh=1,
+            l2_voc_thresh=2,
+            l3_temp_thresh=-200,
+            l3_humidity_thresh=3,
+            l3_voc_thresh=4,
+            l4_voc_thresh=5,
+            l5_voc_thresh=6,
+            l5_pm25_thresh=7,
         )
         payload = encode_config_update(version=1, request=request)
         self.assertEqual(CONFIG_UPDATE.size, len(payload))
