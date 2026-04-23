@@ -1,6 +1,8 @@
 import type {
   AlertIncident,
   AlertTimelineEntry,
+  BorderRouterDetail,
+  BorderRouterRegistration,
   ConfigRevision,
   ConfigRevisionDraft,
   ConfigurationResponse,
@@ -1193,7 +1195,7 @@ function toRecipient(record: RecipientRecord): NotificationRecipient {
   };
 }
 
-function getMockGateways(): GatewayMarker[] {
+export function listMockGateways(): GatewayMarker[] {
   return [
     {
       id: "gateway-1",
@@ -1207,6 +1209,50 @@ function getMockGateways(): GatewayMarker[] {
       softwareVersion: "1.0",
     },
   ];
+}
+
+const borderRouterRegistrations: Record<number, BorderRouterRegistration[]> = {
+  1: [
+    {
+      reportedAt: "2026-04-14T19:57:00Z",
+      latitude: 40.43539954526423,
+      longitude: -86.92967431940525,
+      softwareVersion: "1.0",
+      backhaulVersion: 1,
+    },
+    {
+      reportedAt: "2026-04-13T08:12:00Z",
+      latitude: 40.435221,
+      longitude: -86.929503,
+      softwareVersion: "1.0",
+      backhaulVersion: 1,
+    },
+    {
+      reportedAt: "2026-04-11T17:20:00Z",
+      latitude: 40.435114,
+      longitude: -86.929861,
+      softwareVersion: "0.9",
+      backhaulVersion: 1,
+    },
+  ],
+};
+
+export function getMockBorderRouterDetail(gatewayId: number): BorderRouterDetail {
+  const gateway = listMockGateways().find((entry) => entry.gatewayId === gatewayId);
+  if (!gateway) {
+    throw new Error(`Unknown gateway ${gatewayId}`);
+  }
+
+  const recentRegistrations = borderRouterRegistrations[gatewayId] ?? [];
+  const oldestRegistration =
+    recentRegistrations.length > 0 ? recentRegistrations[recentRegistrations.length - 1].reportedAt : gateway.lastRegisteredAt;
+
+  return {
+    gateway,
+    firstRegisteredAt: oldestRegistration,
+    registrationCount: recentRegistrations.length,
+    recentRegistrations,
+  };
 }
 
 export function getMockDashboard(): DashboardResponse {
@@ -1228,7 +1274,7 @@ export function getMockDashboard(): DashboardResponse {
   return {
     summary,
     fleet,
-    gateways: getMockGateways(),
+    gateways: listMockGateways(),
     neighborLinks: buildMeshLinks(),
     alertQueue,
     downlinks: downlinks

@@ -11,7 +11,8 @@ import { EmptyState } from "../components/common/EmptyState";
 import { LoadingState } from "../components/common/LoadingState";
 import { PageContainer } from "../components/common/PageContainer";
 import { TableShell } from "../components/common/TableShell";
-import { formatTimestamp } from "../lib/format";
+import { convertCelsiusToFahrenheit, convertFahrenheitToCelsius, formatTimestamp } from "../lib/format";
+import { setTemperatureUnit, useTemperatureUnit } from "../lib/temperatureDisplay";
 import { useAsyncData } from "../lib/useAsyncData";
 
 const emptyThresholds: ConfigThresholds = {
@@ -62,18 +63,8 @@ const thresholdGroups: Array<{
   },
 ];
 
-type TemperatureUnit = "C" | "F";
-
 function isTemperatureThreshold(key: keyof ConfigThresholds) {
   return key === "l2TempThresh" || key === "l3TempThresh";
-}
-
-function convertCelsiusToFahrenheit(value: number) {
-  return (value * 9) / 5 + 32;
-}
-
-function convertFahrenheitToCelsius(value: number) {
-  return ((value - 32) * 5) / 9;
 }
 
 function roundThresholdValue(value: number) {
@@ -84,7 +75,7 @@ export function ConfigurationPage() {
   const { data, error, loading, reload } = useAsyncData(getConfiguration, []);
   const [thresholds, setThresholds] = useState<ConfigThresholds>(emptyThresholds);
   const [notes, setNotes] = useState("");
-  const [temperatureUnit, setTemperatureUnit] = useState<TemperatureUnit>("C");
+  const temperatureUnit = useTemperatureUnit();
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -209,8 +200,8 @@ export function ConfigurationPage() {
               <p>Edit the active thresholds and create a new revision.</p>
             </div>
             <label className="field threshold-units-field">
-              <span>Temperature entry units</span>
-              <select value={temperatureUnit} onChange={(event) => setTemperatureUnit(event.target.value as TemperatureUnit)}>
+              <span>CSP temperature display</span>
+              <select value={temperatureUnit} onChange={(event) => setTemperatureUnit(event.target.value as "C" | "F")}>
                 <option value="C">Celsius (C)</option>
                 <option value="F">Fahrenheit (F)</option>
               </select>

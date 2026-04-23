@@ -4,14 +4,28 @@ import express from "express";
 import { Pool, type PoolClient, type QueryResultRow } from "pg";
 import {
   BackhaulCodecError,
+  CURRENT_BACKHAUL_VERSION,
+  CURRENT_NODE_PACKET_VERSION,
   durableIngestReceiptStatus,
+  deliveredDownlinkResultStatus,
+  encodeConfigUpdatePacket,
+  encodeDownlinkRequestMessage,
+  encodeNeighborTableUpdatePacket,
+  encodeTimeSyncPacket,
   encodeUplinkReceipt,
+  meshDeliveryFailedDownlinkResultStatus,
+  neighborTableUpdatePacketType,
   parseGatewayRegistrationMessage,
+  parseDownlinkResultMessage,
   parseNodeUplinkEnvelopeMessage,
+  permanentRejectDownlinkResultStatus,
   permanentRejectReceiptStatus,
   registrationPacketType,
   sensorAlertPacketType,
   sensorReportPacketType,
+  timeSyncPacketType,
+  configUpdatePacketType,
+  unknownNodeDownlinkResultStatus,
   parentUpdatePacketType,
   type ParsedNodeUplinkEnvelope,
   type ParsedParentUpdatePacket,
@@ -21,6 +35,7 @@ import {
 import type {
   AlertIncident,
   AlertTimelineEntry,
+  BorderRouterDetail,
   ConfigRevisionDraft,
   ConfigurationResponse,
   ConnectivityStatus,
@@ -52,12 +67,14 @@ import type {
   TelemetrySnapshot,
 } from "../src/api/types";
 import { packetDirections, packetEventTypes, packetLogCodes } from "../src/api/types";
+import { parseGatewayId } from "../src/lib/gatewayId";
 import { parseNodeId } from "../src/lib/nodeId";
 import {
   createMockConfigRevision,
   createMockNeighborDistribution,
   createMockThresholdPush,
   createMockTimeSync,
+  getMockBorderRouterDetail,
   getMockConfiguration,
   getMockDashboard,
   getMockHistory,
@@ -65,6 +82,7 @@ import {
   getMockNodeDetail,
   getMockNotificationSettings,
   listMockAlerts,
+  listMockGateways,
   listMockNodes,
   updateMockNeighborRevision,
   updateMockNotificationRecipient,
@@ -74,6 +92,14 @@ const app = express();
 const port = Number(process.env.API_PORT ?? "4000");
 const databaseUrl = process.env.DATABASE_URL?.trim();
 const pool = databaseUrl ? new Pool({ connectionString: databaseUrl }) : null;
+const gatewayDownlinkScheme = (process.env.GATEWAY_DOWNLINK_SCHEME ?? "http").trim() || "http";
+const gatewayDownlinkPort = parseOptionalPort(process.env.GATEWAY_DOWNLINK_PORT);
+const gatewayDownlinkRequestPath = normalizeHttpPath(process.env.GATEWAY_DOWNLINK_REQUEST_PATH ?? "/api/v1/downlinks");
+const gatewayDownlinkDispatchIntervalMs = parsePositiveInteger(process.env.GATEWAY_DOWNLINK_DISPATCH_INTERVAL_MS, 5_000);
+const gatewayDownlinkDispatchBatchSize = parsePositiveInteger(process.env.GATEWAY_DOWNLINK_DISPATCH_BATCH_SIZE, 10);
+const gatewayDownlinkTimeoutMs = parsePositiveInteger(process.env.GATEWAY_DOWNLINK_TIMEOUT_MS, 10_000);
+const gatewayDownlinkRetryDelayMs = parsePositiveInteger(process.env.GATEWAY_DOWNLINK_RETRY_DELAY_MS, 15_000);
+let isGatewayDownlinkDispatchInFlight = false;
 const notificationEventTypes: NotificationEventType[] = [
   "critical_risk",
   "connectivity_loss",
@@ -154,6 +180,16 @@ function haversineDistanceMeters(
   return Math.round(earthRadius * c);
 }
 
+interface RoutedDeviceTarget {
+  deviceId: number;
+  nodeId: number;
+  gatewayRowId: number;
+  gatewayId: number;
+  lastObservedGatewayAt: string;
+  currentNeighborRevisionId: number | null;
+  downlinkUrl: string;
+}
+
 async function query<T extends QueryResultRow>(text: string, values: unknown[] = []) {
   if (!pool) {
     throw new Error("Database is not configured.");
@@ -167,6 +203,32 @@ function epochSecondsToDate(epochSeconds: number) {
 
 function normalizePgError(error: unknown) {
   return error instanceof Error ? error.message : "Unexpected database error";
+}
+
+function parseOptionalPort(value: string | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed > 0 && parsed <= 65535 ? parsed : null;
+}
+
+function parsePositiveInteger(value: string | undefined, fallback: number) {
+  if (!value) {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function normalizeHttpPath(value: string) {
+  const trimmed = value.trim();
+  if (trimmed.length === 0) {
+    return "/api/v1/downlinks";
+  }
+  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
 }
 
 const stableRejectCodes = {
@@ -300,6 +362,7 @@ async function insertParentObservationInDb(
 
 async function projectRegistrationUplinkInDb(
   client: PoolClient,
+  gatewayRowId: number,
   gatewayUplinkId: number,
   message: ParsedNodeUplinkEnvelope,
   packet: ParsedRegistrationPacket,
@@ -313,6 +376,8 @@ async function projectRegistrationUplinkInDb(
         node_id,
         current_ipv6,
         current_parent_ipv6,
+        last_observed_gateway_row_id,
+        last_observed_gateway_at,
         current_latitude,
         current_longitude,
         current_firmware_version,
@@ -321,11 +386,13 @@ async function projectRegistrationUplinkInDb(
         last_seen_at,
         latest_battery_pct
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $7, $7, $8)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9, $9, $10)
       ON CONFLICT (node_id)
       DO UPDATE SET
         current_ipv6 = EXCLUDED.current_ipv6,
         current_parent_ipv6 = EXCLUDED.current_parent_ipv6,
+        last_observed_gateway_row_id = EXCLUDED.last_observed_gateway_row_id,
+        last_observed_gateway_at = EXCLUDED.last_observed_gateway_at,
         current_latitude = EXCLUDED.current_latitude,
         current_longitude = EXCLUDED.current_longitude,
         current_firmware_version = EXCLUDED.current_firmware_version,
@@ -339,6 +406,8 @@ async function projectRegistrationUplinkInDb(
       packet.nodeId,
       message.observedSrcIpv6,
       packet.parentIpv6,
+      gatewayRowId,
+      observedAt,
       packet.latitude,
       packet.longitude,
       firmwareVersion,
@@ -402,6 +471,7 @@ async function projectRegistrationUplinkInDb(
 
 async function projectSensorUplinkInDb(
   client: PoolClient,
+  gatewayRowId: number,
   gatewayUplinkId: number,
   message: ParsedNodeUplinkEnvelope,
   packet: ParsedSensorPacket,
@@ -484,33 +554,35 @@ async function projectSensorUplinkInDb(
       UPDATE devices
       SET
         current_ipv6 = $2,
-        last_seen_at = GREATEST(COALESCE(devices.last_seen_at, $3), $3),
+        last_observed_gateway_row_id = $3,
+        last_observed_gateway_at = $4,
+        last_seen_at = GREATEST(COALESCE(devices.last_seen_at, $5), $5),
         latest_reported_at = CASE
-          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $4 THEN $4
+          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $6 THEN $6
           ELSE devices.latest_reported_at
         END,
         latest_risk_level = CASE
-          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $4 THEN $5
+          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $6 THEN $7
           ELSE devices.latest_risk_level
         END,
         latest_temperature_c = CASE
-          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $4 THEN $6
+          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $6 THEN $8
           ELSE devices.latest_temperature_c
         END,
         latest_humidity_pct = CASE
-          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $4 THEN $7
+          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $6 THEN $9
           ELSE devices.latest_humidity_pct
         END,
         latest_voc_iaq = CASE
-          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $4 THEN $8
+          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $6 THEN $10
           ELSE devices.latest_voc_iaq
         END,
         latest_pm25_ug_m3 = CASE
-          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $4 THEN $9
+          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $6 THEN $11
           ELSE devices.latest_pm25_ug_m3
         END,
         latest_battery_pct = CASE
-          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $4 THEN $10
+          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $6 THEN $12
           ELSE devices.latest_battery_pct
         END
       WHERE id = $1
@@ -518,6 +590,7 @@ async function projectSensorUplinkInDb(
     [
       device.id,
       message.observedSrcIpv6,
+      gatewayRowId,
       observedAt,
       reportedAt,
       packet.riskLevel,
@@ -600,6 +673,7 @@ async function projectSensorUplinkInDb(
 
 async function projectParentUpdateUplinkInDb(
   client: PoolClient,
+  gatewayRowId: number,
   gatewayUplinkId: number,
   message: ParsedNodeUplinkEnvelope,
   packet: ParsedParentUpdatePacket,
@@ -631,10 +705,12 @@ async function projectParentUpdateUplinkInDb(
       SET
         current_ipv6 = $2,
         current_parent_ipv6 = $3,
-        last_seen_at = GREATEST(COALESCE(devices.last_seen_at, $4), $4)
+        last_observed_gateway_row_id = $4,
+        last_observed_gateway_at = $5,
+        last_seen_at = GREATEST(COALESCE(devices.last_seen_at, $5), $5)
       WHERE id = $1
     `,
-    [device.id, message.observedSrcIpv6, packet.parentIpv6, observedAt],
+    [device.id, message.observedSrcIpv6, packet.parentIpv6, gatewayRowId, observedAt],
   );
 
   await syncDeviceIpv6HistoryInDb(client, device.id, message.observedSrcIpv6, observedAt);
@@ -652,23 +728,362 @@ async function projectParentUpdateUplinkInDb(
 
 async function projectGatewayUplinkInDb(
   client: PoolClient,
+  gatewayRowId: number,
   gatewayUplinkId: number,
   message: ParsedNodeUplinkEnvelope,
 ) {
   switch (message.decodedPayload.type) {
     case registrationPacketType:
-      await projectRegistrationUplinkInDb(client, gatewayUplinkId, message, message.decodedPayload);
+      await projectRegistrationUplinkInDb(client, gatewayRowId, gatewayUplinkId, message, message.decodedPayload);
       return;
     case sensorReportPacketType:
     case sensorAlertPacketType:
-      await projectSensorUplinkInDb(client, gatewayUplinkId, message, message.decodedPayload);
+      await projectSensorUplinkInDb(client, gatewayRowId, gatewayUplinkId, message, message.decodedPayload);
       return;
     case parentUpdatePacketType:
-      await projectParentUpdateUplinkInDb(client, gatewayUplinkId, message, message.decodedPayload);
+      await projectParentUpdateUplinkInDb(client, gatewayRowId, gatewayUplinkId, message, message.decodedPayload);
       return;
     default:
       throw new Error(`Unsupported projected packet type ${(message.decodedPayload as { type: number }).type}`);
   }
+}
+
+async function resolveRoutedDeviceTargetsInDb(
+  client: PoolClient,
+  targetNodeIds?: NodeId[],
+): Promise<RoutedDeviceTarget[]> {
+  const rows = (
+    targetNodeIds?.length
+      ? await client.query<{
+          device_id: number;
+          node_id: number;
+          gateway_row_id: number | null;
+          gateway_id: number | null;
+          last_observed_gateway_at: string | null;
+          current_nn_revision_id: number | null;
+          downlink_url: string | null;
+          latest_gateway_remote_address: string | null;
+        }>(
+          `
+            SELECT
+              d.id AS device_id,
+              d.node_id,
+              d.last_observed_gateway_row_id AS gateway_row_id,
+              g.gateway_id,
+              d.last_observed_gateway_at::text,
+              d.current_nn_revision_id,
+              registration.downlink_url,
+              registration.latest_gateway_remote_address
+            FROM devices d
+            LEFT JOIN gateways g ON g.id = d.last_observed_gateway_row_id
+            LEFT JOIN LATERAL (
+              SELECT
+                raw_payload_metadata->>'downlinkUrl' AS downlink_url,
+                raw_payload_metadata->>'remoteAddress' AS latest_gateway_remote_address
+              FROM gateway_registrations
+              WHERE gateway_row_id = d.last_observed_gateway_row_id
+              ORDER BY reported_at DESC, id DESC
+              LIMIT 1
+            ) registration ON TRUE
+            WHERE d.node_id = ANY($1::smallint[])
+            ORDER BY d.node_id
+          `,
+          [targetNodeIds],
+        )
+      : await client.query<{
+          device_id: number;
+          node_id: number;
+          gateway_row_id: number | null;
+          gateway_id: number | null;
+          last_observed_gateway_at: string | null;
+          current_nn_revision_id: number | null;
+          downlink_url: string | null;
+          latest_gateway_remote_address: string | null;
+        }>(
+          `
+            SELECT
+              d.id AS device_id,
+              d.node_id,
+              d.last_observed_gateway_row_id AS gateway_row_id,
+              g.gateway_id,
+              d.last_observed_gateway_at::text,
+              d.current_nn_revision_id,
+              registration.downlink_url,
+              registration.latest_gateway_remote_address
+            FROM devices d
+            LEFT JOIN gateways g ON g.id = d.last_observed_gateway_row_id
+            LEFT JOIN LATERAL (
+              SELECT
+                raw_payload_metadata->>'downlinkUrl' AS downlink_url,
+                raw_payload_metadata->>'remoteAddress' AS latest_gateway_remote_address
+              FROM gateway_registrations
+              WHERE gateway_row_id = d.last_observed_gateway_row_id
+              ORDER BY reported_at DESC, id DESC
+              LIMIT 1
+            ) registration ON TRUE
+            ORDER BY d.node_id
+          `,
+        )
+  ).rows;
+
+  if (targetNodeIds?.length) {
+    const requestedNodeIds = [...new Set(targetNodeIds)].sort((left, right) => left - right);
+    const foundNodeIds = rows.map((row) => row.node_id);
+    const missingNodeIds = requestedNodeIds.filter((nodeId) => !foundNodeIds.includes(nodeId));
+    if (missingNodeIds.length > 0) {
+      throw new Error(`Unknown node ${missingNodeIds.join(", ")}`);
+    }
+  }
+
+  const unroutableTargets = rows.filter((row) => {
+    const downlinkUrl = normalizeGatewayDownlinkUrl(row.downlink_url) ??
+      deriveGatewayDownlinkUrlFromRemoteAddress(row.latest_gateway_remote_address);
+    return row.gateway_row_id === null || row.gateway_id === null || row.last_observed_gateway_at === null || !downlinkUrl;
+  });
+  if (unroutableTargets.length > 0) {
+    const unroutableNodeList = unroutableTargets.map((row) => row.node_id).join(", ");
+    throw new Error(
+      `Cannot queue downlink for unroutable node(s): ${unroutableNodeList}. Each target needs a previously observed gateway uplink and a BR downlink URL.`,
+    );
+  }
+
+  return rows.map((row) => ({
+    deviceId: row.device_id,
+    nodeId: row.node_id,
+    gatewayRowId: row.gateway_row_id as number,
+    gatewayId: row.gateway_id as number,
+    lastObservedGatewayAt: row.last_observed_gateway_at as string,
+    currentNeighborRevisionId: row.current_nn_revision_id,
+    downlinkUrl:
+      normalizeGatewayDownlinkUrl(row.downlink_url) ??
+      deriveGatewayDownlinkUrlFromRemoteAddress(row.latest_gateway_remote_address) ??
+      "",
+  }));
+}
+
+function buildDownlinkRoutingMetadata(target: RoutedDeviceTarget) {
+  return {
+    routingBasis: "last_observed_gateway",
+    gatewayRowId: target.gatewayRowId,
+    gatewayId: target.gatewayId,
+    lastObservedGatewayAt: target.lastObservedGatewayAt,
+  };
+}
+
+function normalizeGatewayDownlinkUrl(candidate: string | null | undefined) {
+  if (!candidate) {
+    return null;
+  }
+
+  try {
+    const url = new URL(candidate);
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      return null;
+    }
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+function normalizeRemoteAddress(remoteAddress: string | null | undefined) {
+  if (!remoteAddress) {
+    return null;
+  }
+
+  const trimmed = remoteAddress.trim();
+  if (trimmed.length === 0) {
+    return null;
+  }
+
+  return trimmed.startsWith("::ffff:") ? trimmed.slice(7) : trimmed;
+}
+
+function formatHostForUrl(host: string) {
+  return host.includes(":") ? `[${host}]` : host;
+}
+
+function deriveGatewayDownlinkUrlFromRemoteAddress(remoteAddress: string | null | undefined) {
+  const host = normalizeRemoteAddress(remoteAddress);
+  if (!host) {
+    return null;
+  }
+
+  const portSuffix = gatewayDownlinkPort ? `:${gatewayDownlinkPort}` : "";
+  return `${gatewayDownlinkScheme}://${formatHostForUrl(host)}${portSuffix}${gatewayDownlinkRequestPath}`;
+}
+
+function resolveGatewayDownlinkUrlFromRequest(request: express.Request) {
+  return (
+    normalizeGatewayDownlinkUrl(request.get("x-pyronet-downlink-url")) ??
+    deriveGatewayDownlinkUrlFromRemoteAddress(request.ip || null)
+  );
+}
+
+function toEpochSeconds(value: Date) {
+  return Math.floor(value.getTime() / 1000);
+}
+
+async function reserveGatewayDownlinkIdInDb(client: PoolClient) {
+  const result = await client.query<{ downlink_id: string }>(
+    "SELECT nextval('gateway_downlink_downlink_id_seq')::text AS downlink_id",
+  );
+  const downlinkId = result.rows[0]?.downlink_id;
+  if (!downlinkId) {
+    throw new Error("Unable to reserve gateway downlink id.");
+  }
+  return BigInt(downlinkId);
+}
+
+async function buildNeighborDistributionPayloadInDb(
+  client: PoolClient,
+  options: {
+    targetNodeId: number;
+    nnRevisionId: number;
+  },
+) {
+  const result = await client.query<{
+    neighbor_node_id: number;
+    neighbor_ipv6: string | null;
+  }>(
+    `
+      SELECT
+        neighbor.node_id AS neighbor_node_id,
+        CASE
+          WHEN neighbor.current_ipv6 IS NULL THEN NULL
+          ELSE host(neighbor.current_ipv6)
+        END AS neighbor_ipv6
+      FROM nn_revision_memberships membership
+      JOIN devices neighbor ON neighbor.id = membership.neighbor_device_id
+      WHERE membership.nn_revision_id = $1
+      ORDER BY membership.neighbor_rank
+    `,
+    [options.nnRevisionId],
+  );
+
+  const missingIpv6Neighbors = result.rows.filter((row) => row.neighbor_ipv6 === null).map((row) => row.neighbor_node_id);
+  if (missingIpv6Neighbors.length > 0) {
+    throw new Error(
+      `Cannot encode NN table update for node ${options.targetNodeId}. Missing IPv6 for neighbor node(s): ${missingIpv6Neighbors.join(", ")}`,
+    );
+  }
+
+  return encodeNeighborTableUpdatePacket({
+    targetNodeId: options.targetNodeId,
+    neighborIpv6Addresses: result.rows.map((row) => row.neighbor_ipv6 as string),
+  });
+}
+
+async function buildConfigUpdatePayloadInDb(client: PoolClient, configRevisionId: number) {
+  const result = await client.query<{
+    config_id: string;
+    l2_temp_thresh: string;
+    l2_humidity_thresh: string;
+    l2_voc_thresh: number;
+    l3_temp_thresh: string;
+    l3_humidity_thresh: string;
+    l3_voc_thresh: number;
+    l4_voc_thresh: number;
+    l5_voc_thresh: number;
+    l5_pm25_thresh: string;
+  }>(
+    `
+      SELECT
+        config_id::text,
+        l2_temp_thresh::text,
+        l2_humidity_thresh::text,
+        l2_voc_thresh,
+        l3_temp_thresh::text,
+        l3_humidity_thresh::text,
+        l3_voc_thresh,
+        l4_voc_thresh,
+        l5_voc_thresh,
+        l5_pm25_thresh::text
+      FROM config_revisions
+      WHERE id = $1
+    `,
+    [configRevisionId],
+  );
+
+  const revision = result.rows[0];
+  if (!revision) {
+    throw new Error(`Unknown config revision ${configRevisionId}`);
+  }
+
+  return encodeConfigUpdatePacket({
+    configId: Number(revision.config_id),
+    l2TempThresh: Number(revision.l2_temp_thresh),
+    l2HumidityThresh: Number(revision.l2_humidity_thresh),
+    l2VocThresh: revision.l2_voc_thresh,
+    l3TempThresh: Number(revision.l3_temp_thresh),
+    l3HumidityThresh: Number(revision.l3_humidity_thresh),
+    l3VocThresh: revision.l3_voc_thresh,
+    l4VocThresh: revision.l4_voc_thresh,
+    l5VocThresh: revision.l5_voc_thresh,
+    l5Pm25Thresh: Number(revision.l5_pm25_thresh),
+  });
+}
+
+async function insertGatewayDownlinkInDb(
+  client: PoolClient,
+  options: {
+    target: RoutedDeviceTarget;
+    commandCode: typeof neighborTableUpdatePacketType | typeof timeSyncPacketType | typeof configUpdatePacketType;
+    innerPayload: Buffer;
+    nnDistributionEventId?: number;
+    timeSyncEventId?: number;
+    deviceConfigDeploymentId?: number;
+  },
+) {
+  const downlinkId = await reserveGatewayDownlinkIdInDb(client);
+  const createdAt = new Date();
+  const requestPayload = encodeDownlinkRequestMessage({
+    gatewayId: options.target.gatewayId,
+    downlinkId,
+    targetNodeId: options.target.nodeId,
+    createdAtEpochSeconds: toEpochSeconds(createdAt),
+    payload: options.innerPayload,
+  });
+
+  await client.query(
+    `
+      INSERT INTO gateway_downlinks (
+        gateway_row_id,
+        device_id,
+        downlink_id,
+        target_node_id,
+        command_code,
+        backhaul_version,
+        node_packet_version,
+        request_payload,
+        inner_payload,
+        metadata,
+        nn_distribution_event_id,
+        time_sync_event_id,
+        device_config_deployment_id
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12, $13)
+    `,
+    [
+      options.target.gatewayRowId,
+      options.target.deviceId,
+      downlinkId.toString(),
+      options.target.nodeId,
+      options.commandCode,
+      CURRENT_BACKHAUL_VERSION,
+      CURRENT_NODE_PACKET_VERSION,
+      requestPayload,
+      options.innerPayload,
+      JSON.stringify({
+        ...buildDownlinkRoutingMetadata(options.target),
+        downlinkUrl: options.target.downlinkUrl,
+        downlinkId: downlinkId.toString(),
+      }),
+      options.nnDistributionEventId ?? null,
+      options.timeSyncEventId ?? null,
+      options.deviceConfigDeploymentId ?? null,
+    ],
+  );
 }
 
 async function persistGatewayRegistrationInDb(
@@ -775,6 +1190,308 @@ async function persistGatewayRegistrationInDb(
   } finally {
     client.release();
   }
+}
+
+function describeDownlinkResultStatus(status: number) {
+  switch (status) {
+    case deliveredDownlinkResultStatus:
+      return "Delivered";
+    case unknownNodeDownlinkResultStatus:
+      return "Unknown Node";
+    case meshDeliveryFailedDownlinkResultStatus:
+      return "Mesh Delivery Failed";
+    case permanentRejectDownlinkResultStatus:
+      return "Permanent Reject";
+    default:
+      return `Status ${status}`;
+  }
+}
+
+function mapGatewayResultToTransportStatus(
+  status: number,
+): "delivered" | "unknown_node" | "mesh_delivery_failed" | "permanent_reject" {
+  switch (status) {
+    case deliveredDownlinkResultStatus:
+      return "delivered";
+    case unknownNodeDownlinkResultStatus:
+      return "unknown_node";
+    case meshDeliveryFailedDownlinkResultStatus:
+      return "mesh_delivery_failed";
+    case permanentRejectDownlinkResultStatus:
+      return "permanent_reject";
+    default:
+      throw new Error(`Unsupported gateway downlink result status ${status}`);
+  }
+}
+
+function mapGatewayResultToDomainStatus(status: number): "sent" | "failed" {
+  return status === deliveredDownlinkResultStatus ? "sent" : "failed";
+}
+
+async function claimPendingGatewayDownlinksInDb(limit: number) {
+  if (!pool) {
+    return [];
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const claimed = await client.query<{
+      id: number;
+      downlink_id: string;
+      target_node_id: number;
+      request_payload: Buffer;
+      metadata: Record<string, unknown>;
+      nn_distribution_event_id: number | null;
+      time_sync_event_id: number | null;
+      device_config_deployment_id: number | null;
+    }>(
+      `
+        WITH claimed AS (
+          SELECT id
+          FROM gateway_downlinks
+          WHERE status IN ('pending', 'transport_failed')
+            AND next_attempt_at <= NOW()
+          ORDER BY next_attempt_at, queued_at
+          LIMIT $1
+          FOR UPDATE SKIP LOCKED
+        )
+        UPDATE gateway_downlinks downlinks
+        SET
+          status = 'dispatched',
+          attempt_count = downlinks.attempt_count + 1,
+          last_attempt_at = NOW(),
+          dispatched_at = COALESCE(downlinks.dispatched_at, NOW()),
+          last_error = NULL
+        FROM claimed
+        WHERE downlinks.id = claimed.id
+        RETURNING
+          downlinks.id,
+          downlinks.downlink_id::text,
+          downlinks.target_node_id,
+          downlinks.request_payload,
+          downlinks.metadata,
+          downlinks.nn_distribution_event_id,
+          downlinks.time_sync_event_id,
+          downlinks.device_config_deployment_id
+      `,
+      [limit],
+    );
+    await client.query("COMMIT");
+    return claimed.rows;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function markGatewayDownlinkTransportFailureInDb(downlinkRowId: number, reason: string) {
+  await query(
+    `
+      UPDATE gateway_downlinks
+      SET
+        status = 'transport_failed',
+        next_attempt_at = NOW() + ($2 * interval '1 millisecond'),
+        last_error = $3
+      WHERE id = $1
+    `,
+    [downlinkRowId, gatewayDownlinkRetryDelayMs, reason],
+  );
+}
+
+async function applyGatewayDownlinkTerminalResultInDb(
+  downlink: {
+    id: number;
+    target_node_id: number;
+    nn_distribution_event_id: number | null;
+    time_sync_event_id: number | null;
+    device_config_deployment_id: number | null;
+  },
+  gatewayId: number,
+  result: ReturnType<typeof parseDownlinkResultMessage>,
+  resultPayload: Buffer,
+) {
+  if (!pool) {
+    throw new Error("Database is not configured.");
+  }
+
+  const client = await pool.connect();
+  const completedAt = epochSecondsToDate(result.completedAtEpochSeconds);
+  const transportStatus = mapGatewayResultToTransportStatus(result.status);
+  const domainStatus = mapGatewayResultToDomainStatus(result.status);
+  const transportMetadata = JSON.stringify({
+    gatewayResultStatus: result.status,
+    gatewayResultLabel: describeDownlinkResultStatus(result.status),
+    transportStatus,
+    transportCompletedAt: completedAt.toISOString(),
+    gatewayId,
+  });
+  const resultMessage =
+    result.status === deliveredDownlinkResultStatus
+      ? `BR ${gatewayId} delivered downlink to node ${downlink.target_node_id}.`
+      : `BR ${gatewayId} returned ${describeDownlinkResultStatus(result.status)} for node ${downlink.target_node_id}.`;
+
+  try {
+    await client.query("BEGIN");
+    await client.query(
+      `
+        UPDATE gateway_downlinks
+        SET
+          status = $2,
+          completed_at = $3,
+          result_status = $4,
+          result_payload = $5,
+          next_attempt_at = $3,
+          last_error = NULL
+        WHERE id = $1
+      `,
+      [downlink.id, transportStatus, completedAt, result.status, resultPayload],
+    );
+
+    if (downlink.nn_distribution_event_id !== null) {
+      await client.query(
+        `
+          UPDATE nn_distribution_events
+          SET
+            status = $2,
+            payload_metadata = payload_metadata || $3::jsonb
+          WHERE id = $1
+        `,
+        [downlink.nn_distribution_event_id, domainStatus, transportMetadata],
+      );
+    }
+
+    if (downlink.time_sync_event_id !== null) {
+      await client.query(
+        `
+          UPDATE time_sync_events
+          SET
+            status = $2,
+            result_message = $3,
+            payload_metadata = payload_metadata || $4::jsonb
+          WHERE id = $1
+        `,
+        [downlink.time_sync_event_id, domainStatus, resultMessage, transportMetadata],
+      );
+    }
+
+    if (downlink.device_config_deployment_id !== null) {
+      await client.query(
+        `
+          UPDATE device_config_deployments
+          SET
+            status = $2,
+            payload_metadata = payload_metadata || $3::jsonb
+          WHERE id = $1
+        `,
+        [downlink.device_config_deployment_id, domainStatus, transportMetadata],
+      );
+    }
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function dispatchGatewayDownlink(
+  downlink: Awaited<ReturnType<typeof claimPendingGatewayDownlinksInDb>>[number],
+) {
+  const metadata = downlink.metadata ?? {};
+  const downlinkUrl = typeof metadata.downlinkUrl === "string" ? normalizeGatewayDownlinkUrl(metadata.downlinkUrl) : null;
+  const gatewayId = typeof metadata.gatewayId === "number" ? metadata.gatewayId : Number(metadata.gatewayId);
+
+  if (!downlinkUrl || !Number.isInteger(gatewayId)) {
+    await markGatewayDownlinkTransportFailureInDb(
+      downlink.id,
+      "Missing BR downlink URL or gateway identifier on queued downlink.",
+    );
+    return;
+  }
+
+  const abortController = new AbortController();
+  const timeout = setTimeout(() => abortController.abort(), gatewayDownlinkTimeoutMs);
+
+  try {
+    const response = await fetch(downlinkUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/octet-stream",
+      },
+      body: downlink.request_payload,
+      signal: abortController.signal,
+    });
+
+    if (response.status < 200 || response.status >= 300) {
+      await markGatewayDownlinkTransportFailureInDb(
+        downlink.id,
+        `BR returned HTTP ${response.status} for gateway downlink ${downlink.downlink_id}.`,
+      );
+      return;
+    }
+
+    const responseBody = Buffer.from(await response.arrayBuffer());
+    const result = parseDownlinkResultMessage(responseBody);
+    if (result.gatewayId !== gatewayId) {
+      throw new Error(`Gateway result mismatch. Expected gateway ${gatewayId}, got ${result.gatewayId}.`);
+    }
+    if (result.downlinkId.toString() !== downlink.downlink_id) {
+      throw new Error(`Downlink result mismatch. Expected ${downlink.downlink_id}, got ${result.downlinkId.toString()}.`);
+    }
+    if (result.targetNodeId !== downlink.target_node_id) {
+      throw new Error(`Target node mismatch. Expected ${downlink.target_node_id}, got ${result.targetNodeId}.`);
+    }
+
+    await applyGatewayDownlinkTerminalResultInDb(downlink, gatewayId, result, responseBody);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown BR downlink transport error";
+    await markGatewayDownlinkTransportFailureInDb(downlink.id, message);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function dispatchPendingGatewayDownlinks() {
+  while (true) {
+    const claimed = await claimPendingGatewayDownlinksInDb(gatewayDownlinkDispatchBatchSize);
+    if (claimed.length === 0) {
+      return;
+    }
+
+    for (const downlink of claimed) {
+      await dispatchGatewayDownlink(downlink);
+    }
+
+    if (claimed.length < gatewayDownlinkDispatchBatchSize) {
+      return;
+    }
+  }
+}
+
+function startGatewayDownlinkDispatcher() {
+  if (!pool) {
+    return;
+  }
+
+  const runDispatch = () => {
+    if (isGatewayDownlinkDispatchInFlight) {
+      return;
+    }
+
+    isGatewayDownlinkDispatchInFlight = true;
+    void dispatchPendingGatewayDownlinks().finally(() => {
+      isGatewayDownlinkDispatchInFlight = false;
+    });
+  };
+
+  runDispatch();
+  const timer = setInterval(runDispatch, gatewayDownlinkDispatchIntervalMs);
+  timer.unref?.();
 }
 
 async function ensureGatewayRowForUplink(
@@ -1006,7 +1723,7 @@ async function persistGatewayUplinkInDb(
       throw new Error(`Unable to persist uplink ${uplinkIdText} for gateway ${message.gatewayId}`);
     }
 
-    await projectGatewayUplinkInDb(client, gatewayUplinkId, message);
+    await projectGatewayUplinkInDb(client, gatewayRowId, gatewayUplinkId, message);
     await client.query(
       `
         UPDATE gateway_uplinks
@@ -1404,6 +2121,90 @@ async function queryGatewaysFromDb(): Promise<GatewayMarker[]> {
     softwareVersion:
       row.current_sw_version_packed === null ? null : formatPackedVersion(row.current_sw_version_packed),
   }));
+}
+
+async function getBorderRouterDetailFromDb(gatewayId: number): Promise<BorderRouterDetail> {
+  const gatewayResult = await query<{
+    gateway_id: number;
+    current_latitude: string;
+    current_longitude: string;
+    current_sw_version_packed: number | null;
+    first_registered_at: string | null;
+    last_registered_at: string | null;
+    registration_count: string;
+  }>(
+    `
+      SELECT
+        gateway_id,
+        current_latitude::text,
+        current_longitude::text,
+        current_sw_version_packed,
+        first_registered_at::text,
+        last_registered_at::text,
+        (
+          SELECT count(*)::text
+          FROM gateway_registrations gr
+          WHERE gr.gateway_row_id = gateways.id
+        ) AS registration_count
+      FROM gateways
+      WHERE gateway_id = $1
+        AND current_latitude IS NOT NULL
+        AND current_longitude IS NOT NULL
+    `,
+    [gatewayId],
+  );
+
+  const gatewayRow = gatewayResult.rows[0];
+  if (!gatewayRow) {
+    throw new Error(`Unknown gateway ${gatewayId}`);
+  }
+
+  const registrationResult = await query<{
+    reported_at: string;
+    latitude: string;
+    longitude: string;
+    sw_version_packed: number;
+    backhaul_version: number;
+  }>(
+    `
+      SELECT
+        gr.reported_at::text,
+        gr.latitude::text,
+        gr.longitude::text,
+        gr.sw_version_packed,
+        gr.backhaul_version
+      FROM gateway_registrations gr
+      JOIN gateways g ON g.id = gr.gateway_row_id
+      WHERE g.gateway_id = $1
+      ORDER BY gr.reported_at DESC
+      LIMIT 50
+    `,
+    [gatewayId],
+  );
+
+  return {
+    gateway: {
+      id: `gateway-${gatewayRow.gateway_id}`,
+      gatewayId: gatewayRow.gateway_id,
+      location: {
+        lat: Number(gatewayRow.current_latitude),
+        lng: Number(gatewayRow.current_longitude),
+        label: formatCoordinatePair(Number(gatewayRow.current_latitude), Number(gatewayRow.current_longitude)),
+      },
+      lastRegisteredAt: gatewayRow.last_registered_at,
+      softwareVersion:
+        gatewayRow.current_sw_version_packed === null ? null : formatPackedVersion(gatewayRow.current_sw_version_packed),
+    },
+    firstRegisteredAt: gatewayRow.first_registered_at,
+    registrationCount: Number(gatewayRow.registration_count),
+    recentRegistrations: registrationResult.rows.map((row: (typeof registrationResult.rows)[number]) => ({
+      reportedAt: row.reported_at,
+      latitude: Number(row.latitude),
+      longitude: Number(row.longitude),
+      softwareVersion: formatPackedVersion(row.sw_version_packed),
+      backhaulVersion: row.backhaul_version,
+    })),
+  };
 }
 
 async function queryAlertsFromDb(nodes?: NodeSummary[]): Promise<AlertIncident[]> {
@@ -2084,7 +2885,16 @@ function buildSensorReadingDetail(row: {
 async function getPacketHistoryFromDb(options: PacketHistoryQuery = {}): Promise<PacketHistoryResponse> {
   const limit = Math.max(1, Math.min(100, options.limit ?? 20));
   const offset = Math.max(0, options.offset ?? 0);
-  const nodes = await queryNodesFromDb();
+  const [nodes, gateways] = await Promise.all([
+    queryNodesFromDb(),
+    query<{ gateway_id: number }>(
+      `
+        SELECT gateway_id
+        FROM gateways
+        ORDER BY gateway_id
+      `,
+    ),
+  ]);
   const values: unknown[] = [];
   const filters: string[] = [];
 
@@ -2112,6 +2922,36 @@ async function getPacketHistoryFromDb(options: PacketHistoryQuery = {}): Promise
   const whereClause = filters.length > 0 ? `WHERE ${filters.join(" AND ")}` : "";
   const packetLogCte = `
     WITH packet_log AS (
+      SELECT
+        concat('gateway-registration-', registrations.id) AS id,
+        registrations.reported_at::text AS occurred_at,
+        gateways.gateway_id AS node_id,
+        concat('BR ', gateways.gateway_id) AS node_name,
+        'uplink'::text AS direction,
+        '0x81'::text AS packet_code,
+        'gateway_registration'::text AS event_type,
+        'received'::text AS status,
+        concat('Border router ', gateways.gateway_id, ' registration received.') AS summary,
+        concat_ws(
+          ' · ',
+          concat('Lat ', registrations.latitude::text),
+          concat('Lng ', registrations.longitude::text),
+          concat(
+            'SW ',
+            (registrations.sw_version_packed >> 8)::text,
+            '.',
+            (registrations.sw_version_packed & 255)::text
+          ),
+          CASE
+            WHEN registrations.raw_payload_metadata->>'remoteAddress' IS NOT NULL
+              THEN concat('Source ', registrations.raw_payload_metadata->>'remoteAddress')
+          END
+        ) AS detail
+      FROM gateway_registrations registrations
+      JOIN gateways ON gateways.id = registrations.gateway_row_id
+
+      UNION ALL
+
       SELECT
         concat('registration-', registrations.id) AS id,
         registrations.observed_at::text AS occurred_at,
@@ -2316,11 +3156,18 @@ async function getPacketHistoryFromDb(options: PacketHistoryQuery = {}): Promise
     limit,
     offset,
     hasMore: offset + limit < totalCount,
-    availableNodes: nodes.map((node) => ({
-      id: node.id,
-      nodeId: node.nodeId,
-      displayName: String(node.nodeId),
-    })),
+    availableNodes: [
+      ...nodes.map((node) => ({
+        id: node.id,
+        nodeId: node.nodeId,
+        displayName: String(node.nodeId),
+      })),
+      ...gateways.rows.map((gateway) => ({
+        id: `gateway-${gateway.gateway_id}`,
+        nodeId: gateway.gateway_id,
+        displayName: `BR ${gateway.gateway_id}`,
+      })),
+    ],
     availableDirections: [...packetDirections],
     availablePacketCodes: [...packetLogCodes],
     availableEventTypes: [...packetEventTypes],
@@ -2654,19 +3501,29 @@ async function createConfigRevisionInDb(draft: ConfigRevisionDraft): Promise<Con
       throw new Error("Unable to create config revision.");
     }
 
-    const targets = draft.targetNodeIds?.length
-      ? await client.query<{ id: number }>("SELECT id FROM devices WHERE node_id = ANY($1::smallint[])", [draft.targetNodeIds])
-      : await client.query<{ id: number }>("SELECT id FROM devices");
+    const targets = await resolveRoutedDeviceTargetsInDb(client, draft.targetNodeIds);
+    const configPayload = await buildConfigUpdatePayloadInDb(client, configRevisionId);
 
-    for (const target of targets.rows) {
-      await client.query(
+    for (const target of targets) {
+      const deploymentInsert = await client.query<{ id: number }>(
         `
-          INSERT INTO device_config_deployments (device_id, config_revision_id, status, sent_at)
-          VALUES ($1, $2, 'sent', NOW())
+          INSERT INTO device_config_deployments (device_id, config_revision_id, status, sent_at, payload_metadata)
+          VALUES ($1, $2, 'pending', NOW(), $3::jsonb)
+          RETURNING id
         `,
-        [target.id, configRevisionId],
+        [target.deviceId, configRevisionId, JSON.stringify(buildDownlinkRoutingMetadata(target))],
       );
-      await client.query("UPDATE devices SET current_config_revision_id = $2 WHERE id = $1", [target.id, configRevisionId]);
+      const deploymentId = deploymentInsert.rows[0]?.id;
+      if (!deploymentId) {
+        throw new Error(`Unable to create config deployment audit row for node ${target.nodeId}`);
+      }
+      await insertGatewayDownlinkInDb(client, {
+        target,
+        commandCode: configUpdatePacketType,
+        innerPayload: configPayload,
+        deviceConfigDeploymentId: deploymentId,
+      });
+      await client.query("UPDATE devices SET current_config_revision_id = $2 WHERE id = $1", [target.deviceId, configRevisionId]);
     }
 
     await client.query("COMMIT");
@@ -2689,13 +3546,40 @@ async function updateNeighborRevisionInDb(nodeId: NodeId, draft: NeighborRevisio
   try {
     await client.query("BEGIN");
 
-    const ownerResult = await client.query<{ id: number; current_latitude: string; current_longitude: string }>(
-      "SELECT id, current_latitude::text, current_longitude::text FROM devices WHERE node_id = $1",
+    const ownerResult = await client.query<{
+      id: number;
+      current_latitude: string;
+      current_longitude: string;
+      last_observed_gateway_row_id: number | null;
+      last_observed_gateway_at: string | null;
+      gateway_id: number | null;
+    }>(
+      `
+        SELECT
+          d.id,
+          d.current_latitude::text,
+          d.current_longitude::text,
+          d.last_observed_gateway_row_id,
+          d.last_observed_gateway_at::text,
+          g.gateway_id
+        FROM devices d
+        LEFT JOIN gateways g ON g.id = d.last_observed_gateway_row_id
+        WHERE d.node_id = $1
+      `,
       [nodeId],
     );
     const owner = ownerResult.rows[0];
     if (!owner) {
       throw new Error(`Unknown node ${nodeId}`);
+    }
+    if (
+      owner.last_observed_gateway_row_id === null ||
+      owner.last_observed_gateway_at === null ||
+      owner.gateway_id === null
+    ) {
+      throw new Error(
+        `Cannot queue downlink for unroutable node ${nodeId}. The node needs a previously observed gateway uplink.`,
+      );
     }
 
     await client.query("UPDATE nn_revisions SET active_to = NOW() WHERE device_id = $1 AND active_to IS NULL", [owner.id]);
@@ -2757,10 +3641,38 @@ async function updateNeighborRevisionInDb(nodeId: NodeId, draft: NeighborRevisio
     }
 
     await client.query("UPDATE devices SET current_nn_revision_id = $2 WHERE id = $1", [owner.id, revisionId]);
-    await client.query(
-      "INSERT INTO nn_distribution_events (device_id, nn_revision_id, status, sent_at) VALUES ($1, $2, 'sent', NOW())",
-      [owner.id, revisionId],
+    const [target] = await resolveRoutedDeviceTargetsInDb(client, [nodeId]);
+    const nnPayload = await buildNeighborDistributionPayloadInDb(client, {
+      targetNodeId: nodeId,
+      nnRevisionId: revisionId,
+    });
+    const distributionInsert = await client.query<{ id: number }>(
+      `
+        INSERT INTO nn_distribution_events (device_id, nn_revision_id, status, sent_at, payload_metadata)
+        VALUES ($1, $2, 'pending', NOW(), $3::jsonb)
+        RETURNING id
+      `,
+      [
+        owner.id,
+        revisionId,
+        JSON.stringify({
+          routingBasis: "last_observed_gateway",
+          gatewayRowId: owner.last_observed_gateway_row_id,
+          gatewayId: owner.gateway_id,
+          lastObservedGatewayAt: owner.last_observed_gateway_at,
+        }),
+      ],
     );
+    const distributionEventId = distributionInsert.rows[0]?.id;
+    if (!distributionEventId) {
+      throw new Error(`Unable to create NN distribution audit row for node ${nodeId}`);
+    }
+    await insertGatewayDownlinkInDb(client, {
+      target,
+      commandCode: neighborTableUpdatePacketType,
+      innerPayload: nnPayload,
+      nnDistributionEventId: distributionEventId,
+    });
 
     await client.query("COMMIT");
   } catch (error) {
@@ -2777,18 +3689,43 @@ async function createTimeSyncInDb(request: DownlinkRequest): Promise<Configurati
   if (!pool) {
     throw new Error("Database is not configured.");
   }
-  const targets = request.targetNodeIds?.length
-    ? await query<{ id: number }>("SELECT id FROM devices WHERE node_id = ANY($1::smallint[])", [request.targetNodeIds])
-    : await query<{ id: number }>("SELECT id FROM devices");
 
-  for (const target of targets.rows) {
-    await query(
-      `
-        INSERT INTO time_sync_events (device_id, target_time, status, sent_at)
-        VALUES ($1, NOW(), 'sent', NOW())
-      `,
-      [target.id],
-    );
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const targets = await resolveRoutedDeviceTargetsInDb(client, request.targetNodeIds);
+    const targetTime = new Date();
+    const timeSyncPayload = encodeTimeSyncPacket({
+      epochSeconds: toEpochSeconds(targetTime),
+    });
+
+    for (const target of targets) {
+      const eventInsert = await client.query<{ id: number }>(
+        `
+          INSERT INTO time_sync_events (device_id, target_time, status, sent_at, payload_metadata)
+          VALUES ($1, $2, 'pending', NOW(), $3::jsonb)
+          RETURNING id
+        `,
+        [target.deviceId, targetTime, JSON.stringify(buildDownlinkRoutingMetadata(target))],
+      );
+      const timeSyncEventId = eventInsert.rows[0]?.id;
+      if (!timeSyncEventId) {
+        throw new Error(`Unable to create time sync audit row for node ${target.nodeId}`);
+      }
+      await insertGatewayDownlinkInDb(client, {
+        target,
+        commandCode: timeSyncPacketType,
+        innerPayload: timeSyncPayload,
+        timeSyncEventId,
+      });
+    }
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
   }
 
   return getConfigurationFromDb();
@@ -2798,24 +3735,46 @@ async function createNeighborDistributionInDb(request: DownlinkRequest): Promise
   if (!pool) {
     throw new Error("Database is not configured.");
   }
-  const targets = request.targetNodeIds?.length
-    ? await query<{ id: number; current_nn_revision_id: number | null }>(
-        "SELECT id, current_nn_revision_id FROM devices WHERE node_id = ANY($1::smallint[])",
-        [request.targetNodeIds],
-      )
-    : await query<{ id: number; current_nn_revision_id: number | null }>("SELECT id, current_nn_revision_id FROM devices");
 
-  for (const target of targets.rows) {
-    if (!target.current_nn_revision_id) {
-      continue;
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const targets = await resolveRoutedDeviceTargetsInDb(client, request.targetNodeIds);
+
+    for (const target of targets) {
+      if (!target.currentNeighborRevisionId) {
+        continue;
+      }
+      const nnPayload = await buildNeighborDistributionPayloadInDb(client, {
+        targetNodeId: target.nodeId,
+        nnRevisionId: target.currentNeighborRevisionId,
+      });
+      const distributionInsert = await client.query<{ id: number }>(
+        `
+          INSERT INTO nn_distribution_events (device_id, nn_revision_id, status, sent_at, payload_metadata)
+          VALUES ($1, $2, 'pending', NOW(), $3::jsonb)
+          RETURNING id
+        `,
+        [target.deviceId, target.currentNeighborRevisionId, JSON.stringify(buildDownlinkRoutingMetadata(target))],
+      );
+      const distributionEventId = distributionInsert.rows[0]?.id;
+      if (!distributionEventId) {
+        throw new Error(`Unable to create NN distribution audit row for node ${target.nodeId}`);
+      }
+      await insertGatewayDownlinkInDb(client, {
+        target,
+        commandCode: neighborTableUpdatePacketType,
+        innerPayload: nnPayload,
+        nnDistributionEventId: distributionEventId,
+      });
     }
-    await query(
-      `
-        INSERT INTO nn_distribution_events (device_id, nn_revision_id, status, sent_at)
-        VALUES ($1, $2, 'sent', NOW())
-      `,
-      [target.id, target.current_nn_revision_id],
-    );
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
   }
 
   return getConfigurationFromDb();
@@ -2826,30 +3785,52 @@ async function createThresholdPushInDb(request: DownlinkRequest): Promise<Config
     throw new Error("Database is not configured.");
   }
 
-  const configRevisionId =
-    request.configRevisionId ??
-    (
-      await query<{ id: number }>(
-        "SELECT id FROM config_revisions WHERE retired_at IS NULL ORDER BY created_at DESC LIMIT 1",
-      )
-    ).rows[0]?.id;
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
 
-  if (!configRevisionId) {
-    throw new Error("No active config revision found.");
-  }
+    const configRevisionId =
+      request.configRevisionId ??
+      (
+        await client.query<{ id: number }>(
+          "SELECT id FROM config_revisions WHERE retired_at IS NULL ORDER BY created_at DESC LIMIT 1",
+        )
+      ).rows[0]?.id;
 
-  const targets = request.targetNodeIds?.length
-    ? await query<{ id: number }>("SELECT id FROM devices WHERE node_id = ANY($1::smallint[])", [request.targetNodeIds])
-    : await query<{ id: number }>("SELECT id FROM devices");
+    if (!configRevisionId) {
+      throw new Error("No active config revision found.");
+    }
 
-  for (const target of targets.rows) {
-    await query(
-      `
-        INSERT INTO device_config_deployments (device_id, config_revision_id, status, sent_at)
-        VALUES ($1, $2, 'sent', NOW())
-      `,
-      [target.id, configRevisionId],
-    );
+    const targets = await resolveRoutedDeviceTargetsInDb(client, request.targetNodeIds);
+    const configPayload = await buildConfigUpdatePayloadInDb(client, configRevisionId);
+
+    for (const target of targets) {
+      const deploymentInsert = await client.query<{ id: number }>(
+        `
+          INSERT INTO device_config_deployments (device_id, config_revision_id, status, sent_at, payload_metadata)
+          VALUES ($1, $2, 'pending', NOW(), $3::jsonb)
+          RETURNING id
+        `,
+        [target.deviceId, configRevisionId, JSON.stringify(buildDownlinkRoutingMetadata(target))],
+      );
+      const deploymentId = deploymentInsert.rows[0]?.id;
+      if (!deploymentId) {
+        throw new Error(`Unable to create config deployment audit row for node ${target.nodeId}`);
+      }
+      await insertGatewayDownlinkInDb(client, {
+        target,
+        commandCode: configUpdatePacketType,
+        innerPayload: configPayload,
+        deviceConfigDeploymentId: deploymentId,
+      });
+    }
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
   }
 
   return getConfigurationFromDb();
@@ -2921,6 +3902,7 @@ app.post("/api/v1/gateways/register", octetStreamBody, async (request, response,
       httpContentType: request.get("content-type") ?? null,
       httpContentLength: body.length,
       remoteAddress: request.ip || null,
+      downlinkUrl: resolveGatewayDownlinkUrlFromRequest(request),
     });
 
     response.status(204).end();
@@ -2993,6 +3975,29 @@ app.get("/api/dashboard", async (_request, response, next) => {
 app.get("/api/nodes", async (_request, response, next) => {
   try {
     response.json(await withSource(queryNodesFromDb, listMockNodes));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/gateways", async (_request, response, next) => {
+  try {
+    response.json(await withSource(queryGatewaysFromDb, listMockGateways));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/gateways/:gatewayId", async (request, response, next) => {
+  try {
+    const gatewayId = parseGatewayId(request.params.gatewayId);
+    if (gatewayId === null) {
+      response.status(400).json({ message: "gatewayId must be a valid unsigned 16-bit integer." });
+      return;
+    }
+    response.json(
+      await withSource(() => getBorderRouterDetailFromDb(gatewayId), () => getMockBorderRouterDetail(gatewayId)),
+    );
   } catch (error) {
     next(error);
   }
@@ -3195,5 +4200,6 @@ app.use((error: unknown, _request: express.Request, response: express.Response, 
 });
 
 app.listen(port, () => {
+  startGatewayDownlinkDispatcher();
   process.stdout.write(`PyroNet API listening on http://localhost:${port}\n`);
 });

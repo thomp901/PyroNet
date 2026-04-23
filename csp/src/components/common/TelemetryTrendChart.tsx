@@ -1,7 +1,8 @@
 import { useState, type CSSProperties } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { HistoryAggregateBucket, HistoryResponse, ReadingHistoryPoint } from "../../api/types";
-import { formatNullableNumber, formatVocPpm, riskLabel } from "../../lib/format";
+import { formatNullableNumber, formatTemperature, formatTemperatureDelta, formatVocPpm, riskLabel } from "../../lib/format";
+import { useTemperatureUnit } from "../../lib/temperatureDisplay";
 
 export type TelemetryMeasurementId = "temperatureC" | "humidityPct" | "vocIaq" | "pm25UgM3";
 type TelemetryRangeId = "1h" | "6h" | "1d" | "1w" | "1m";
@@ -11,6 +12,7 @@ interface TelemetryMeasurementOption {
   label: string;
   accent: string;
   formatter: (value: number | null | undefined) => string;
+  deltaFormatter: (value: number | null | undefined) => string;
   getRawValue: (reading: ReadingHistoryPoint) => number | null | undefined;
   getAggregateValue: (bucket: HistoryAggregateBucket) => number | null | undefined;
 }
@@ -61,40 +63,12 @@ const telemetryRangeOptions: Array<{
   { id: "1m", label: "1M", sourceWindow: "30d", mode: "aggregate" },
 ];
 
-export const telemetryMeasurementOptions: TelemetryMeasurementOption[] = [
-  {
-    id: "temperatureC",
-    label: "Temperature",
-    accent: "#ef954f",
-    formatter: (value) => formatNullableNumber(value, "°C"),
-    getRawValue: (reading) => reading.temperatureC,
-    getAggregateValue: (bucket) => bucket.avgTemperatureC,
-  },
-  {
-    id: "humidityPct",
-    label: "Humidity",
-    accent: "#6bc48d",
-    formatter: (value) => formatNullableNumber(value, "%"),
-    getRawValue: (reading) => reading.humidityPct,
-    getAggregateValue: (bucket) => bucket.avgHumidityPct,
-  },
-  {
-    id: "vocIaq",
-    label: "VOC (ppm)",
-    accent: "#f0c55b",
-    formatter: (value) => formatVocPpm(value),
-    getRawValue: (reading) => reading.vocIaq,
-    getAggregateValue: (bucket) => bucket.avgVocIaq,
-  },
-  {
-    id: "pm25UgM3",
-    label: "PM2.5",
-    accent: "#f06b59",
-    formatter: (value) => formatNullableNumber(value, " ug/m3"),
-    getRawValue: (reading) => reading.pm25UgM3,
-    getAggregateValue: (bucket) => bucket.avgPm25UgM3,
-  },
-];
+export const telemetryMeasurementOptions = [
+  { id: "temperatureC", label: "Temperature" },
+  { id: "humidityPct", label: "Humidity" },
+  { id: "vocIaq", label: "VOC (ppm)" },
+  { id: "pm25UgM3", label: "PM2.5" },
+] as const satisfies Array<{ id: TelemetryMeasurementId; label: string }>;
 
 function formatAxisTick(value: number, rangeId: TelemetryRangeId) {
   const date = new Date(value);
@@ -205,8 +179,47 @@ function TelemetryTooltip({ active, payload, measurement, rangeId }: TooltipCont
 }
 
 export function TelemetryTrendChart({ historyByWindow, measurementId }: TelemetryTrendChartProps) {
+  const temperatureUnit = useTemperatureUnit();
   const [selectedRange, setSelectedRange] = useState<TelemetryRangeId>("1d");
-  const measurement = telemetryMeasurementOptions.find((option) => option.id === measurementId) ?? telemetryMeasurementOptions[0];
+  const measurementOptions: TelemetryMeasurementOption[] = [
+    {
+      id: "temperatureC",
+      label: "Temperature",
+      accent: "#ef954f",
+      formatter: (value) => formatTemperature(value, temperatureUnit),
+      deltaFormatter: (value) => formatTemperatureDelta(value, temperatureUnit),
+      getRawValue: (reading) => reading.temperatureC,
+      getAggregateValue: (bucket) => bucket.avgTemperatureC,
+    },
+    {
+      id: "humidityPct",
+      label: "Humidity",
+      accent: "#6bc48d",
+      formatter: (value) => formatNullableNumber(value, "%"),
+      deltaFormatter: (value) => formatNullableNumber(value, "%"),
+      getRawValue: (reading) => reading.humidityPct,
+      getAggregateValue: (bucket) => bucket.avgHumidityPct,
+    },
+    {
+      id: "vocIaq",
+      label: "VOC (ppm)",
+      accent: "#f0c55b",
+      formatter: (value) => formatVocPpm(value),
+      deltaFormatter: (value) => formatVocPpm(value),
+      getRawValue: (reading) => reading.vocIaq,
+      getAggregateValue: (bucket) => bucket.avgVocIaq,
+    },
+    {
+      id: "pm25UgM3",
+      label: "PM2.5",
+      accent: "#f06b59",
+      formatter: (value) => formatNullableNumber(value, " ug/m3"),
+      deltaFormatter: (value) => formatNullableNumber(value, " ug/m3"),
+      getRawValue: (reading) => reading.pm25UgM3,
+      getAggregateValue: (bucket) => bucket.avgPm25UgM3,
+    },
+  ];
+  const measurement = measurementOptions.find((option) => option.id === measurementId) ?? measurementOptions[0];
   const range = telemetryRangeOptions.find((option) => option.id === selectedRange) ?? telemetryRangeOptions[2];
   const chartData: ChartPoint[] =
     range.mode === "raw"
@@ -233,7 +246,7 @@ export function TelemetryTrendChart({ historyByWindow, measurementId }: Telemetr
         </div>
         <div className="history-chart-meta-item">
           <span className="history-chart-meta-label">Change</span>
-          <strong>{deltaValue === null ? "N/A" : measurement.formatter(deltaValue)}</strong>
+          <strong>{deltaValue === null ? "N/A" : measurement.deltaFormatter(deltaValue)}</strong>
         </div>
         <div className="history-chart-meta-item">
           <span className="history-chart-meta-label">Range</span>

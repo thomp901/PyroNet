@@ -4,6 +4,7 @@ const navItems = [
   { to: "/", label: "Dashboard", end: true },
   { to: "/map", label: "Map" },
   { to: "/nodes", label: "Nodes" },
+  { to: "/border-routers", label: "Border Routers" },
   { to: "/alerts", label: "Alerts" },
   { to: "/history", label: "History" },
   { to: "/configuration", label: "Configuration" },

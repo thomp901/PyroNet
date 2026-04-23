@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { PacketDirection, PacketEventType, PacketLogEntry, PacketLogStatus } from "../../api/types";
-import { formatTimestamp } from "../../lib/format";
+import { formatTemperatureInText, formatTimestamp } from "../../lib/format";
+import { useTemperatureUnit } from "../../lib/temperatureDisplay";
 import { TableShell } from "./TableShell";
 
 type SortColumn = "time" | "node" | "direction" | "event" | "status" | "summary";
@@ -24,6 +25,8 @@ function compareText(left: string, right: string, direction: SortDirection) {
 
 function eventTypeLabel(eventType: PacketEventType) {
   switch (eventType) {
+    case "gateway_registration":
+      return "BR Registration";
     case "registration":
       return "Registration";
     case "periodic_report":
@@ -60,6 +63,7 @@ function statusClassName(status: PacketLogStatus) {
 }
 
 export function PacketHistoryTable({ entries }: PacketHistoryTableProps) {
+  const temperatureUnit = useTemperatureUnit();
   const [sortColumn, setSortColumn] = useState<SortColumn>("time");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
@@ -201,9 +205,15 @@ export function PacketHistoryTable({ entries }: PacketHistoryTableProps) {
         <tr key={entry.id}>
           <td>{formatTimestamp(entry.occurredAt)}</td>
           <td>
-            <Link className="table-link" to={`/nodes/${entry.nodeId}`}>
-              {entry.nodeId}
-            </Link>
+            {entry.eventType === "gateway_registration" ? (
+              <Link className="table-link" to={`/border-routers/${entry.nodeId}`}>
+                BR {entry.nodeId}
+              </Link>
+            ) : (
+              <Link className="table-link" to={`/nodes/${entry.nodeId}`}>
+                {entry.nodeId}
+              </Link>
+            )}
           </td>
           <td>
             <span className={`badge packet-direction-${entry.direction}`}>{directionLabel(entry.direction)}</span>
@@ -215,7 +225,7 @@ export function PacketHistoryTable({ entries }: PacketHistoryTableProps) {
           <td>
             <div className="packet-history-summary">
               <strong>{entry.summary}</strong>
-              {entry.detail ? <span className="table-subtle">{entry.detail}</span> : null}
+              {entry.detail ? <span className="table-subtle">{formatTemperatureInText(entry.detail, temperatureUnit)}</span> : null}
             </div>
           </td>
         </tr>

@@ -1,6 +1,7 @@
 import type { KeyboardEvent, MouseEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getDashboard } from "../api/dashboard";
+import { BorderRouterTable } from "../components/common/BorderRouterTable";
 import { EmptyState } from "../components/common/EmptyState";
 import { LoadingState } from "../components/common/LoadingState";
 import { NodeFleetTable } from "../components/common/NodeFleetTable";
@@ -127,22 +128,43 @@ export function DashboardPage() {
         </div>
       </div>
 
-      <div
-        className="card dashboard-link-card"
-        onClick={(event) => navigateFromCard("/nodes", event)}
-        onKeyDown={(event) => navigateFromCard("/nodes", event)}
-        role="link"
-        tabIndex={0}
-        aria-label="Open node fleet"
-      >
-        <div className="section-heading">
-          <div>
-            <h2>Fleet Overview</h2>
+      <div className="split-grid dashboard-overview-grid">
+        <div
+          className="card dashboard-link-card"
+          onClick={(event) => navigateFromCard("/nodes", event)}
+          onKeyDown={(event) => navigateFromCard("/nodes", event)}
+          role="link"
+          tabIndex={0}
+          aria-label="Open node fleet"
+        >
+          <div className="section-heading">
+            <div>
+              <h2>Node Overview</h2>
+            </div>
+          </div>
+
+          <div className="dashboard-card-static-zone" onClick={stopCardNavigation} onKeyDown={stopCardNavigation}>
+            <NodeFleetTable nodes={data.fleet} className="table-shell-compact node-fleet-table" showNodeIdLink={false} />
           </div>
         </div>
 
-        <div className="dashboard-card-static-zone" onClick={stopCardNavigation} onKeyDown={stopCardNavigation}>
-          <NodeFleetTable nodes={data.fleet} showNodeIdLink={false} />
+        <div
+          className="card dashboard-link-card"
+          onClick={(event) => navigateFromCard("/border-routers", event)}
+          onKeyDown={(event) => navigateFromCard("/border-routers", event)}
+          role="link"
+          tabIndex={0}
+          aria-label="Open border routers"
+        >
+          <div className="section-heading">
+            <div>
+              <h2>Border Router Overview</h2>
+            </div>
+          </div>
+
+          <div className="dashboard-card-static-zone" onClick={stopCardNavigation} onKeyDown={stopCardNavigation}>
+            <BorderRouterTable borderRouters={data.gateways} />
+          </div>
         </div>
       </div>
 

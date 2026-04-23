@@ -298,6 +298,10 @@ table {
   grid-template-columns: minmax(0, 1.08fr) minmax(0, 1.12fr);
 }
 
+.dashboard-overview-grid {
+  grid-template-columns: minmax(0, 1.55fr) minmax(340px, 0.85fr);
+}
+
 .stack-grid {
   display: grid;
   gap: 16px;
@@ -591,6 +595,17 @@ table {
 
 .node-fleet-table th:first-child,
 .node-fleet-table td:first-child {
+  text-align: center;
+}
+
+.border-router-table table {
+  min-width: 0;
+}
+
+.border-router-table th,
+.border-router-table td,
+.border-router-history-table th,
+.border-router-history-table td {
   text-align: center;
 }
 

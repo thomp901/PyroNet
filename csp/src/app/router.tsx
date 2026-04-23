@@ -1,6 +1,8 @@
 import { createBrowserRouter } from "react-router-dom";
 import { AppLayout } from "../components/layout/AppLayout";
 import { AlertsPage } from "../pages/AlertsPage";
+import { BorderRouterDetailPage } from "../pages/BorderRouterDetailPage";
+import { BorderRoutersPage } from "../pages/BorderRoutersPage";
 import { ConfigurationPage } from "../pages/ConfigurationPage";
 import { DashboardPage } from "../pages/DashboardPage";
 import { HistoryPage } from "../pages/HistoryPage";
@@ -37,6 +39,20 @@ export const router = createBrowserRouter([
         element: <NodesPage />,
         handle: {
           title: "Node Fleet",
+        },
+      },
+      {
+        path: "border-routers",
+        element: <BorderRoutersPage />,
+        handle: {
+          title: "Border Routers",
+        },
+      },
+      {
+        path: "border-routers/:gatewayId",
+        element: <BorderRouterDetailPage />,
+        handle: {
+          title: "Border Router Detail",
         },
       },
       {

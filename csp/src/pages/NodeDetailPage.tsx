@@ -10,14 +10,16 @@ import { StatCard } from "../components/common/StatCard";
 import { TableShell } from "../components/common/TableShell";
 import { TelemetryTrendChart, telemetryMeasurementOptions, type TelemetryMeasurementId } from "../components/common/TelemetryTrendChart";
 import { MeshMap } from "../features/map/MeshMap";
-import { formatCoordinatePair, formatInteger, formatNullableNumber, formatTimestamp, formatVocPpm, riskLabel } from "../lib/format";
+import { formatCoordinatePair, formatInteger, formatNullableNumber, formatTemperature, formatTimestamp, formatVocPpm, riskLabel } from "../lib/format";
 import { parseNodeId } from "../lib/nodeId";
+import { useTemperatureUnit } from "../lib/temperatureDisplay";
 import { useAsyncData } from "../lib/useAsyncData";
 
 export function NodeDetailPage() {
   const navigate = useNavigate();
   const params = useParams();
   const nodeId = parseNodeId(params.nodeId);
+  const temperatureUnit = useTemperatureUnit();
   const [selectedMeasurement, setSelectedMeasurement] = useState<TelemetryMeasurementId>("temperatureC");
 
   function openNeighborDetail(neighborNodeId: number) {
@@ -72,7 +74,7 @@ export function NodeDetailPage() {
       title={`Node ${data.node.nodeId}`}
     >
       <div className="stat-grid node-detail-stat-grid">
-        <StatCard label="Temperature" value={formatNullableNumber(data.node.latestTelemetry?.temperatureC ?? null, "°C")} />
+        <StatCard label="Temperature" value={formatTemperature(data.node.latestTelemetry?.temperatureC ?? null, temperatureUnit)} />
         <StatCard label="Humidity" value={formatNullableNumber(data.node.latestTelemetry?.humidityPct ?? null, "%")} />
         <StatCard label="VOC (ppm)" value={formatVocPpm(data.node.latestTelemetry?.vocIaq ?? null)} />
         <StatCard label="PM2.5" value={formatNullableNumber(data.node.latestTelemetry?.pm25UgM3 ?? null, " ug/m3")} />
@@ -238,13 +240,13 @@ export function NodeDetailPage() {
               <p>Most recent raw telemetry samples for the last 24 hours.</p>
             </div>
           </div>
-          <TableShell columns={["Reported", "Source", "Risk", "Temp", "RH", "VOC (ppm)", "PM2.5"]}>
+          <TableShell columns={["Reported", "Source", "Risk", "Temp", "RH", "VOC", "PM2.5"]}>
             {data.recentReadings.map((reading) => (
               <tr key={reading.id}>
                 <td>{formatTimestamp(reading.reportedAt)}</td>
                 <td>{reading.sourceType}</td>
                 <td>{riskLabel(reading.riskLevel)}</td>
-                <td>{formatNullableNumber(reading.temperatureC, "°C")}</td>
+                <td>{formatTemperature(reading.temperatureC, temperatureUnit)}</td>
                 <td>{formatNullableNumber(reading.humidityPct, "%")}</td>
                 <td>{formatVocPpm(reading.vocIaq)}</td>
                 <td>{formatNullableNumber(reading.pm25UgM3, " ug/m3")}</td>

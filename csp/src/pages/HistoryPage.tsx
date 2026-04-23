@@ -22,6 +22,8 @@ function humanizeLabel(value: string) {
 
 function packetCodeLabel(code: PacketLogCode) {
   switch (code) {
+    case "0x81":
+      return "0x81 BR Registration";
     case "0x01":
       return "0x01 Registration";
     case "0x02":

@@ -1,4 +1,5 @@
 import type { AlertIncidentType } from "../api/types";
+import type { TemperatureUnit } from "./temperatureDisplay";
 
 function formatCoordinateDms(value: number, positiveHemisphere: string, negativeHemisphere: string) {
   const hemisphere = value >= 0 ? positiveHemisphere : negativeHemisphere;
@@ -55,6 +56,38 @@ export function formatNullableNumber(value: number | null | undefined, unit = ""
   return `${value.toFixed(digits)}${unit}`;
 }
 
+export function convertCelsiusToFahrenheit(value: number) {
+  return (value * 9) / 5 + 32;
+}
+
+export function convertFahrenheitToCelsius(value: number) {
+  return ((value - 32) * 5) / 9;
+}
+
+export function convertTemperatureForDisplay(value: number, temperatureUnit: TemperatureUnit) {
+  return temperatureUnit === "F" ? convertCelsiusToFahrenheit(value) : value;
+}
+
+export function convertTemperatureDeltaForDisplay(value: number, temperatureUnit: TemperatureUnit) {
+  return temperatureUnit === "F" ? (value * 9) / 5 : value;
+}
+
+export function formatTemperature(value: number | null | undefined, temperatureUnit: TemperatureUnit, digits = 1) {
+  if (typeof value !== "number") {
+    return "N/A";
+  }
+
+  return `${convertTemperatureForDisplay(value, temperatureUnit).toFixed(digits)}°${temperatureUnit}`;
+}
+
+export function formatTemperatureDelta(value: number | null | undefined, temperatureUnit: TemperatureUnit, digits = 1) {
+  if (typeof value !== "number") {
+    return "N/A";
+  }
+
+  return `${convertTemperatureDeltaForDisplay(value, temperatureUnit).toFixed(digits)}°${temperatureUnit}`;
+}
+
 export function formatInteger(value: number | null | undefined, unit = "") {
   if (typeof value !== "number") {
     return "N/A";
@@ -65,6 +98,17 @@ export function formatInteger(value: number | null | undefined, unit = "") {
 
 export function formatVocPpm(value: number | null | undefined) {
   return formatInteger(value, " ppm");
+}
+
+export function formatTemperatureInText(value: string | null | undefined, temperatureUnit: TemperatureUnit) {
+  if (!value || temperatureUnit === "C") {
+    return value ?? "";
+  }
+
+  return value.replace(/(-?\d+(?:\.\d+)?)°C/g, (_match, numericPortion: string) => {
+    const digits = numericPortion.includes(".") ? numericPortion.length - numericPortion.indexOf(".") - 1 : 0;
+    return `${convertCelsiusToFahrenheit(Number(numericPortion)).toFixed(digits)}°F`;
+  });
 }
 
 export function riskLabel(value: number | null | undefined) {

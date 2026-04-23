@@ -89,6 +89,16 @@ CREATE TYPE gateway_uplink_receipt_status AS ENUM (
     'permanent_reject'
 );
 
+CREATE TYPE gateway_downlink_status AS ENUM (
+    'pending',
+    'dispatched',
+    'delivered',
+    'unknown_node',
+    'mesh_delivery_failed',
+    'permanent_reject',
+    'transport_failed'
+);
+
 CREATE TYPE device_parent_observation_source AS ENUM (
     'registration',
     'parent_update'
@@ -342,11 +352,21 @@ CREATE TABLE gateway_uplink_dead_letters (
     )
 );
 
+CREATE SEQUENCE gateway_downlink_downlink_id_seq
+    AS bigint
+    START WITH 1
+    INCREMENT BY 1
+    MINVALUE 1
+    NO MAXVALUE
+    CACHE 1;
+
 CREATE TABLE devices (
     id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     node_id smallint NOT NULL,
     current_ipv6 inet,
     current_parent_ipv6 inet,
+    last_observed_gateway_row_id bigint REFERENCES gateways(id) ON DELETE SET NULL,
+    last_observed_gateway_at timestamptz,
     current_latitude numeric(9,6) NOT NULL,
     current_longitude numeric(9,6) NOT NULL,
     current_firmware_version text,
@@ -398,6 +418,9 @@ CREATE TABLE devices (
         latest_battery_health_score IS NULL OR (
             latest_battery_health_score >= 0 AND latest_battery_health_score <= 100
         )
+    ),
+    CONSTRAINT chk_devices_last_observed_gateway_presence CHECK (
+        (last_observed_gateway_row_id IS NULL) = (last_observed_gateway_at IS NULL)
     ),
     CONSTRAINT chk_devices_seen_after_registration CHECK (
         last_seen_at IS NULL OR last_seen_at >= first_registered_at
@@ -690,6 +713,87 @@ CREATE TABLE device_config_deployments (
     )
 );
 
+CREATE TABLE gateway_downlinks (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    gateway_row_id bigint NOT NULL REFERENCES gateways(id) ON DELETE CASCADE,
+    device_id bigint NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+    downlink_id bigint NOT NULL DEFAULT nextval('gateway_downlink_downlink_id_seq'::regclass),
+    target_node_id integer NOT NULL,
+    command_code smallint NOT NULL,
+    backhaul_version smallint NOT NULL DEFAULT 1,
+    node_packet_version smallint NOT NULL DEFAULT 1,
+    status gateway_downlink_status NOT NULL DEFAULT 'pending',
+    queued_at timestamptz NOT NULL DEFAULT NOW(),
+    dispatched_at timestamptz,
+    completed_at timestamptz,
+    last_attempt_at timestamptz,
+    next_attempt_at timestamptz NOT NULL DEFAULT NOW(),
+    attempt_count integer NOT NULL DEFAULT 0,
+    request_payload bytea NOT NULL,
+    inner_payload bytea NOT NULL,
+    result_status smallint,
+    result_payload bytea,
+    last_error text,
+    metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+    nn_distribution_event_id bigint UNIQUE REFERENCES nn_distribution_events(id) ON DELETE CASCADE,
+    time_sync_event_id bigint UNIQUE REFERENCES time_sync_events(id) ON DELETE CASCADE,
+    device_config_deployment_id bigint UNIQUE REFERENCES device_config_deployments(id) ON DELETE CASCADE,
+    CONSTRAINT uq_gateway_downlinks_gateway_downlink UNIQUE (gateway_row_id, downlink_id),
+    CONSTRAINT chk_gateway_downlinks_downlink_id_positive CHECK (downlink_id > 0),
+    CONSTRAINT chk_gateway_downlinks_target_node_uint16 CHECK (
+        target_node_id >= 0 AND target_node_id <= 65535
+    ),
+    CONSTRAINT chk_gateway_downlinks_command_code_supported CHECK (
+        command_code IN (4, 5, 6)
+    ),
+    CONSTRAINT chk_gateway_downlinks_backhaul_version_uint8 CHECK (
+        backhaul_version >= 0 AND backhaul_version <= 255
+    ),
+    CONSTRAINT chk_gateway_downlinks_node_packet_version_uint8 CHECK (
+        node_packet_version >= 0 AND node_packet_version <= 255
+    ),
+    CONSTRAINT chk_gateway_downlinks_attempt_count_non_negative CHECK (
+        attempt_count >= 0
+    ),
+    CONSTRAINT chk_gateway_downlinks_request_payload_non_empty CHECK (
+        octet_length(request_payload) >= 20
+    ),
+    CONSTRAINT chk_gateway_downlinks_inner_payload_non_empty CHECK (
+        octet_length(inner_payload) > 0
+    ),
+    CONSTRAINT chk_gateway_downlinks_result_payload_length CHECK (
+        result_payload IS NULL OR octet_length(result_payload) = 19
+    ),
+    CONSTRAINT chk_gateway_downlinks_completed_after_queued CHECK (
+        completed_at IS NULL OR completed_at >= queued_at
+    ),
+    CONSTRAINT chk_gateway_downlinks_dispatched_after_queued CHECK (
+        dispatched_at IS NULL OR dispatched_at >= queued_at
+    ),
+    CONSTRAINT chk_gateway_downlinks_last_attempt_after_queued CHECK (
+        last_attempt_at IS NULL OR last_attempt_at >= queued_at
+    ),
+    CONSTRAINT chk_gateway_downlinks_terminal_completion_required CHECK (
+        status IN ('pending', 'dispatched', 'transport_failed')
+        OR completed_at IS NOT NULL
+    ),
+    CONSTRAINT chk_gateway_downlinks_terminal_result_required CHECK (
+        status IN ('pending', 'dispatched', 'transport_failed')
+        OR result_status IS NOT NULL
+    ),
+    CONSTRAINT chk_gateway_downlinks_metadata_object CHECK (
+        jsonb_typeof(metadata) = 'object'
+    ),
+    CONSTRAINT chk_gateway_downlinks_one_domain_reference CHECK (
+        ((nn_distribution_event_id IS NOT NULL)::integer
+        + (time_sync_event_id IS NOT NULL)::integer
+        + (device_config_deployment_id IS NOT NULL)::integer) = 1
+    )
+);
+
+ALTER SEQUENCE gateway_downlink_downlink_id_seq
+    OWNED BY gateway_downlinks.downlink_id;
+
 CREATE TABLE notification_recipients (
     id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     display_name text,
@@ -854,6 +958,12 @@ CREATE INDEX idx_gateway_uplink_receipts_status_responded_at
 
 CREATE INDEX idx_gateway_uplink_dead_letters_dead_lettered_at
     ON gateway_uplink_dead_letters (dead_lettered_at DESC);
+
+CREATE INDEX idx_gateway_downlinks_status_next_attempt
+    ON gateway_downlinks (status, next_attempt_at, queued_at);
+
+CREATE INDEX idx_gateway_downlinks_gateway_queued_at
+    ON gateway_downlinks (gateway_row_id, queued_at DESC);
 
 CREATE INDEX idx_devices_last_seen_at
     ON devices (last_seen_at DESC);
@@ -1161,6 +1271,9 @@ COMMENT ON TABLE gateway_uplink_receipts IS
 COMMENT ON TABLE gateway_uplink_dead_letters IS
 'Operator-visible dead-letter records for permanently rejected uplinks, preserving rejection reasons separately from the raw inbox.';
 
+COMMENT ON TABLE gateway_downlinks IS
+'Durable BR-facing outbox for CSP-originated 0x84 downlink requests and terminal 0x85 results.';
+
 COMMENT ON TABLE device_config_deployments IS
 'Per-device audit log of configuration pushes and acknowledgements for config revisions.';
 
@@ -1184,6 +1297,12 @@ COMMENT ON COLUMN devices.current_ipv6 IS
 
 COMMENT ON COLUMN devices.current_parent_ipv6 IS
 'Latest preferred RPL parent IPv6 observed by the CSP from registration or parent-update uplinks. This is routing state, not CSP-managed nearest-neighbor membership.';
+
+COMMENT ON COLUMN devices.last_observed_gateway_row_id IS
+'Most recent gateway row that delivered a valid projected uplink for this device. Used as the CSP downlink routing basis until a fresher observation arrives.';
+
+COMMENT ON COLUMN devices.last_observed_gateway_at IS
+'Observation timestamp corresponding to last_observed_gateway_row_id.';
 
 COMMENT ON COLUMN gateway_uplinks.uplink_id IS
 'Unsigned 64-bit gateway-assigned idempotency key stored as numeric(20,0) because PostgreSQL bigint cannot represent the full uint64 range.';

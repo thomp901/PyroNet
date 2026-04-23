@@ -19,9 +19,10 @@ export type HistoryWindow = "24h" | "7d" | "30d";
 export type NodeId = number;
 export const packetDirections = ["uplink", "downlink"] as const;
 export type PacketDirection = (typeof packetDirections)[number];
-export const packetLogCodes = ["0x01", "0x02", "0x03", "0x04", "0x05", "0x06", "0x08"] as const;
+export const packetLogCodes = ["0x01", "0x02", "0x03", "0x04", "0x05", "0x06", "0x08", "0x81"] as const;
 export type PacketLogCode = (typeof packetLogCodes)[number];
 export const packetEventTypes = [
+  "gateway_registration",
   "registration",
   "periodic_report",
   "critical_alert",
@@ -106,6 +107,21 @@ export interface GatewayMarker {
   location: Coordinate;
   lastRegisteredAt: string | null;
   softwareVersion: string | null;
+}
+
+export interface BorderRouterRegistration {
+  reportedAt: string;
+  latitude: number;
+  longitude: number;
+  softwareVersion: string | null;
+  backhaulVersion: number;
+}
+
+export interface BorderRouterDetail {
+  gateway: GatewayMarker;
+  firstRegisteredAt: string | null;
+  registrationCount: number;
+  recentRegistrations: BorderRouterRegistration[];
 }
 
 export interface AlertIncident {
