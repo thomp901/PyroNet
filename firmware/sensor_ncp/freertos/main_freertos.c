@@ -47,11 +47,64 @@
 #include <task.h>
 
 #include <ti/drivers/Board.h>
+#include <ti/drivers/Power.h>
+#include <ti/drivers/power/PowerCC26XX.h>
+
+#include "mesh_system.h"
+#include "ns_trace.h"
+
+#ifdef NV_RESTORE
+#include "macconfig.h"
+#include "nvocmp.h"
+#else
+#include "nvintf.h"
+#endif
+
+#ifdef FEATURE_TIMAC_SUPPORT
+#include "macTask.h"
+
+#ifndef USE_DEFAULT_USER_CFG
+#include "mac_user_config.h"
+macUserCfg_t macUser0Cfg[] = MAC_USER_CFG;
+#else
+extern macUserCfg_t macUser0Cfg[];
+#endif
+
+static uint8_t timacTaskId;
+extern void startRfCbThread(void);
+
+#define MAIN_ASSERT_MAC 3
+#endif
+
+#ifdef WISUN_RCP_ENABLE
+#include "rcp_host.h"
+#endif
 
 extern void *mainThread(void *arg0);
 
+#ifdef NV_RESTORE
+mac_Config_t Main_user1Cfg = {0};
+#endif
+
+NVINTF_nvFuncts_t *pNV = NULL;
+
 /* Stack size in bytes */
 #define THREADSTACKSIZE 2048
+
+#ifdef FEATURE_TIMAC_SUPPORT
+void Main_assertHandler(uint8_t assertReason)
+{
+    (void)assertReason;
+    taskDISABLE_INTERRUPTS();
+
+    while (1) {}
+}
+
+void assertHandler(void)
+{
+    Main_assertHandler(MAIN_ASSERT_MAC);
+}
+#endif
 
 /*
  *  ======== main ========
@@ -68,7 +121,19 @@ int main(void)
     __iar_Initlocks();
 #endif
 
+    Power_setConstraint(PowerCC26XX_IDLE_PD_DISALLOW);
+    Power_setConstraint(PowerCC26XX_SB_DISALLOW);
+
     Board_init();
+
+#ifdef FEATURE_TIMAC_SUPPORT
+    macUser0Cfg[0].pAssertFP = assertHandler;
+    timacTaskId = macTaskInit(macUser0Cfg);
+#endif
+
+#ifdef WISUN_RCP_ENABLE
+    rcp_init();
+#endif
 
     /* Initialize the attributes structure with default values */
     pthread_attr_init(&attrs);
@@ -90,6 +155,22 @@ int main(void)
         /* pthread_create() failed */
         while (1) {}
     }
+
+    ns_trace_init();
+    mesh_system_init();
+
+#ifdef NV_RESTORE
+    NVOCMP_loadApiPtrs(&Main_user1Cfg.nvFps);
+    if (Main_user1Cfg.nvFps.initNV != NULL)
+    {
+        Main_user1Cfg.nvFps.initNV(NULL);
+    }
+    pNV = &Main_user1Cfg.nvFps;
+#endif
+
+#ifdef FEATURE_TIMAC_SUPPORT
+    startRfCbThread();
+#endif
 
     /* Start the FreeRTOS scheduler */
     vTaskStartScheduler();

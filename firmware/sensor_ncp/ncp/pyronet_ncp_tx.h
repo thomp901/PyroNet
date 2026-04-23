@@ -1,0 +1,4 @@
+#ifndef NCP_PYRONET_NCP_TX_H
+#define NCP_PYRONET_NCP_TX_H
+
+#endif /* NCP_PYRONET_NCP_TX_H */
