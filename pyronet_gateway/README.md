@@ -2,7 +2,7 @@
 
 This repository now contains only the gateway runtime.
 
-The gateway accepts node traffic over CoAP, stores accepted uplinks durably in a local SQLite outbox, retries delivery to a remote backhaul service over HTTP, and exposes an HTTP API for downlinks that are converted into CoAP packets for target nodes.
+The gateway accepts node traffic over CoAP, stores accepted uplinks durably in a local SQLite outbox, retries delivery to a remote backhaul service over HTTP, and exposes one binary HTTP downlink API at `POST /api/v1/downlinks` for `0x84` requests and `0x85` responses.
 
 ## Runtime Flow
 
@@ -11,7 +11,7 @@ The gateway accepts node traffic over CoAP, stores accepted uplinks durably in a
 3. [pyronet_gateway/service.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/service.py:1) parses the node packet, updates current node IPv6 and liveness in SQLite, and enqueues a backhaul envelope in the durable outbox.
 4. [pyronet_gateway/registration_worker.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/registration_worker.py:1) keeps the gateway registered with the remote backhaul.
 5. [pyronet_gateway/retry_worker.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/retry_worker.py:1) drains the outbox with exponential backoff until the remote service returns a terminal receipt.
-6. [pyronet_gateway/downlink_http_api.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/downlink_http_api.py:1) accepts JSON downlink requests and [pyronet_gateway/downlink_delivery_service.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/downlink_delivery_service.py:1) resolves `node_id -> current IPv6` before emitting CoAP back into the mesh.
+6. [pyronet_gateway/downlink_http_api.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/downlink_http_api.py:1) accepts binary `application/octet-stream` downlink requests and [pyronet_gateway/downlink_delivery_service.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/downlink_delivery_service.py:1) resolves `node_id -> current IPv6` before emitting CoAP back into the mesh.
 
 ## Key Components
 
@@ -128,7 +128,7 @@ sudo make live-decode CONFIG=./config.example.toml LIVE_DECODE_ARGS="--show-back
 Current tests live in:
 
 - [tests/test_gateway_service.py](/home/admin/border_router/pyronet_gateway/tests/test_gateway_service.py:1) for uplink intake, outbox persistence, retry behavior, and HTTP backhaul classification.
-- [tests/test_downlink_phase2.py](/home/admin/border_router/pyronet_gateway/tests/test_downlink_phase2.py:1) for downlink encoding, validation, delivery routing, and HTTP API behavior.
+- [tests/test_downlink_phase2.py](/home/admin/border_router/pyronet_gateway/tests/test_downlink_phase2.py:1) for binary downlink encoding, delivery routing, and `/api/v1/downlinks` HTTP behavior.
 - [tests/test_backhaul_live.py](/home/admin/border_router/pyronet_gateway/tests/test_backhaul_live.py:1) for opt-in live backhaul sends against a real endpoint.
 
 Live backhaul test guard:

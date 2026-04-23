@@ -7,8 +7,13 @@ import time
 import unittest
 
 from pyronet_gateway.backhaul_client import HTTPBackhaulClient
-from pyronet_gateway.packet_codec import GatewayRegistration, NodeUplinkEnvelope, UplinkReceipt
-from pyronet_gateway.protocol.backhaul import RECEIPT_DURABLE_INGEST, RECEIPT_PERMANENT_REJECT
+from pyronet_gateway.protocol.backhaul import (
+    RECEIPT_DURABLE_INGEST,
+    RECEIPT_PERMANENT_REJECT,
+    GatewayRegistration,
+    NodeUplinkEnvelope,
+    UplinkReceipt,
+)
 
 REGISTRATION_STRUCT = struct.Struct("<BBHffHB16s")
 SENSOR_STRUCT = struct.Struct("<BBHIBhHHHB")

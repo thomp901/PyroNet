@@ -11,18 +11,15 @@ from pathlib import Path
 from pyronet_gateway.backhaul_client import HTTPBackhaulClient, PermanentBackhaulError, TransientBackhaulError
 from pyronet_gateway.coap_intake import COAP_CODE_BAD_REQUEST, COAP_CODE_CHANGED, CoapIntakeService
 from pyronet_gateway.config import BackhaulConfig, CoapConfig, GatewayConfig, RuntimeConfig
-from pyronet_gateway.packet_codec import (
-    GatewayRegistration,
-    NodeUplinkEnvelope,
-    PacketParseError,
-    UplinkReceipt,
-    node_uplink_header_size,
-    parse_node_packet,
-)
 from pyronet_gateway.protocol.backhaul import (
     RECEIPT_DURABLE_INGEST,
     RECEIPT_PERMANENT_REJECT,
+    GatewayRegistration,
+    NodeUplinkEnvelope,
+    UplinkReceipt,
+    node_uplink_header_size,
 )
+from pyronet_gateway.protocol.node_packets import PacketParseError, parse_node_packet
 from pyronet_gateway.registration_worker import RegistrationWorker
 from pyronet_gateway.retry_worker import OutboxRetryWorker, RetryPolicy
 from pyronet_gateway.service import GatewayService
@@ -624,13 +621,9 @@ class HTTPBackhaulClientClassificationTests(unittest.TestCase):
             status=RECEIPT_DURABLE_INGEST,
         )
 
-        urllib.request.urlopen = lambda _request, timeout=None: FakeHTTPResponse(
-            status=200, body=mismatched.to_bytes()
-        )
+        urllib.request.urlopen = lambda _request, timeout=None: FakeHTTPResponse(status=200, body=mismatched.to_bytes())
 
-        with self.assertRaisesRegex(
-            TransientBackhaulError, "uplink receipt does not match the posted envelope"
-        ):
+        with self.assertRaisesRegex(TransientBackhaulError, "uplink receipt does not match the posted envelope"):
             self.client.send_uplink(envelope)
 
     def test_http_500_is_transient(self) -> None:
@@ -753,7 +746,7 @@ def build_coap_post(
         value = segment.encode("utf-8")
         options += _encode_option(delta, value)
         previous_number = option_number
-    return header + options + b"\xFF" + payload
+    return header + options + b"\xff" + payload
 
 
 def _encode_option(delta: int, value: bytes) -> bytes:

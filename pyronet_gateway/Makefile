@@ -56,4 +56,4 @@ db-shell:
 
 db-downlinks:
 	@test -f "$(DB_PATH)" || { echo "DB not found: $(DB_PATH)"; exit 1; }
-	$(SQLITE) "$(DB_PATH)" "SELECT id, request_type, target_node_id, target_ipv6, status, error_category, error_detail, created_at, completed_at FROM downlink_attempts ORDER BY id DESC LIMIT 20;"
+	$(SQLITE) "$(DB_PATH)" "SELECT gateway_id, downlink_id, target_node_id, status, created_at, completed_at FROM downlink_terminal_results ORDER BY completed_at DESC LIMIT 20;"
