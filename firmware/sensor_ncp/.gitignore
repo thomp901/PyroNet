@@ -1,0 +1,33 @@
+.DS_Store
+
+# Stale root-level SysConfig output
+/FreeRTOSConfig.h
+/syscfg_c.rov.xs
+/ti_devices_config.c
+/ti_drivers_config.c
+/ti_drivers_config.h
+/ti_freertos_config.c
+/ti_freertos_portable_config.c
+/ti_utils_build_linker.cmd.genlibs
+
+# TI SysConfig / ticlang generated output
+/freertos/ticlang/build/
+/freertos/ticlang/FreeRTOSConfig.h
+/freertos/ticlang/syscfg_c.rov.xs
+/freertos/ticlang/ti_devices_config.c
+/freertos/ticlang/ti_drivers_config.c
+/freertos/ticlang/ti_drivers_config.h
+/freertos/ticlang/ti_freertos_config.c
+/freertos/ticlang/ti_freertos_portable_config.c
+/freertos/ticlang/ti_radio_config.c
+/freertos/ticlang/ti_radio_config.h
+/freertos/ticlang/ti_utils_build_compiler.opt
+/freertos/ticlang/ti_utils_build_linker.cmd.genlibs
+/freertos/ticlang/ti_utils_build_linker.cmd.genmap
+/freertos/ticlang/ti_wisunfan_config.h
+/freertos/ticlang/ti_wisunfan_features.h
+
+# Build artifacts
+/freertos/ticlang/*.obj
+/freertos/ticlang/*.out
+/freertos/ticlang/*.map

@@ -1,0 +1,19 @@
+# Local OS/editor noise
+.DS_Store
+
+# In-tree CMake/Ninja build output
+/cmake_gcc/build/
+/build_host/
+
+# Machine-local provisioning copied from the tracked example when needed
+/config/pyronet_app_provisioning_config.h
+
+# Common generated firmware artifacts when produced outside the normal build dir
+*.bin
+*.hex
+*.map
+*.out
+*.s37
+*.obj
+.ninja_deps
+.ninja_log

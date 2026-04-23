@@ -1,0 +1,34 @@
+[gateway]
+gateway_id = 7
+latitude = 39.7684
+longitude = -86.1581
+node_packet_version = 1
+
+[coap]
+bind_host = "::"
+port = 5683
+resource_path = "/uplink"
+duplicate_cache_ttl_seconds = 60.0
+duplicate_cache_max_entries = 1024
+downlink_port = 5683
+downlink_resource_path = "/downlink"
+ack_timeout_seconds = 2.0
+max_retransmit = 4
+
+[backhaul]
+base_url = "http://127.0.0.1:8080"
+http_timeout_seconds = 5.0
+registration_retry_base_delay_seconds = 5
+registration_retry_max_delay_seconds = 300
+uplink_retry_base_delay_seconds = 5
+uplink_retry_max_delay_seconds = 300
+
+[runtime]
+db_path = "./pyronet-gateway.sqlite3"
+log_level = "INFO"
+worker_poll_interval_seconds = 1.0
+
+[http_api]
+bind_host = "::"
+port = 8081
+max_request_body_bytes = 65536

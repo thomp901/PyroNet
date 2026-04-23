@@ -1,0 +1,6 @@
+{
+  "sdkRoot" : "/Users/diegosmacbook/.silabs/slt/installs/conan/p/simpleb526998f4a4d/p/",
+  "apackRoot" : "/Users/diegosmacbook/.silabs/slt/installs/conan/p/simpleb526998f4a4d/p/platform/radio/efr32_multiphy_configurator",
+  "partOpn" : "efr32zg28b312f1024im48",
+  "boards" : "brd2705arevA02"
+}
