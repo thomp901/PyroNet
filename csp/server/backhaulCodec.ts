@@ -254,7 +254,7 @@ export function parseNodeUplinkEnvelopeMessage(input: Buffer | Uint8Array): Pars
     throw new BackhaulCodecError("invalid_field_value", "payload_len must be greater than zero");
   }
 
-  assertGlobalUnicastIpv6(observedSrcIpv6Bytes, "observed_src_ipv6");
+  assertIngressIpv6(observedSrcIpv6Bytes, "observed_src_ipv6");
 
   const payload = rawEnvelope.subarray(minimumLength, expectedLength);
   const decodedPayload = parseNodeUplinkPacket(payload);
@@ -507,7 +507,7 @@ function parseRegistrationPacket(rawPayload: Buffer): ParsedRegistrationPacket {
   assertUnsignedInt(batteryPct, 100, "battery_pct");
 
   if (!isZeroIpv6(parentIpv6Bytes)) {
-    assertGlobalUnicastIpv6(parentIpv6Bytes, "parent_ipv6");
+    assertIngressIpv6(parentIpv6Bytes, "parent_ipv6");
   }
 
   return {
@@ -582,7 +582,7 @@ function parseParentUpdatePacket(rawPayload: Buffer): ParsedParentUpdatePacket {
   const parentIpv6Bytes = rawPayload.subarray(8, 24);
 
   if (!isZeroIpv6(parentIpv6Bytes)) {
-    assertGlobalUnicastIpv6(parentIpv6Bytes, "parent_ipv6");
+    assertIngressIpv6(parentIpv6Bytes, "parent_ipv6");
   }
 
   return {
@@ -653,7 +653,7 @@ function assertUint64(value: bigint, label: string) {
   }
 }
 
-function assertGlobalUnicastIpv6(value: Uint8Array, label: string) {
+function assertIngressIpv6(value: Uint8Array, label: string) {
   if (value.length !== 16) {
     throw new BackhaulCodecError("invalid_length", `${label} must be 16 bytes`);
   }
@@ -667,10 +667,6 @@ function assertGlobalUnicastIpv6(value: Uint8Array, label: string) {
 
   if (firstByte === 0xff) {
     throw new BackhaulCodecError("invalid_field_value", `${label} must not be multicast`);
-  }
-
-  if (firstByte === 0xfe && (secondByte & 0xc0) === 0x80) {
-    throw new BackhaulCodecError("invalid_field_value", `${label} must not be link-local`);
   }
 
   const isLoopback = value.subarray(0, 15).every((byte) => byte === 0) && value[15] === 1;
@@ -827,6 +823,6 @@ function parseIpv6Address(value: string): Buffer {
     bytes.writeUInt16BE(parsed, index * 2);
   });
 
-  assertGlobalUnicastIpv6(bytes, "ipv6_address");
+  assertIngressIpv6(bytes, "ipv6_address");
   return bytes;
 }

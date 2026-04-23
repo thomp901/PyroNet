@@ -19,7 +19,6 @@ import {
   parseDownlinkResultMessage,
   parseNodeUplinkEnvelopeMessage,
   permanentRejectDownlinkResultStatus,
-  permanentRejectReceiptStatus,
   registrationPacketType,
   sensorAlertPacketType,
   sensorReportPacketType,
@@ -37,6 +36,7 @@ import type {
   AlertTimelineEntry,
   BorderRouterDetail,
   ConfigRevisionDraft,
+  ConfigThresholds,
   ConfigurationResponse,
   ConnectivityStatus,
   DashboardResponse,
@@ -66,6 +66,7 @@ import type {
   ReadingHistoryPoint,
   TelemetrySnapshot,
 } from "../src/api/types";
+import { DEFAULT_CONFIG_THRESHOLDS, configThresholdKeys } from "../src/api/configThresholds";
 import { packetDirections, packetEventTypes, packetLogCodes } from "../src/api/types";
 import { parseGatewayId } from "../src/lib/gatewayId";
 import { parseNodeId } from "../src/lib/nodeId";
@@ -92,8 +93,9 @@ const app = express();
 const port = Number(process.env.API_PORT ?? "4000");
 const databaseUrl = process.env.DATABASE_URL?.trim();
 const pool = databaseUrl ? new Pool({ connectionString: databaseUrl }) : null;
+const defaultGatewayDownlinkPort = 8081;
 const gatewayDownlinkScheme = (process.env.GATEWAY_DOWNLINK_SCHEME ?? "http").trim() || "http";
-const gatewayDownlinkPort = parseOptionalPort(process.env.GATEWAY_DOWNLINK_PORT);
+const gatewayDownlinkPort = parseOptionalPort(process.env.GATEWAY_DOWNLINK_PORT) ?? defaultGatewayDownlinkPort;
 const gatewayDownlinkRequestPath = normalizeHttpPath(process.env.GATEWAY_DOWNLINK_REQUEST_PATH ?? "/api/v1/downlinks");
 const gatewayDownlinkDispatchIntervalMs = parsePositiveInteger(process.env.GATEWAY_DOWNLINK_DISPATCH_INTERVAL_MS, 5_000);
 const gatewayDownlinkDispatchBatchSize = parsePositiveInteger(process.env.GATEWAY_DOWNLINK_DISPATCH_BATCH_SIZE, 10);
@@ -116,6 +118,80 @@ const octetStreamBody = express.raw({ type: "application/octet-stream", limit: "
 
 function getNowMs() {
   return Date.now();
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function normalizeConfigThresholds(input: unknown): ConfigThresholds {
+  const source = isRecord(input) ? input : {};
+  const normalized = { ...DEFAULT_CONFIG_THRESHOLDS };
+
+  for (const key of configThresholdKeys) {
+    const value = source[key];
+    if (value === undefined || value === null) {
+      continue;
+    }
+    if (typeof value !== "number" || !Number.isFinite(value)) {
+      throw new Error(`${key} must be a finite number.`);
+    }
+    normalized[key] = value;
+  }
+
+  validateConfigThresholds(normalized);
+  return normalized;
+}
+
+function validateConfigThresholds(thresholds: ConfigThresholds) {
+  assertThresholdRange(thresholds.l2TempThresh, -327.68, 327.67, "l2TempThresh");
+  assertThresholdRange(thresholds.l3TempThresh, -327.68, 327.67, "l3TempThresh");
+  assertThresholdRange(thresholds.l2HumidityThresh, 0, 100, "l2HumidityThresh");
+  assertThresholdRange(thresholds.l3HumidityThresh, 0, 100, "l3HumidityThresh");
+  assertThresholdInteger(thresholds.l2VocThresh, 0, 65_535, "l2VocThresh");
+  assertThresholdInteger(thresholds.l3VocThresh, 0, 65_535, "l3VocThresh");
+  assertThresholdInteger(thresholds.l4VocThresh, 0, 65_535, "l4VocThresh");
+  assertThresholdInteger(thresholds.l5VocThresh, 0, 65_535, "l5VocThresh");
+  assertThresholdRange(thresholds.l5Pm25Thresh, 0, 6_553.5, "l5Pm25Thresh");
+
+  if (thresholds.l2TempThresh > thresholds.l3TempThresh) {
+    throw new Error("l2TempThresh must be less than or equal to l3TempThresh.");
+  }
+  if (thresholds.l3HumidityThresh > thresholds.l2HumidityThresh) {
+    throw new Error("l3HumidityThresh must be less than or equal to l2HumidityThresh.");
+  }
+  if (thresholds.l2VocThresh > thresholds.l3VocThresh) {
+    throw new Error("l2VocThresh must be less than or equal to l3VocThresh.");
+  }
+  if (thresholds.l3VocThresh > thresholds.l4VocThresh) {
+    throw new Error("l3VocThresh must be less than or equal to l4VocThresh.");
+  }
+  if (thresholds.l4VocThresh > thresholds.l5VocThresh) {
+    throw new Error("l4VocThresh must be less than or equal to l5VocThresh.");
+  }
+}
+
+function assertThresholdRange(
+  value: number,
+  minimum: number,
+  maximum: number,
+  fieldName: (typeof configThresholdKeys)[number],
+) {
+  if (value < minimum || value > maximum) {
+    throw new Error(`${fieldName} must be between ${minimum} and ${maximum}.`);
+  }
+}
+
+function assertThresholdInteger(
+  value: number,
+  minimum: number,
+  maximum: number,
+  fieldName: (typeof configThresholdKeys)[number],
+) {
+  if (!Number.isInteger(value)) {
+    throw new Error(`${fieldName} must be an integer.`);
+  }
+  assertThresholdRange(value, minimum, maximum, fieldName);
 }
 
 function timestampMs(value: string | null) {
@@ -556,33 +632,33 @@ async function projectSensorUplinkInDb(
         current_ipv6 = $2,
         last_observed_gateway_row_id = $3,
         last_observed_gateway_at = $4,
-        last_seen_at = GREATEST(COALESCE(devices.last_seen_at, $5), $5),
+        last_seen_at = GREATEST(COALESCE(devices.last_seen_at, $4), $4),
         latest_reported_at = CASE
-          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $6 THEN $6
+          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $5 THEN $5
           ELSE devices.latest_reported_at
         END,
         latest_risk_level = CASE
-          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $6 THEN $7
+          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $5 THEN $6
           ELSE devices.latest_risk_level
         END,
         latest_temperature_c = CASE
-          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $6 THEN $8
+          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $5 THEN $7
           ELSE devices.latest_temperature_c
         END,
         latest_humidity_pct = CASE
-          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $6 THEN $9
+          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $5 THEN $8
           ELSE devices.latest_humidity_pct
         END,
         latest_voc_iaq = CASE
-          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $6 THEN $10
+          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $5 THEN $9
           ELSE devices.latest_voc_iaq
         END,
         latest_pm25_ug_m3 = CASE
-          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $6 THEN $11
+          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $5 THEN $10
           ELSE devices.latest_pm25_ug_m3
         END,
         latest_battery_pct = CASE
-          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $6 THEN $12
+          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $5 THEN $11
           ELSE devices.latest_battery_pct
         END
       WHERE id = $1
@@ -879,6 +955,9 @@ function normalizeGatewayDownlinkUrl(candidate: string | null | undefined) {
     const url = new URL(candidate);
     if (url.protocol !== "http:" && url.protocol !== "https:") {
       return null;
+    }
+    if (url.port.length === 0 && gatewayDownlinkPort) {
+      url.port = String(gatewayDownlinkPort);
     }
     return url.toString();
   } catch {
@@ -1520,100 +1599,72 @@ async function ensureGatewayRowForUplink(
 type PersistedUplinkReceipt = {
   receiptBuffer: Buffer;
   isDuplicate: boolean;
-  receiptStatus: "durable_ingest" | "permanent_reject";
-  rejectCode: StableRejectCode | null;
+  receiptStatus: "durable_ingest";
+  rejectCode: null;
 };
 
-function createPermanentRejectReceiptBuffer(gatewayId: number, uplinkId: bigint, version: number) {
+function createDurableIngestReceiptBuffer(gatewayId: number, uplinkId: bigint, version: number) {
   return encodeUplinkReceipt({
     gatewayId,
     uplinkId,
-    status: permanentRejectReceiptStatus,
+    status: durableIngestReceiptStatus,
     version,
   });
 }
 
-function normalizeRejectCode(error: BackhaulCodecError): StableRejectCode {
+function normalizeAcceptedErrorCode(error: BackhaulCodecError): StableRejectCode {
   return error.code;
 }
 
-async function createStoredPermanentRejectInDb(
+async function createStoredAcceptedUplinkReceiptInDb(
   client: PoolClient,
   options: {
     gatewayUplinkId: number;
     gatewayId: number;
     uplinkId: bigint;
     version: number;
-    rejectCode: StableRejectCode;
-    rejectDetail: string;
-    reason: "parse_or_validation_failure";
+    acceptedErrorCode: StableRejectCode;
+    acceptedErrorDetail: string;
+    reason: "accepted_despite_parse_or_validation_failure";
   },
 ) {
-  const receiptBuffer = createPermanentRejectReceiptBuffer(options.gatewayId, options.uplinkId, options.version);
+  const receiptBuffer = createDurableIngestReceiptBuffer(options.gatewayId, options.uplinkId, options.version);
 
   await client.query(
     `
       UPDATE gateway_uplinks
       SET
-        storage_status = 'rejected',
         metadata = gateway_uplinks.metadata || $2::jsonb
       WHERE id = $1
     `,
     [
       options.gatewayUplinkId,
       JSON.stringify({
-        terminalRejectCode: options.rejectCode,
-        terminalRejectReason: options.reason,
-      }),
-    ],
-  );
-
-  const receiptInsert = await client.query<{ id: number }>(
-    `
-      INSERT INTO gateway_uplink_receipts (
-        gateway_uplink_id,
-        status,
-        receipt_version,
-        receipt_payload,
-        reject_code,
-        reject_detail,
-        metadata
-      )
-      VALUES ($1, 'permanent_reject', $2, $3, $4, $5, $6::jsonb)
-      RETURNING id
-    `,
-    [
-      options.gatewayUplinkId,
-      options.version,
-      receiptBuffer,
-      options.rejectCode,
-      options.rejectDetail,
-      JSON.stringify({
-        reason: options.reason,
-        rejectCode: options.rejectCode,
+        acceptedDespiteErrorCode: options.acceptedErrorCode,
+        acceptedDespiteErrorReason: options.reason,
       }),
     ],
   );
 
   await client.query(
     `
-      INSERT INTO gateway_uplink_dead_letters (
+      INSERT INTO gateway_uplink_receipts (
         gateway_uplink_id,
-        gateway_uplink_receipt_id,
-        reason_code,
-        reason_detail,
+        status,
+        receipt_version,
+        receipt_payload,
         metadata
       )
-      VALUES ($1, $2, $3, $4, $5::jsonb)
+      VALUES ($1, 'durable_ingest', $2, $3, $4::jsonb)
     `,
     [
       options.gatewayUplinkId,
-      receiptInsert.rows[0]?.id ?? null,
-      options.rejectCode,
-      options.rejectDetail,
+      options.version,
+      receiptBuffer,
       JSON.stringify({
-        origin: "api_v1_uplinks",
         reason: options.reason,
+        acceptedErrorCode: options.acceptedErrorCode,
+        acceptedErrorDetail: options.acceptedErrorDetail,
       }),
     ],
   );
@@ -1655,6 +1706,41 @@ async function persistGatewayUplinkInDb(
 
     const existingReceipt = existingReceiptResult.rows[0];
     if (existingReceipt?.receipt_payload) {
+      const receiptBuffer =
+        existingReceipt.status === "durable_ingest"
+          ? existingReceipt.receipt_payload
+          : createDurableIngestReceiptBuffer(message.gatewayId, message.uplinkId, message.version);
+
+      if (existingReceipt.status !== "durable_ingest") {
+        await client.query(
+          `
+            UPDATE gateway_uplink_receipts
+            SET
+              status = 'durable_ingest',
+              receipt_version = $2,
+              receipt_payload = $3,
+              reject_code = NULL,
+              reject_detail = NULL,
+              metadata = gateway_uplink_receipts.metadata || $4::jsonb
+            WHERE gateway_uplink_id = (
+              SELECT id
+              FROM gateway_uplinks
+              WHERE gateway_row_id = $1
+                AND uplink_id = $5::numeric(20,0)
+            )
+          `,
+          [
+            gatewayRowId,
+            message.version,
+            receiptBuffer,
+            JSON.stringify({
+              reason: "accepted_duplicate_of_previous_reject",
+            }),
+            uplinkIdText,
+          ],
+        );
+      }
+
       await client.query(
         `
           UPDATE gateway_uplinks
@@ -1677,10 +1763,10 @@ async function persistGatewayUplinkInDb(
 
       await client.query("COMMIT");
       return {
-        receiptBuffer: existingReceipt.receipt_payload,
+        receiptBuffer,
         isDuplicate: true,
-        receiptStatus: existingReceipt.status,
-        rejectCode: existingReceipt.reject_code,
+        receiptStatus: "durable_ingest",
+        rejectCode: null,
       };
     }
 
@@ -1782,11 +1868,11 @@ async function persistGatewayUplinkInDb(
   }
 }
 
-async function persistPermanentRejectUplinkInDb(
+async function persistAcceptedUplinkDespiteErrorInDb(
   rawEnvelope: Buffer,
   codecError: BackhaulCodecError,
   requestMetadata: Record<string, string | number | boolean | null>,
-) {
+): Promise<PersistedUplinkReceipt> {
   if (!pool) {
     throw new Error("Database is not configured.");
   }
@@ -1795,17 +1881,17 @@ async function persistPermanentRejectUplinkInDb(
   const version = rawEnvelope.length >= 2 ? rawEnvelope.readUInt8(1) : null;
   const gatewayId = rawEnvelope.length >= 4 ? rawEnvelope.readUInt16LE(2) : null;
   const uplinkId = rawEnvelope.length >= 12 ? rawEnvelope.readBigUInt64LE(4) : null;
-  const rejectCode = normalizeRejectCode(codecError);
+  const acceptedErrorCode = normalizeAcceptedErrorCode(codecError);
   const receiptGatewayId = gatewayId ?? 0;
   const receiptUplinkId = uplinkId ?? 0n;
-  const receiptBuffer = createPermanentRejectReceiptBuffer(receiptGatewayId, receiptUplinkId, version ?? 1);
+  const receiptBuffer = createDurableIngestReceiptBuffer(receiptGatewayId, receiptUplinkId, version ?? 1);
 
   if (gatewayId === null || uplinkId === null) {
     return {
       receiptBuffer,
       isDuplicate: false,
-      receiptStatus: "permanent_reject" as const,
-      rejectCode,
+      receiptStatus: "durable_ingest" as const,
+      rejectCode: null,
     };
   }
 
@@ -1834,6 +1920,41 @@ async function persistPermanentRejectUplinkInDb(
 
     const existingReceipt = existingReceiptResult.rows[0];
     if (existingReceipt?.receipt_payload) {
+      const duplicateReceiptBuffer =
+        existingReceipt.status === "durable_ingest"
+          ? existingReceipt.receipt_payload
+          : createDurableIngestReceiptBuffer(gatewayId, uplinkId, version ?? 1);
+
+      if (existingReceipt.status !== "durable_ingest") {
+        await client.query(
+          `
+            UPDATE gateway_uplink_receipts
+            SET
+              status = 'durable_ingest',
+              receipt_version = $2,
+              receipt_payload = $3,
+              reject_code = NULL,
+              reject_detail = NULL,
+              metadata = gateway_uplink_receipts.metadata || $4::jsonb
+            WHERE gateway_uplink_id = (
+              SELECT id
+              FROM gateway_uplinks
+              WHERE gateway_row_id = $1
+                AND uplink_id = $5::numeric(20,0)
+            )
+          `,
+          [
+            gatewayRowId,
+            version ?? 1,
+            duplicateReceiptBuffer,
+            JSON.stringify({
+              reason: "accepted_duplicate_of_previous_reject",
+            }),
+            uplinkIdText,
+          ],
+        );
+      }
+
       await client.query(
         `
           UPDATE gateway_uplinks
@@ -1848,10 +1969,10 @@ async function persistPermanentRejectUplinkInDb(
 
       await client.query("COMMIT");
       return {
-        receiptBuffer: existingReceipt.receipt_payload,
+        receiptBuffer: duplicateReceiptBuffer,
         isDuplicate: true,
-        receiptStatus: existingReceipt.status,
-        rejectCode: existingReceipt.reject_code,
+        receiptStatus: "durable_ingest",
+        rejectCode: null,
       };
     }
 
@@ -1877,8 +1998,8 @@ async function persistPermanentRejectUplinkInDb(
         rawEnvelope,
         JSON.stringify({
           ...requestMetadata,
-          parseFailureCode: rejectCode,
-          parseFailureMessage: codecError.message,
+          acceptedDespiteErrorCode: acceptedErrorCode,
+          acceptedDespiteErrorMessage: codecError.message,
         }),
       ],
     );
@@ -1888,22 +2009,22 @@ async function persistPermanentRejectUplinkInDb(
       throw new Error(`Unable to persist rejected uplink ${uplinkIdText} for gateway ${gatewayId}`);
     }
 
-    await createStoredPermanentRejectInDb(client, {
+    await createStoredAcceptedUplinkReceiptInDb(client, {
       gatewayUplinkId,
       gatewayId,
       uplinkId,
       version: version ?? 1,
-      rejectCode,
-      rejectDetail: codecError.message,
-      reason: "parse_or_validation_failure",
+      acceptedErrorCode,
+      acceptedErrorDetail: codecError.message,
+      reason: "accepted_despite_parse_or_validation_failure",
     });
 
     await client.query("COMMIT");
     return {
       receiptBuffer,
       isDuplicate: false,
-      receiptStatus: "permanent_reject" as const,
-      rejectCode,
+      receiptStatus: "durable_ingest" as const,
+      rejectCode: null,
     };
   } catch (error) {
     await client.query("ROLLBACK");
@@ -3175,6 +3296,33 @@ async function getPacketHistoryFromDb(options: PacketHistoryQuery = {}): Promise
   };
 }
 
+async function clearPacketHistoryInDb() {
+  if (!pool) {
+    throw new Error("Database is not configured.");
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+    await client.query(
+      `
+        TRUNCATE TABLE
+          notification_deliveries,
+          devices,
+          gateways
+        RESTART IDENTITY CASCADE
+      `,
+    );
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 function buildTrendSummary(points: ReadingHistoryPoint[]): HistoryTrendSummary {
   if (points.length < 2) {
     return {
@@ -3459,6 +3607,7 @@ async function createConfigRevisionInDb(draft: ConfigRevisionDraft): Promise<Con
     throw new Error("Database is not configured.");
   }
 
+  const thresholds = normalizeConfigThresholds(draft.thresholds);
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -3483,15 +3632,15 @@ async function createConfigRevisionInDb(draft: ConfigRevisionDraft): Promise<Con
         RETURNING id
       `,
       [
-        draft.thresholds.l2TempThresh,
-        draft.thresholds.l2HumidityThresh,
-        draft.thresholds.l2VocThresh,
-        draft.thresholds.l3TempThresh,
-        draft.thresholds.l3HumidityThresh,
-        draft.thresholds.l3VocThresh,
-        draft.thresholds.l4VocThresh,
-        draft.thresholds.l5VocThresh,
-        draft.thresholds.l5Pm25Thresh,
+        thresholds.l2TempThresh,
+        thresholds.l2HumidityThresh,
+        thresholds.l2VocThresh,
+        thresholds.l3TempThresh,
+        thresholds.l3HumidityThresh,
+        thresholds.l3VocThresh,
+        thresholds.l4VocThresh,
+        thresholds.l5VocThresh,
+        thresholds.l5Pm25Thresh,
         draft.notes ?? null,
       ],
     );
@@ -3897,20 +4046,22 @@ app.post("/api/v1/gateways/register", octetStreamBody, async (request, response,
       return;
     }
 
-    const message = parseGatewayRegistrationMessage(body);
-    await persistGatewayRegistrationInDb(message, {
-      httpContentType: request.get("content-type") ?? null,
-      httpContentLength: body.length,
-      remoteAddress: request.ip || null,
-      downlinkUrl: resolveGatewayDownlinkUrlFromRequest(request),
-    });
+    try {
+      const message = parseGatewayRegistrationMessage(body);
+      await persistGatewayRegistrationInDb(message, {
+        httpContentType: request.get("content-type") ?? null,
+        httpContentLength: body.length,
+        remoteAddress: request.ip || null,
+        downlinkUrl: resolveGatewayDownlinkUrlFromRequest(request),
+      });
+    } catch (error) {
+      if (!(error instanceof BackhaulCodecError)) {
+        throw error;
+      }
+    }
 
     response.status(204).end();
   } catch (error) {
-    if (error instanceof BackhaulCodecError) {
-      response.status(400).json({ message: error.message, code: error.code });
-      return;
-    }
     next(error);
   }
 });
@@ -3946,7 +4097,7 @@ app.post("/api/v1/uplinks", octetStreamBody, async (request, response, next) => 
       receipt = await persistGatewayUplinkInDb(message, requestMetadata);
     } catch (error) {
       if (error instanceof BackhaulCodecError) {
-        receipt = await persistPermanentRejectUplinkInDb(body, error, requestMetadata);
+        receipt = await persistAcceptedUplinkDespiteErrorInDb(body, error, requestMetadata);
       } else {
         throw error;
       }
@@ -4099,6 +4250,20 @@ app.get("/api/history/packets", async (request, response, next) => {
     };
 
     response.json(await withSource(() => getPacketHistoryFromDb(query), () => getMockPacketHistory(query)));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.delete("/api/history/packets", async (_request, response, next) => {
+  try {
+    if (!pool) {
+      response.status(503).json({ message: "Database is not configured." });
+      return;
+    }
+
+    await clearPacketHistoryInDb();
+    response.json({ ok: true });
   } catch (error) {
     next(error);
   }

@@ -28,6 +28,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new ApiError(`Request failed with status ${response.status}.`);
   }
 
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
   return (await response.json()) as T;
 }
 
@@ -46,5 +50,11 @@ export async function apiPut<TResponse, TBody>(path: string, body: TBody): Promi
   return request<TResponse>(path, {
     method: "PUT",
     body: JSON.stringify(body),
+  });
+}
+
+export async function apiDelete<T>(path: string): Promise<T> {
+  return request<T>(path, {
+    method: "DELETE",
   });
 }

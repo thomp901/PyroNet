@@ -13,5 +13,11 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["server/**/*.ts", "src/api/types.ts", "src/lib/nodeId.ts", "src/lib/gatewayId.ts"]
+  "include": [
+    "server/**/*.ts",
+    "src/api/types.ts",
+    "src/api/configThresholds.ts",
+    "src/lib/nodeId.ts",
+    "src/lib/gatewayId.ts"
+  ]
 }
