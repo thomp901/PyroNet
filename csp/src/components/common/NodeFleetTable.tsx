@@ -2,7 +2,7 @@ import type { KeyboardEvent, MouseEvent } from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { NodeSummary } from "../../api/types";
-import { formatInteger, formatLocation, formatNullableNumber, formatTimestamp, riskLabel } from "../../lib/format";
+import { formatInteger, formatLocation, formatNullableNumber, formatTimestamp, formatVocPpm, riskLabel } from "../../lib/format";
 import { TableShell } from "./TableShell";
 
 type SortColumn = "node" | "location" | "risk" | "temp" | "rh" | "voc" | "pm25" | "battery" | "lastSeen";
@@ -15,7 +15,7 @@ interface NodeFleetTableProps {
   showNodeIdLink?: boolean;
 }
 
-const columns = ["Node", "Location", "Risk", "Temp", "RH", "VOC", "PM2.5", "Battery %", "Last Seen"];
+const columns = ["Node", "Location", "Risk", "Temp", "RH", "VOC (ppm)", "PM2.5", "Battery %", "Last Seen"];
 
 function compareNullableNumbers(left: number | null | undefined, right: number | null | undefined, direction: SortDirection) {
   if (left == null && right == null) {
@@ -253,9 +253,9 @@ export function NodeFleetTable({
               type="button"
               className="table-sort-button"
               onClick={() => toggleSort("voc")}
-              aria-label={sortButtonLabel("VOC", "voc")}
+              aria-label={sortButtonLabel("VOC (ppm)", "voc")}
             >
-              VOC
+              VOC (ppm)
               <span className="table-sort-indicator" aria-hidden="true">
                 {sortIndicator("voc")}
               </span>
@@ -343,7 +343,7 @@ export function NodeFleetTable({
           </td>
           <td>{formatNullableNumber(node.latestTelemetry?.temperatureC ?? null, "°C")}</td>
           <td>{formatNullableNumber(node.latestTelemetry?.humidityPct ?? null, "%")}</td>
-          <td>{formatInteger(node.latestTelemetry?.vocIaq ?? null)}</td>
+          <td>{formatVocPpm(node.latestTelemetry?.vocIaq ?? null)}</td>
           <td>{formatNullableNumber(node.latestTelemetry?.pm25UgM3 ?? null, " ug/m3")}</td>
           <td>{formatInteger(node.latestTelemetry?.batteryPct ?? null, "%")}</td>
           <td>

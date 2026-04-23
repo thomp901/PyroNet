@@ -10,7 +10,7 @@ import { StatCard } from "../components/common/StatCard";
 import { TableShell } from "../components/common/TableShell";
 import { TelemetryTrendChart, telemetryMeasurementOptions, type TelemetryMeasurementId } from "../components/common/TelemetryTrendChart";
 import { MeshMap } from "../features/map/MeshMap";
-import { formatCoordinatePair, formatInteger, formatNullableNumber, formatTimestamp, riskLabel } from "../lib/format";
+import { formatCoordinatePair, formatInteger, formatNullableNumber, formatTimestamp, formatVocPpm, riskLabel } from "../lib/format";
 import { parseNodeId } from "../lib/nodeId";
 import { useAsyncData } from "../lib/useAsyncData";
 
@@ -74,7 +74,7 @@ export function NodeDetailPage() {
       <div className="stat-grid node-detail-stat-grid">
         <StatCard label="Temperature" value={formatNullableNumber(data.node.latestTelemetry?.temperatureC ?? null, "°C")} />
         <StatCard label="Humidity" value={formatNullableNumber(data.node.latestTelemetry?.humidityPct ?? null, "%")} />
-        <StatCard label="VOC" value={formatInteger(data.node.latestTelemetry?.vocIaq ?? null)} />
+        <StatCard label="VOC (ppm)" value={formatVocPpm(data.node.latestTelemetry?.vocIaq ?? null)} />
         <StatCard label="PM2.5" value={formatNullableNumber(data.node.latestTelemetry?.pm25UgM3 ?? null, " ug/m3")} />
         <StatCard label="Battery" value={formatInteger(data.node.latestTelemetry?.batteryPct ?? null, "%")} />
         <StatCard label="Latest risk" value={riskLabel(data.node.currentRiskLevel)} />
@@ -107,6 +107,10 @@ export function NodeDetailPage() {
               <div>
                 <dt>IPv6</dt>
                 <dd>{data.node.ipv6Address ?? "N/A"}</dd>
+              </div>
+              <div>
+                <dt>Preferred parent</dt>
+                <dd>{data.currentParentIpv6 ?? "None"}</dd>
               </div>
               <div>
                 <dt>Firmware</dt>
@@ -208,6 +212,24 @@ export function NodeDetailPage() {
         </div>
       </div>
 
+      <article className="card">
+        <div className="section-heading">
+          <div>
+            <h2>Parent observations</h2>
+            <p>Recent registration-time and 0x08 preferred-parent observations.</p>
+          </div>
+        </div>
+        <TableShell columns={["Observed", "Source", "Parent IPv6"]}>
+          {data.parentObservations.map((observation) => (
+            <tr key={`${observation.observedAt}-${observation.sourceType}-${observation.parentIpv6 ?? "none"}`}>
+              <td>{formatTimestamp(observation.observedAt)}</td>
+              <td>{observation.sourceType}</td>
+              <td>{observation.parentIpv6 ?? "None"}</td>
+            </tr>
+          ))}
+        </TableShell>
+      </article>
+
       <div className="split-grid">
         <div className="card">
           <div className="section-heading">
@@ -216,7 +238,7 @@ export function NodeDetailPage() {
               <p>Most recent raw telemetry samples for the last 24 hours.</p>
             </div>
           </div>
-          <TableShell columns={["Reported", "Source", "Risk", "Temp", "RH", "VOC", "PM2.5"]}>
+          <TableShell columns={["Reported", "Source", "Risk", "Temp", "RH", "VOC (ppm)", "PM2.5"]}>
             {data.recentReadings.map((reading) => (
               <tr key={reading.id}>
                 <td>{formatTimestamp(reading.reportedAt)}</td>
@@ -224,7 +246,7 @@ export function NodeDetailPage() {
                 <td>{riskLabel(reading.riskLevel)}</td>
                 <td>{formatNullableNumber(reading.temperatureC, "°C")}</td>
                 <td>{formatNullableNumber(reading.humidityPct, "%")}</td>
-                <td>{formatInteger(reading.vocIaq)}</td>
+                <td>{formatVocPpm(reading.vocIaq)}</td>
                 <td>{formatNullableNumber(reading.pm25UgM3, " ug/m3")}</td>
               </tr>
             ))}

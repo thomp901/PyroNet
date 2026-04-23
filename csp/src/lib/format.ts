@@ -63,6 +63,10 @@ export function formatInteger(value: number | null | undefined, unit = "") {
   return `${Math.round(value)}${unit}`;
 }
 
+export function formatVocPpm(value: number | null | undefined) {
+  return formatInteger(value, " ppm");
+}
+
 export function riskLabel(value: number | null | undefined) {
   if (typeof value !== "number") {
     return "Unknown";

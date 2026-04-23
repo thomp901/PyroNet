@@ -89,7 +89,7 @@ export function DashboardPage() {
       </div>
 
       <div className="dashboard-grid dashboard-grid-stack">
-        <MapPreview nodes={data.fleet} links={data.neighborLinks} />
+        <MapPreview nodes={data.fleet} gateways={data.gateways} links={data.neighborLinks} />
 
         <div
           className="card dashboard-link-card"

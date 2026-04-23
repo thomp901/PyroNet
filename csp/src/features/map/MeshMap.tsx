@@ -2,12 +2,13 @@ import { latLngBounds, type Map as LeafletMap } from "leaflet";
 import { useEffect, useState } from "react";
 import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
 import { useNavigate } from "react-router-dom";
-import type { MeshLink, NodeSummary } from "../../api/types";
-import { riskLabel } from "../../lib/format";
+import type { GatewayMarker, MeshLink, NodeSummary } from "../../api/types";
+import { formatTimestamp, riskLabel } from "../../lib/format";
 import "./leaflet";
 
 interface MeshMapProps {
   nodes: NodeSummary[];
+  gateways?: GatewayMarker[];
   links: MeshLink[];
   className?: string;
   legendDefaultOpen?: boolean;
@@ -20,12 +21,19 @@ const nodeLegendItems = [
   { label: "Risk Level 4", color: "#f18b2c" },
   { label: "Risk Level 1-3", color: "#2f9d68" },
   { label: "Offline", color: "#5f6b7a" },
+  { label: "Gateway", color: "#1f78ff" },
 ] as const;
 
 const fallbackCenter: [number, number] = [34.2605, -118.472];
 
-function applyMeshViewport(map: LeafletMap, nodes: NodeSummary[], focusNodeId?: number, focusZoom = 15) {
-  if (nodes.length === 0) {
+function applyMeshViewport(
+  map: LeafletMap,
+  nodes: NodeSummary[],
+  gateways: GatewayMarker[],
+  focusNodeId?: number,
+  focusZoom = 15,
+) {
+  if (nodes.length === 0 && gateways.length === 0) {
     return;
   }
 
@@ -37,16 +45,29 @@ function applyMeshViewport(map: LeafletMap, nodes: NodeSummary[], focusNodeId?: 
     }
   }
 
-  const bounds = latLngBounds(nodes.map((node) => [node.location.lat, node.location.lng] as [number, number]));
+  const bounds = latLngBounds([
+    ...nodes.map((node) => [node.location.lat, node.location.lng] as [number, number]),
+    ...gateways.map((gateway) => [gateway.location.lat, gateway.location.lng] as [number, number]),
+  ]);
   map.fitBounds(bounds.pad(0.2), { animate: false });
 }
 
-function FitToMesh({ nodes, focusNodeId, focusZoom = 15 }: { nodes: NodeSummary[]; focusNodeId?: number; focusZoom?: number }) {
+function FitToMesh({
+  nodes,
+  gateways,
+  focusNodeId,
+  focusZoom = 15,
+}: {
+  nodes: NodeSummary[];
+  gateways: GatewayMarker[];
+  focusNodeId?: number;
+  focusZoom?: number;
+}) {
   const map = useMap();
 
   useEffect(() => {
-    applyMeshViewport(map, nodes, focusNodeId, focusZoom);
-  }, [focusNodeId, focusZoom, map, nodes]);
+    applyMeshViewport(map, nodes, gateways, focusNodeId, focusZoom);
+  }, [focusNodeId, focusZoom, gateways, map, nodes]);
 
   return null;
 }
@@ -74,12 +95,21 @@ function markerColor(node: NodeSummary) {
   return "#2f9d68";
 }
 
-export function MeshMap({ nodes, className = "leaflet-map", legendDefaultOpen = false, focusNodeId, focusZoom }: MeshMapProps) {
+export function MeshMap({
+  nodes,
+  gateways = [],
+  className = "leaflet-map",
+  legendDefaultOpen = false,
+  focusNodeId,
+  focusZoom,
+}: MeshMapProps) {
   const navigate = useNavigate();
   const [map, setMap] = useState<LeafletMap | null>(null);
   const center = nodes[0]
     ? ([nodes[0].location.lat, nodes[0].location.lng] as [number, number])
-    : fallbackCenter;
+    : gateways[0]
+      ? ([gateways[0].location.lat, gateways[0].location.lng] as [number, number])
+      : fallbackCenter;
 
   return (
     <div className="mesh-map-shell">
@@ -89,7 +119,7 @@ export function MeshMap({ nodes, className = "leaflet-map", legendDefaultOpen = 
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
         <RegisterMapInstance onReady={setMap} />
-        <FitToMesh nodes={nodes} focusNodeId={focusNodeId} focusZoom={focusZoom} />
+        <FitToMesh nodes={nodes} gateways={gateways} focusNodeId={focusNodeId} focusZoom={focusZoom} />
         {nodes.map((node) => (
           <CircleMarker
             key={node.id}
@@ -114,6 +144,27 @@ export function MeshMap({ nodes, className = "leaflet-map", legendDefaultOpen = 
             </Popup>
           </CircleMarker>
         ))}
+        {gateways.map((gateway) => (
+          <CircleMarker
+            key={gateway.id}
+            center={[gateway.location.lat, gateway.location.lng]}
+            radius={8}
+            pathOptions={{
+              color: "#08111a",
+              weight: 2,
+              fillColor: "#1f78ff",
+              fillOpacity: 0.95,
+            }}
+          >
+            <Popup>
+              <strong>Gateway {gateway.gatewayId}</strong>
+              <br />
+              {gateway.softwareVersion ? `SW ${gateway.softwareVersion}` : "Software unknown"}
+              <br />
+              {gateway.lastRegisteredAt ? formatTimestamp(gateway.lastRegisteredAt) : "No registration timestamp"}
+            </Popup>
+          </CircleMarker>
+        ))}
       </MapContainer>
 
       <button
@@ -121,7 +172,7 @@ export function MeshMap({ nodes, className = "leaflet-map", legendDefaultOpen = 
         type="button"
         onClick={() => {
           if (map) {
-            applyMeshViewport(map, nodes, focusNodeId, focusZoom);
+            applyMeshViewport(map, nodes, gateways, focusNodeId, focusZoom);
           }
         }}
       >
@@ -129,8 +180,8 @@ export function MeshMap({ nodes, className = "leaflet-map", legendDefaultOpen = 
       </button>
 
       <details className="map-legend" open={legendDefaultOpen}>
-        <summary className="map-legend-title">Node legend</summary>
-        <ul className="map-legend-list" aria-label="Node color legend">
+        <summary className="map-legend-title">Map legend</summary>
+        <ul className="map-legend-list" aria-label="Map color legend">
           {nodeLegendItems.map((item) => (
             <li key={item.label} className="map-legend-item">
               <span className="map-legend-swatch" style={{ backgroundColor: item.color }} aria-hidden="true" />

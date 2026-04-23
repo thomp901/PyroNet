@@ -38,7 +38,7 @@ const thresholdGroups: Array<{
     fields: [
       { key: "l2TempThresh", label: "Temperature threshold" },
       { key: "l2HumidityThresh", label: "Humidity threshold" },
-      { key: "l2VocThresh", label: "VOC threshold" },
+      { key: "l2VocThresh", label: "VOC threshold (ppm)" },
     ],
   },
   {
@@ -46,17 +46,17 @@ const thresholdGroups: Array<{
     fields: [
       { key: "l3TempThresh", label: "Temperature threshold" },
       { key: "l3HumidityThresh", label: "Humidity threshold" },
-      { key: "l3VocThresh", label: "VOC threshold" },
+      { key: "l3VocThresh", label: "VOC threshold (ppm)" },
     ],
   },
   {
     title: "Level 4 thresholds",
-    fields: [{ key: "l4VocThresh", label: "VOC threshold" }],
+    fields: [{ key: "l4VocThresh", label: "VOC threshold (ppm)" }],
   },
   {
     title: "Level 5 thresholds",
     fields: [
-      { key: "l5VocThresh", label: "VOC threshold" },
+      { key: "l5VocThresh", label: "VOC threshold (ppm)" },
       { key: "l5Pm25Thresh", label: "PM2.5 threshold" },
     ],
   },

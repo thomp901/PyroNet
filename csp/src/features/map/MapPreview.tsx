@@ -1,14 +1,15 @@
 import type { KeyboardEvent, MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import type { MeshLink, NodeSummary } from "../../api/types";
+import type { GatewayMarker, MeshLink, NodeSummary } from "../../api/types";
 import { MeshMap } from "./MeshMap";
 
 interface MapPreviewProps {
   nodes: NodeSummary[];
+  gateways: GatewayMarker[];
   links: MeshLink[];
 }
 
-export function MapPreview({ nodes, links }: MapPreviewProps) {
+export function MapPreview({ nodes, gateways, links }: MapPreviewProps) {
   const navigate = useNavigate();
 
   function openMapPage() {
@@ -44,7 +45,7 @@ export function MapPreview({ nodes, links }: MapPreviewProps) {
         </div>
       </div>
       <div className="map-container" onClick={stopMapPreviewNavigation} onKeyDownCapture={stopMapPreviewNavigation}>
-        <MeshMap nodes={nodes} links={links} />
+        <MeshMap nodes={nodes} gateways={gateways} links={links} />
       </div>
     </div>
   );

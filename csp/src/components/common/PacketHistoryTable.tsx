@@ -30,6 +30,8 @@ function eventTypeLabel(eventType: PacketEventType) {
       return "Periodic Report";
     case "critical_alert":
       return "Critical Alert";
+    case "parent_update":
+      return "Parent Update";
     case "neighbor_distribution":
       return "Neighbor Distribution";
     case "time_sync":

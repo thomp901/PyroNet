@@ -35,6 +35,7 @@ export function MapPage() {
       <div className="map-page-frame">
         <MeshMap
           nodes={data.fleet}
+          gateways={data.gateways}
           links={data.neighborLinks}
           className="leaflet-map leaflet-map-fullscreen"
           legendDefaultOpen

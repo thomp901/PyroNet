@@ -8,6 +8,7 @@ import type {
   DashboardResponse,
   DownlinkActivity,
   DownlinkRequest,
+  GatewayMarker,
   HistoryAggregateBucket,
   HistoryResponse,
   HistoryTrendSummary,
@@ -33,14 +34,15 @@ import type {
   NotificationSettingsResponse,
   ReadingHistoryPoint,
   TelemetrySnapshot,
-} from "../api/types";
-import { packetDirections, packetEventTypes, packetLogCodes } from "../api/types";
+} from "../../src/api/types";
+import { packetDirections, packetEventTypes, packetLogCodes } from "../../src/api/types";
 
 interface DeviceRecord {
   id: string;
   nodeId: NodeId;
   displayName: string;
   ipv6Address: string;
+  currentParentIpv6: string | null;
   firmwareVersion: string;
   location: { lat: number; lng: number; label: string };
   firstRegisteredAt: string;
@@ -110,6 +112,13 @@ interface Ipv6HistoryRecord {
   validTo: string | null;
 }
 
+interface ParentObservationRecord {
+  deviceId: string;
+  observedAt: string;
+  parentIpv6: string | null;
+  sourceType: NodeDetail["parentObservations"][number]["sourceType"];
+}
+
 interface DownlinkRecord {
   id: string;
   commandCode: "0x04" | "0x05" | "0x06";
@@ -141,6 +150,7 @@ const devices: DeviceRecord[] = [
     nodeId: 1,
     displayName: "North Ridge Sensor",
     ipv6Address: "2001:db8:100::11",
+    currentParentIpv6: "2001:db8:100::1",
     firmwareVersion: "2.4.1",
     location: { lat: 40.43579440192811, lng: -86.93249721937255, label: "North Ridge" },
     firstRegisteredAt: "2026-03-01T08:15:00Z",
@@ -157,6 +167,7 @@ const devices: DeviceRecord[] = [
     nodeId: 2,
     displayName: "Valley Floor Sensor",
     ipv6Address: "2001:db8:100::12",
+    currentParentIpv6: "2001:db8:100::11",
     firmwareVersion: "2.4.1",
     location: { lat: 40.43762953279087, lng: -86.93262806454159, label: "Valley Floor" },
     firstRegisteredAt: "2026-03-03T07:40:00Z",
@@ -173,6 +184,7 @@ const devices: DeviceRecord[] = [
     nodeId: 3,
     displayName: "Canyon Mouth Sensor",
     ipv6Address: "2001:db8:100::13",
+    currentParentIpv6: null,
     firmwareVersion: "2.4.0",
     location: { lat: 40.43691260317419, lng: -86.92977554062905, label: "Canyon Mouth" },
     firstRegisteredAt: "2026-03-04T12:10:00Z",
@@ -189,6 +201,7 @@ const devices: DeviceRecord[] = [
     nodeId: 4,
     displayName: "Operations Gateway",
     ipv6Address: "2001:db8:100::14",
+    currentParentIpv6: "2001:db8:100::11",
     firmwareVersion: "3.0.2",
     location: { lat: 40.43539954526423, lng: -86.92967431940525, label: "Operations Yard" },
     firstRegisteredAt: "2026-02-25T18:00:00Z",
@@ -623,6 +636,16 @@ const ipv6History: Ipv6HistoryRecord[] = [
   { deviceId: "dev-004", address: "2001:db8:100::14", validFrom: "2026-02-25T18:00:00Z", validTo: null },
 ];
 
+const parentObservations: ParentObservationRecord[] = [
+  { deviceId: "dev-001", observedAt: "2026-04-14T19:41:00Z", parentIpv6: "2001:db8:100::1", sourceType: "parent_update" },
+  { deviceId: "dev-001", observedAt: "2026-04-14T06:10:00Z", parentIpv6: "2001:db8:100::1", sourceType: "registration" },
+  { deviceId: "dev-002", observedAt: "2026-04-14T18:28:00Z", parentIpv6: "2001:db8:100::11", sourceType: "parent_update" },
+  { deviceId: "dev-002", observedAt: "2026-04-14T05:40:00Z", parentIpv6: "2001:db8:100::11", sourceType: "registration" },
+  { deviceId: "dev-003", observedAt: "2026-04-13T08:06:00Z", parentIpv6: null, sourceType: "parent_update" },
+  { deviceId: "dev-003", observedAt: "2026-04-13T04:22:00Z", parentIpv6: "2001:db8:100::12", sourceType: "registration" },
+  { deviceId: "dev-004", observedAt: "2026-04-14T00:05:00Z", parentIpv6: "2001:db8:100::11", sourceType: "registration" },
+];
+
 const downlinks: DownlinkRecord[] = [
   {
     id: "dl-001",
@@ -1018,7 +1041,7 @@ function buildReadingDetail(reading: ReadingRecord) {
     `Risk ${reading.riskLevel}`,
     `${reading.temperatureC.toFixed(1)}°C`,
     `${reading.humidityPct.toFixed(0)}% RH`,
-    `VOC ${Math.round(reading.vocIaq)}`,
+    `VOC ${Math.round(reading.vocIaq)} ppm`,
     `PM2.5 ${reading.pm25UgM3.toFixed(1)}`,
   ].join(" · ");
 }
@@ -1067,6 +1090,29 @@ function toPacketLogEntryFromReading(reading: ReadingRecord): PacketLogEntry {
   };
 }
 
+function toPacketLogEntryFromParentObservation(observation: ParentObservationRecord): PacketLogEntry {
+  const device = devices.find((entry) => entry.id === observation.deviceId);
+  if (!device) {
+    throw new Error(`Unknown device ${observation.deviceId}`);
+  }
+
+  return {
+    id: `parent-${device.id}-${observation.observedAt}`,
+    occurredAt: observation.observedAt,
+    nodeId: device.nodeId,
+    nodeName: device.displayName,
+    direction: "uplink",
+    packetCode: "0x08",
+    eventType: "parent_update",
+    status: "received",
+    summary: `Parent update received from node ${device.nodeId}.`,
+    detail: [
+      observation.parentIpv6 ? `Parent ${observation.parentIpv6}` : "Preferred parent cleared",
+      observation.sourceType === "registration" ? "Observed during registration" : "Observed during parent update",
+    ].join(" · "),
+  };
+}
+
 function toPacketLogEntryFromDownlink(record: DownlinkRecord): PacketLogEntry {
   const device = devices.find((entry) => entry.id === record.deviceId);
   if (!device) {
@@ -1094,9 +1140,12 @@ function toPacketLogEntryFromDownlink(record: DownlinkRecord): PacketLogEntry {
 }
 
 function listMockPacketLogEntries() {
-  return [...registrations.map(toPacketLogEntryFromRegistration), ...readings.map(toPacketLogEntryFromReading), ...downlinks.map(toPacketLogEntryFromDownlink)].sort(
-    (left, right) => timestampMs(right.occurredAt) - timestampMs(left.occurredAt),
-  );
+  return [
+    ...registrations.map(toPacketLogEntryFromRegistration),
+    ...readings.map(toPacketLogEntryFromReading),
+    ...parentObservations.filter((entry) => entry.sourceType === "parent_update").map(toPacketLogEntryFromParentObservation),
+    ...downlinks.map(toPacketLogEntryFromDownlink),
+  ].sort((left, right) => timestampMs(right.occurredAt) - timestampMs(left.occurredAt));
 }
 
 function filterPacketLogEntries(entries: PacketLogEntry[], query: PacketHistoryQuery) {
@@ -1144,6 +1193,22 @@ function toRecipient(record: RecipientRecord): NotificationRecipient {
   };
 }
 
+function getMockGateways(): GatewayMarker[] {
+  return [
+    {
+      id: "gateway-1",
+      gatewayId: 1,
+      location: {
+        lat: 40.43539954526423,
+        lng: -86.92967431940525,
+        label: "Operations Yard Gateway",
+      },
+      lastRegisteredAt: "2026-04-14T19:57:00Z",
+      softwareVersion: "1.0",
+    },
+  ];
+}
+
 export function getMockDashboard(): DashboardResponse {
   const fleet = devices.map(toNodeSummary).sort((left, right) => {
     return (right.currentRiskLevel ?? 0) - (left.currentRiskLevel ?? 0);
@@ -1163,6 +1228,7 @@ export function getMockDashboard(): DashboardResponse {
   return {
     summary,
     fleet,
+    gateways: getMockGateways(),
     neighborLinks: buildMeshLinks(),
     alertQueue,
     downlinks: downlinks
@@ -1185,6 +1251,7 @@ export function getMockNodeDetail(nodeId: NodeId): NodeDetail {
 
   return {
     node: toNodeSummary(device),
+    currentParentIpv6: device.currentParentIpv6,
     currentNeighborRevision: getNeighborRevisionForDevice(device.id),
     recentReadings: getRecentReadings(device.id, 24),
     alertTimeline: timeline
@@ -1194,6 +1261,14 @@ export function getMockNodeDetail(nodeId: NodeId): NodeDetail {
     recentRegistrations: registrations
       .filter((entry) => entry.deviceId === device.id)
       .sort((left, right) => timestampMs(right.observedAt) - timestampMs(left.observedAt)),
+    parentObservations: parentObservations
+      .filter((entry) => entry.deviceId === device.id)
+      .sort((left, right) => timestampMs(right.observedAt) - timestampMs(left.observedAt))
+      .map((entry) => ({
+        observedAt: entry.observedAt,
+        parentIpv6: entry.parentIpv6,
+        sourceType: entry.sourceType,
+      })),
   };
 }
 

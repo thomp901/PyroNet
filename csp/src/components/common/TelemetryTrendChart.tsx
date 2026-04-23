@@ -1,7 +1,7 @@
 import { useState, type CSSProperties } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { HistoryAggregateBucket, HistoryResponse, ReadingHistoryPoint } from "../../api/types";
-import { formatInteger, formatNullableNumber, riskLabel } from "../../lib/format";
+import { formatNullableNumber, formatVocPpm, riskLabel } from "../../lib/format";
 
 export type TelemetryMeasurementId = "temperatureC" | "humidityPct" | "vocIaq" | "pm25UgM3";
 type TelemetryRangeId = "1h" | "6h" | "1d" | "1w" | "1m";
@@ -80,9 +80,9 @@ export const telemetryMeasurementOptions: TelemetryMeasurementOption[] = [
   },
   {
     id: "vocIaq",
-    label: "VOC IAQ",
+    label: "VOC (ppm)",
     accent: "#f0c55b",
-    formatter: (value) => formatInteger(value),
+    formatter: (value) => formatVocPpm(value),
     getRawValue: (reading) => reading.vocIaq,
     getAggregateValue: (bucket) => bucket.avgVocIaq,
   },

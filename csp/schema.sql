@@ -78,6 +78,22 @@ CREATE TYPE notification_delivery_status AS ENUM (
     'skipped'
 );
 
+CREATE TYPE gateway_uplink_storage_status AS ENUM (
+    'received',
+    'projected',
+    'rejected'
+);
+
+CREATE TYPE gateway_uplink_receipt_status AS ENUM (
+    'durable_ingest',
+    'permanent_reject'
+);
+
+CREATE TYPE device_parent_observation_source AS ENUM (
+    'registration',
+    'parent_update'
+);
+
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -130,10 +146,207 @@ CREATE TABLE config_revisions (
 ALTER SEQUENCE config_revisions_config_id_seq
     OWNED BY config_revisions.config_id;
 
+CREATE TABLE gateways (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    gateway_id integer NOT NULL,
+    current_latitude numeric(9,6),
+    current_longitude numeric(9,6),
+    current_sw_version_packed integer,
+    first_registered_at timestamptz,
+    last_registered_at timestamptz,
+    last_gateway_timestamp_at timestamptz,
+    created_at timestamptz NOT NULL DEFAULT NOW(),
+    updated_at timestamptz NOT NULL DEFAULT NOW(),
+    metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+    CONSTRAINT uq_gateways_gateway_id UNIQUE (gateway_id),
+    CONSTRAINT chk_gateways_gateway_id_uint16 CHECK (
+        gateway_id >= 0 AND gateway_id <= 65535
+    ),
+    CONSTRAINT chk_gateways_latitude CHECK (
+        current_latitude >= -90 AND current_latitude <= 90
+    ),
+    CONSTRAINT chk_gateways_longitude CHECK (
+        current_longitude >= -180 AND current_longitude <= 180
+    ),
+    CONSTRAINT chk_gateways_sw_version_uint16 CHECK (
+        current_sw_version_packed IS NULL OR (
+            current_sw_version_packed >= 0 AND current_sw_version_packed <= 65535
+        )
+    ),
+    CONSTRAINT chk_gateways_registration_window CHECK (
+        first_registered_at IS NULL
+        OR last_registered_at IS NULL
+        OR last_registered_at >= first_registered_at
+    ),
+    CONSTRAINT chk_gateways_registration_fields_present_together CHECK (
+        (first_registered_at IS NULL) = (last_registered_at IS NULL)
+    ),
+    CONSTRAINT chk_gateways_current_snapshot_presence CHECK (
+        (current_latitude IS NULL AND current_longitude IS NULL AND current_sw_version_packed IS NULL)
+        OR (
+            current_latitude IS NOT NULL
+            AND current_longitude IS NOT NULL
+            AND current_sw_version_packed IS NOT NULL
+        )
+    ),
+    CONSTRAINT chk_gateways_metadata_object CHECK (
+        jsonb_typeof(metadata) = 'object'
+    )
+);
+
+CREATE TABLE gateway_registrations (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    gateway_row_id bigint NOT NULL REFERENCES gateways(id) ON DELETE CASCADE,
+    reported_at timestamptz NOT NULL,
+    ingested_at timestamptz NOT NULL DEFAULT NOW(),
+    latitude numeric(9,6) NOT NULL,
+    longitude numeric(9,6) NOT NULL,
+    sw_version_packed integer NOT NULL,
+    backhaul_version smallint NOT NULL,
+    raw_message bytea NOT NULL,
+    raw_payload_metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+    CONSTRAINT chk_gateway_registrations_latitude CHECK (
+        latitude >= -90 AND latitude <= 90
+    ),
+    CONSTRAINT chk_gateway_registrations_longitude CHECK (
+        longitude >= -180 AND longitude <= 180
+    ),
+    CONSTRAINT chk_gateway_registrations_sw_version_uint16 CHECK (
+        sw_version_packed >= 0 AND sw_version_packed <= 65535
+    ),
+    CONSTRAINT chk_gateway_registrations_backhaul_version_uint8 CHECK (
+        backhaul_version >= 0 AND backhaul_version <= 255
+    ),
+    CONSTRAINT chk_gateway_registrations_raw_message_length CHECK (
+        octet_length(raw_message) = 18
+    ),
+    CONSTRAINT chk_gateway_registrations_metadata_object CHECK (
+        jsonb_typeof(raw_payload_metadata) = 'object'
+    )
+);
+
+CREATE TABLE gateway_uplinks (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    gateway_row_id bigint NOT NULL REFERENCES gateways(id) ON DELETE CASCADE,
+    uplink_id numeric(20,0) NOT NULL,
+    received_at timestamptz,
+    observed_src_ipv6 inet,
+    backhaul_version smallint,
+    payload_len integer NOT NULL,
+    payload_type smallint,
+    payload_version smallint,
+    payload bytea,
+    raw_envelope bytea NOT NULL,
+    storage_status gateway_uplink_storage_status NOT NULL DEFAULT 'received',
+    first_csp_received_at timestamptz NOT NULL DEFAULT NOW(),
+    last_csp_received_at timestamptz NOT NULL DEFAULT NOW(),
+    delivery_attempt_count integer NOT NULL DEFAULT 1,
+    metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+    CONSTRAINT uq_gateway_uplinks_gateway_uplink UNIQUE (gateway_row_id, uplink_id),
+    CONSTRAINT chk_gateway_uplinks_uplink_id_uint64 CHECK (
+        uplink_id >= 0 AND uplink_id <= 18446744073709551615
+    ),
+    CONSTRAINT chk_gateway_uplinks_ipv6_global_unicast CHECK (
+        observed_src_ipv6 IS NULL OR (
+            family(observed_src_ipv6) = 6
+            AND NOT (observed_src_ipv6 <<= inet '::/128')
+            AND NOT (observed_src_ipv6 <<= inet '::1/128')
+            AND NOT (observed_src_ipv6 <<= inet 'fe80::/10')
+            AND NOT (observed_src_ipv6 <<= inet 'ff00::/8')
+        )
+    ),
+    CONSTRAINT chk_gateway_uplinks_backhaul_version_uint8 CHECK (
+        backhaul_version IS NULL OR (
+            backhaul_version >= 0 AND backhaul_version <= 255
+        )
+    ),
+    CONSTRAINT chk_gateway_uplinks_payload_len_non_negative CHECK (
+        payload_len >= 0
+    ),
+    CONSTRAINT chk_gateway_uplinks_payload_type_uint8 CHECK (
+        payload_type IS NULL OR (payload_type >= 0 AND payload_type <= 255)
+    ),
+    CONSTRAINT chk_gateway_uplinks_payload_version_uint8 CHECK (
+        payload_version IS NULL OR (payload_version >= 0 AND payload_version <= 255)
+    ),
+    CONSTRAINT chk_gateway_uplinks_payload_octet_length CHECK (
+        payload IS NULL OR octet_length(payload) = payload_len
+    ),
+    CONSTRAINT chk_gateway_uplinks_raw_envelope_present CHECK (
+        octet_length(raw_envelope) >= payload_len
+    ),
+    CONSTRAINT chk_gateway_uplinks_attempt_count_positive CHECK (
+        delivery_attempt_count > 0
+    ),
+    CONSTRAINT chk_gateway_uplinks_last_received_after_first CHECK (
+        last_csp_received_at >= first_csp_received_at
+    ),
+    CONSTRAINT chk_gateway_uplinks_received_at_required_when_not_rejected CHECK (
+        storage_status = 'rejected' OR received_at IS NOT NULL
+    ),
+    CONSTRAINT chk_gateway_uplinks_payload_required_when_not_rejected CHECK (
+        storage_status = 'rejected' OR payload IS NOT NULL
+    ),
+    CONSTRAINT chk_gateway_uplinks_observed_src_ipv6_required_when_not_rejected CHECK (
+        storage_status = 'rejected' OR observed_src_ipv6 IS NOT NULL
+    ),
+    CONSTRAINT chk_gateway_uplinks_backhaul_version_required_when_not_rejected CHECK (
+        storage_status = 'rejected' OR backhaul_version IS NOT NULL
+    ),
+    CONSTRAINT chk_gateway_uplinks_metadata_object CHECK (
+        jsonb_typeof(metadata) = 'object'
+    )
+);
+
+CREATE TABLE gateway_uplink_receipts (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    gateway_uplink_id bigint NOT NULL REFERENCES gateway_uplinks(id) ON DELETE CASCADE,
+    status gateway_uplink_receipt_status NOT NULL,
+    receipt_version smallint NOT NULL,
+    responded_at timestamptz NOT NULL DEFAULT NOW(),
+    receipt_payload bytea,
+    reject_code text,
+    reject_detail text,
+    metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+    CONSTRAINT uq_gateway_uplink_receipts_uplink UNIQUE (gateway_uplink_id),
+    CONSTRAINT chk_gateway_uplink_receipts_version_uint8 CHECK (
+        receipt_version >= 0 AND receipt_version <= 255
+    ),
+    CONSTRAINT chk_gateway_uplink_receipts_payload_length CHECK (
+        receipt_payload IS NULL OR octet_length(receipt_payload) = 13
+    ),
+    CONSTRAINT chk_gateway_uplink_receipts_reject_reason_required CHECK (
+        status <> 'permanent_reject' OR reject_code IS NOT NULL
+    ),
+    CONSTRAINT chk_gateway_uplink_receipts_metadata_object CHECK (
+        jsonb_typeof(metadata) = 'object'
+    )
+);
+
+CREATE TABLE gateway_uplink_dead_letters (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    gateway_uplink_id bigint NOT NULL REFERENCES gateway_uplinks(id) ON DELETE CASCADE,
+    gateway_uplink_receipt_id bigint REFERENCES gateway_uplink_receipts(id) ON DELETE SET NULL,
+    dead_lettered_at timestamptz NOT NULL DEFAULT NOW(),
+    reason_code text NOT NULL,
+    reason_detail text,
+    operator_note text,
+    metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+    CONSTRAINT uq_gateway_uplink_dead_letters_uplink UNIQUE (gateway_uplink_id),
+    CONSTRAINT uq_gateway_uplink_dead_letters_receipt UNIQUE (gateway_uplink_receipt_id),
+    CONSTRAINT chk_gateway_uplink_dead_letters_reason_not_blank CHECK (
+        length(btrim(reason_code)) > 0
+    ),
+    CONSTRAINT chk_gateway_uplink_dead_letters_metadata_object CHECK (
+        jsonb_typeof(metadata) = 'object'
+    )
+);
+
 CREATE TABLE devices (
     id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     node_id smallint NOT NULL,
     current_ipv6 inet,
+    current_parent_ipv6 inet,
     current_latitude numeric(9,6) NOT NULL,
     current_longitude numeric(9,6) NOT NULL,
     current_firmware_version text,
@@ -163,8 +376,16 @@ CREATE TABLE devices (
             AND NOT (current_ipv6 <<= inet '::/128')
             AND NOT (current_ipv6 <<= inet '::1/128')
             AND NOT (current_ipv6 <<= inet 'fe80::/10')
-            AND NOT (current_ipv6 <<= inet 'fc00::/7')
             AND NOT (current_ipv6 <<= inet 'ff00::/8')
+        )
+    ),
+    CONSTRAINT chk_devices_current_parent_ipv6_global_unicast CHECK (
+        current_parent_ipv6 IS NULL OR (
+            family(current_parent_ipv6) = 6
+            AND NOT (current_parent_ipv6 <<= inet '::/128')
+            AND NOT (current_parent_ipv6 <<= inet '::1/128')
+            AND NOT (current_parent_ipv6 <<= inet 'fe80::/10')
+            AND NOT (current_parent_ipv6 <<= inet 'ff00::/8')
         )
     ),
     CONSTRAINT chk_devices_latest_risk_level CHECK (latest_risk_level IS NULL OR latest_risk_level BETWEEN 1 AND 5),
@@ -186,6 +407,7 @@ CREATE TABLE devices (
 CREATE TABLE device_registrations (
     id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     device_id bigint NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+    gateway_uplink_id bigint UNIQUE REFERENCES gateway_uplinks(id) ON DELETE RESTRICT,
     observed_ipv6 inet NOT NULL,
     latitude numeric(9,6) NOT NULL,
     longitude numeric(9,6) NOT NULL,
@@ -199,7 +421,6 @@ CREATE TABLE device_registrations (
         AND NOT (observed_ipv6 <<= inet '::/128')
         AND NOT (observed_ipv6 <<= inet '::1/128')
         AND NOT (observed_ipv6 <<= inet 'fe80::/10')
-        AND NOT (observed_ipv6 <<= inet 'fc00::/7')
         AND NOT (observed_ipv6 <<= inet 'ff00::/8')
     ),
     CONSTRAINT chk_device_registrations_latitude CHECK (latitude >= -90 AND latitude <= 90),
@@ -222,15 +443,38 @@ CREATE TABLE device_ipv6_history (
         AND NOT (ipv6_address <<= inet '::/128')
         AND NOT (ipv6_address <<= inet '::1/128')
         AND NOT (ipv6_address <<= inet 'fe80::/10')
-        AND NOT (ipv6_address <<= inet 'fc00::/7')
         AND NOT (ipv6_address <<= inet 'ff00::/8')
     ),
     CONSTRAINT chk_device_ipv6_history_valid_window CHECK (valid_to IS NULL OR valid_to > valid_from)
 );
 
+CREATE TABLE device_parent_observations (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    device_id bigint NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+    gateway_uplink_id bigint UNIQUE NOT NULL REFERENCES gateway_uplinks(id) ON DELETE RESTRICT,
+    source_type device_parent_observation_source NOT NULL,
+    observed_parent_ipv6 inet,
+    observed_at timestamptz NOT NULL,
+    ingested_at timestamptz NOT NULL DEFAULT NOW(),
+    raw_payload_metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+    CONSTRAINT chk_device_parent_observations_ipv6_global_unicast CHECK (
+        observed_parent_ipv6 IS NULL OR (
+            family(observed_parent_ipv6) = 6
+            AND NOT (observed_parent_ipv6 <<= inet '::/128')
+            AND NOT (observed_parent_ipv6 <<= inet '::1/128')
+            AND NOT (observed_parent_ipv6 <<= inet 'fe80::/10')
+            AND NOT (observed_parent_ipv6 <<= inet 'ff00::/8')
+        )
+    ),
+    CONSTRAINT chk_device_parent_observations_metadata_object CHECK (
+        jsonb_typeof(raw_payload_metadata) = 'object'
+    )
+);
+
 CREATE TABLE sensor_readings (
     id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     device_id bigint NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+    gateway_uplink_id bigint UNIQUE REFERENCES gateway_uplinks(id) ON DELETE RESTRICT,
     source_type sensor_reading_source NOT NULL,
     reported_at timestamptz NOT NULL,
     ingested_at timestamptz NOT NULL DEFAULT NOW(),
@@ -587,6 +831,30 @@ CREATE UNIQUE INDEX uq_nn_revisions_current_per_device
 CREATE UNIQUE INDEX uq_notification_recipients_email_lower
     ON notification_recipients (lower(email_address));
 
+CREATE INDEX idx_gateways_last_registered_at
+    ON gateways (last_registered_at DESC);
+
+CREATE INDEX idx_gateway_registrations_gateway_reported_at
+    ON gateway_registrations (gateway_row_id, reported_at DESC);
+
+CREATE INDEX idx_gateway_registrations_ingested_at
+    ON gateway_registrations (ingested_at DESC);
+
+CREATE INDEX idx_gateway_uplinks_gateway_received_at
+    ON gateway_uplinks (gateway_row_id, received_at DESC, uplink_id DESC);
+
+CREATE INDEX idx_gateway_uplinks_storage_status_received_at
+    ON gateway_uplinks (storage_status, first_csp_received_at DESC);
+
+CREATE INDEX idx_gateway_uplinks_observed_src_ipv6_received_at
+    ON gateway_uplinks (observed_src_ipv6, received_at DESC);
+
+CREATE INDEX idx_gateway_uplink_receipts_status_responded_at
+    ON gateway_uplink_receipts (status, responded_at DESC);
+
+CREATE INDEX idx_gateway_uplink_dead_letters_dead_lettered_at
+    ON gateway_uplink_dead_letters (dead_lettered_at DESC);
+
 CREATE INDEX idx_devices_last_seen_at
     ON devices (last_seen_at DESC);
 
@@ -596,14 +864,25 @@ CREATE INDEX idx_devices_latest_reported_at
 CREATE INDEX idx_device_registrations_device_observed_at
     ON device_registrations (device_id, observed_at DESC);
 
+CREATE INDEX idx_device_registrations_gateway_uplink
+    ON device_registrations (gateway_uplink_id)
+    WHERE gateway_uplink_id IS NOT NULL;
+
 CREATE INDEX idx_device_registrations_ipv6_observed_at
     ON device_registrations (observed_ipv6, observed_at DESC);
 
 CREATE INDEX idx_device_ipv6_history_device_valid_from
     ON device_ipv6_history (device_id, valid_from DESC);
 
+CREATE INDEX idx_device_parent_observations_device_observed_at
+    ON device_parent_observations (device_id, observed_at DESC);
+
 CREATE INDEX idx_sensor_readings_device_reported_at
     ON sensor_readings (device_id, reported_at DESC);
+
+CREATE INDEX idx_sensor_readings_gateway_uplink
+    ON sensor_readings (gateway_uplink_id)
+    WHERE gateway_uplink_id IS NOT NULL;
 
 CREATE INDEX idx_sensor_readings_device_ingested_at
     ON sensor_readings (device_id, ingested_at DESC);
@@ -784,6 +1063,11 @@ BEFORE UPDATE ON config_revisions
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
 
+CREATE TRIGGER trg_set_updated_at_gateways
+BEFORE UPDATE ON gateways
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
 CREATE TRIGGER trg_prevent_config_revision_config_id_update
 BEFORE UPDATE OF config_id ON config_revisions
 FOR EACH ROW
@@ -838,6 +1122,9 @@ COMMENT ON TABLE device_registrations IS
 COMMENT ON TABLE device_ipv6_history IS
 'Tracks validity windows for each IPv6 address observed for a device. The row with NULL valid_to is the current address assignment.';
 
+COMMENT ON TABLE device_parent_observations IS
+'Append-only history of preferred-parent observations sourced from registration packets and 0x08 parent-update uplinks.';
+
 COMMENT ON TABLE sensor_readings IS
 'Append-only telemetry history for sensor reports and sensor alerts. Raw rows should remain available for at least 24 hours even if longer-term aggregates are also maintained.';
 
@@ -859,6 +1146,21 @@ COMMENT ON TABLE nn_distribution_events IS
 COMMENT ON TABLE config_revisions IS
 'Versioned wildfire risk threshold definitions keyed by the monotonic config_id used in packet 0x06.';
 
+COMMENT ON TABLE gateways IS
+'Current per-gateway snapshot keyed by the stable logical gateway_id used by the binary backhaul protocol. Rows may exist before a 0x81 registration arrives so raw 0x82 uplinks can be stored durably.';
+
+COMMENT ON TABLE gateway_registrations IS
+'Append-only audit log of gateway registration messages received over the backhaul API, including the raw 0x81 payload.';
+
+COMMENT ON TABLE gateway_uplinks IS
+'Durable raw inbox for CSP-bound 0x82 uplink envelopes. One row represents the idempotency key (gateway_id, uplink_id) plus raw bytes needed for replay.';
+
+COMMENT ON TABLE gateway_uplink_receipts IS
+'Terminal 0x83 receipt state for stored gateway uplinks. Duplicate 0x82 deliveries should reuse the same terminal receipt.';
+
+COMMENT ON TABLE gateway_uplink_dead_letters IS
+'Operator-visible dead-letter records for permanently rejected uplinks, preserving rejection reasons separately from the raw inbox.';
+
 COMMENT ON TABLE device_config_deployments IS
 'Per-device audit log of configuration pushes and acknowledgements for config revisions.';
 
@@ -879,6 +1181,15 @@ COMMENT ON TABLE sensor_reading_hourly_aggregates IS
 
 COMMENT ON COLUMN devices.current_ipv6 IS
 'Authoritative current network address for the device. This value may change when a node rejoins.';
+
+COMMENT ON COLUMN devices.current_parent_ipv6 IS
+'Latest preferred RPL parent IPv6 observed by the CSP from registration or parent-update uplinks. This is routing state, not CSP-managed nearest-neighbor membership.';
+
+COMMENT ON COLUMN gateway_uplinks.uplink_id IS
+'Unsigned 64-bit gateway-assigned idempotency key stored as numeric(20,0) because PostgreSQL bigint cannot represent the full uint64 range.';
+
+COMMENT ON COLUMN gateway_uplinks.raw_envelope IS
+'Original binary 0x82 message body as received by the CSP, retained for replay and audit.';
 
 COMMENT ON COLUMN sensor_readings.raw_payload_metadata IS
 'Supplemental packet metadata such as original epoch seconds, packet counters, or gateway ingestion details.';

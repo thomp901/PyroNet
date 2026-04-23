@@ -1,6 +1,23 @@
+import "./loadEnv";
 import cors from "cors";
 import express from "express";
-import { Pool, type QueryResultRow } from "pg";
+import { Pool, type PoolClient, type QueryResultRow } from "pg";
+import {
+  BackhaulCodecError,
+  durableIngestReceiptStatus,
+  encodeUplinkReceipt,
+  parseGatewayRegistrationMessage,
+  parseNodeUplinkEnvelopeMessage,
+  permanentRejectReceiptStatus,
+  registrationPacketType,
+  sensorAlertPacketType,
+  sensorReportPacketType,
+  parentUpdatePacketType,
+  type ParsedNodeUplinkEnvelope,
+  type ParsedParentUpdatePacket,
+  type ParsedRegistrationPacket,
+  type ParsedSensorPacket,
+} from "./backhaulCodec";
 import type {
   AlertIncident,
   AlertTimelineEntry,
@@ -9,6 +26,7 @@ import type {
   ConnectivityStatus,
   DashboardResponse,
   DownlinkRequest,
+  GatewayMarker,
   HistoryAggregateBucket,
   HistoryResponse,
   HistoryTrendSummary,
@@ -50,7 +68,7 @@ import {
   listMockNodes,
   updateMockNeighborRevision,
   updateMockNotificationRecipient,
-} from "../src/mocks/mockBackend";
+} from "./mocks/mockBackend";
 
 const app = express();
 const port = Number(process.env.API_PORT ?? "4000");
@@ -68,6 +86,7 @@ const notificationEventTypes: NotificationEventType[] = [
 
 app.use(cors());
 app.use(express.json());
+const octetStreamBody = express.raw({ type: "application/octet-stream", limit: "4kb" });
 
 function getNowMs() {
   return Date.now();
@@ -140,6 +159,1041 @@ async function query<T extends QueryResultRow>(text: string, values: unknown[] =
     throw new Error("Database is not configured.");
   }
   return pool.query<T>(text, values);
+}
+
+function epochSecondsToDate(epochSeconds: number) {
+  return new Date(epochSeconds * 1000);
+}
+
+function normalizePgError(error: unknown) {
+  return error instanceof Error ? error.message : "Unexpected database error";
+}
+
+const stableRejectCodes = {
+  invalidLength: "invalid_length",
+  invalidType: "invalid_type",
+  unsupportedVersion: "unsupported_version",
+  invalidFieldValue: "invalid_field_value",
+  unsupportedPayloadType: "unsupported_payload_type",
+} as const;
+
+type StableRejectCode = (typeof stableRejectCodes)[keyof typeof stableRejectCodes];
+
+function formatPackedVersion(version: number) {
+  return `${(version >> 8) & 0xff}.${version & 0xff}`;
+}
+
+function buildGatewayProjectionMetadata(
+  message: ParsedNodeUplinkEnvelope,
+  extra: Record<string, string | number | boolean | null> = {},
+) {
+  return {
+    gatewayId: message.gatewayId,
+    uplinkId: message.uplinkId.toString(),
+    backhaulVersion: message.version,
+    observedSrcIpv6: message.observedSrcIpv6,
+    receivedAt: epochSecondsToDate(message.receivedAtEpochSeconds).toISOString(),
+    payloadType: message.decodedPayload.type,
+    payloadVersion: message.decodedPayload.version,
+    ...extra,
+  };
+}
+
+async function syncDeviceIpv6HistoryInDb(
+  client: PoolClient,
+  deviceId: number,
+  observedIpv6: string,
+  validFrom: Date,
+  registrationId: number | null = null,
+) {
+  const currentIpv6Result = await client.query<{
+    id: number;
+    ipv6_address: string;
+  }>(
+    `
+      SELECT id, host(ipv6_address) AS ipv6_address
+      FROM device_ipv6_history
+      WHERE device_id = $1
+        AND valid_to IS NULL
+      FOR UPDATE
+    `,
+    [deviceId],
+  );
+
+  const currentIpv6 = currentIpv6Result.rows[0];
+  if (!currentIpv6) {
+    await client.query(
+      `
+        INSERT INTO device_ipv6_history (device_id, ipv6_address, registration_id, valid_from)
+        VALUES ($1, $2, $3, $4)
+      `,
+      [deviceId, observedIpv6, registrationId, validFrom],
+    );
+    return;
+  }
+
+  if (currentIpv6.ipv6_address === observedIpv6) {
+    if (registrationId !== null) {
+      await client.query(
+        `
+          UPDATE device_ipv6_history
+          SET registration_id = $2
+          WHERE id = $1
+        `,
+        [currentIpv6.id, registrationId],
+      );
+    }
+    return;
+  }
+
+  await client.query(
+    `
+      UPDATE device_ipv6_history
+      SET valid_to = $2
+      WHERE id = $1
+    `,
+    [currentIpv6.id, validFrom],
+  );
+
+  await client.query(
+    `
+      INSERT INTO device_ipv6_history (device_id, ipv6_address, registration_id, valid_from)
+      VALUES ($1, $2, $3, $4)
+    `,
+    [deviceId, observedIpv6, registrationId, validFrom],
+  );
+}
+
+async function insertParentObservationInDb(
+  client: PoolClient,
+  options: {
+    deviceId: number;
+    gatewayUplinkId: number;
+    observedParentIpv6: string | null;
+    observedAt: Date;
+    sourceType: "registration" | "parent_update";
+    metadata: Record<string, string | number | boolean | null>;
+  },
+) {
+  await client.query(
+    `
+      INSERT INTO device_parent_observations (
+        device_id,
+        gateway_uplink_id,
+        source_type,
+        observed_parent_ipv6,
+        observed_at,
+        raw_payload_metadata
+      )
+      VALUES ($1, $2, $3, $4, $5, $6::jsonb)
+    `,
+    [
+      options.deviceId,
+      options.gatewayUplinkId,
+      options.sourceType,
+      options.observedParentIpv6,
+      options.observedAt,
+      JSON.stringify(options.metadata),
+    ],
+  );
+}
+
+async function projectRegistrationUplinkInDb(
+  client: PoolClient,
+  gatewayUplinkId: number,
+  message: ParsedNodeUplinkEnvelope,
+  packet: ParsedRegistrationPacket,
+) {
+  const observedAt = epochSecondsToDate(message.receivedAtEpochSeconds);
+  const firmwareVersion = formatPackedVersion(packet.fwVersionPacked);
+
+  const deviceResult = await client.query<{ id: number }>(
+    `
+      INSERT INTO devices (
+        node_id,
+        current_ipv6,
+        current_parent_ipv6,
+        current_latitude,
+        current_longitude,
+        current_firmware_version,
+        first_registered_at,
+        last_registered_at,
+        last_seen_at,
+        latest_battery_pct
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $7, $7, $8)
+      ON CONFLICT (node_id)
+      DO UPDATE SET
+        current_ipv6 = EXCLUDED.current_ipv6,
+        current_parent_ipv6 = EXCLUDED.current_parent_ipv6,
+        current_latitude = EXCLUDED.current_latitude,
+        current_longitude = EXCLUDED.current_longitude,
+        current_firmware_version = EXCLUDED.current_firmware_version,
+        first_registered_at = LEAST(devices.first_registered_at, EXCLUDED.first_registered_at),
+        last_registered_at = GREATEST(devices.last_registered_at, EXCLUDED.last_registered_at),
+        last_seen_at = GREATEST(COALESCE(devices.last_seen_at, EXCLUDED.last_seen_at), EXCLUDED.last_seen_at),
+        latest_battery_pct = EXCLUDED.latest_battery_pct
+      RETURNING id
+    `,
+    [
+      packet.nodeId,
+      message.observedSrcIpv6,
+      packet.parentIpv6,
+      packet.latitude,
+      packet.longitude,
+      firmwareVersion,
+      observedAt,
+      packet.batteryPct,
+    ],
+  );
+
+  const deviceId = deviceResult.rows[0]?.id;
+  if (!deviceId) {
+    throw new Error(`Unable to upsert device for registration uplink ${message.uplinkId.toString()}`);
+  }
+
+  const insertedRegistration = await client.query<{ id: number }>(
+    `
+      INSERT INTO device_registrations (
+        device_id,
+        gateway_uplink_id,
+        observed_ipv6,
+        latitude,
+        longitude,
+        firmware_version,
+        battery_pct,
+        observed_at,
+        raw_payload_metadata
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)
+      RETURNING id
+    `,
+    [
+      deviceId,
+      gatewayUplinkId,
+      message.observedSrcIpv6,
+      packet.latitude,
+      packet.longitude,
+      firmwareVersion,
+      packet.batteryPct,
+      observedAt,
+      JSON.stringify(
+        buildGatewayProjectionMetadata(message, {
+          registrationParentIpv6: packet.parentIpv6,
+          firmwareVersionPacked: packet.fwVersionPacked,
+        }),
+      ),
+    ],
+  );
+
+  const registrationId = insertedRegistration.rows[0]?.id ?? null;
+  await syncDeviceIpv6HistoryInDb(client, deviceId, message.observedSrcIpv6, observedAt, registrationId);
+  await insertParentObservationInDb(client, {
+    deviceId,
+    gatewayUplinkId,
+    observedParentIpv6: packet.parentIpv6,
+    observedAt,
+    sourceType: "registration",
+    metadata: buildGatewayProjectionMetadata(message, {
+      registrationParentIpv6: packet.parentIpv6,
+    }),
+  });
+}
+
+async function projectSensorUplinkInDb(
+  client: PoolClient,
+  gatewayUplinkId: number,
+  message: ParsedNodeUplinkEnvelope,
+  packet: ParsedSensorPacket,
+) {
+  const deviceResult = await client.query<{
+    id: number;
+    current_config_revision_id: number | null;
+  }>(
+    `
+      SELECT id, current_config_revision_id
+      FROM devices
+      WHERE node_id = $1
+      FOR UPDATE
+    `,
+    [packet.nodeId],
+  );
+
+  const device = deviceResult.rows[0];
+  if (!device) {
+    throw new BackhaulCodecError(
+      "invalid_field_value",
+      `Cannot project sensor uplink for unknown node ${packet.nodeId}. Registration must arrive first.`,
+    );
+  }
+
+  const reportedAt = epochSecondsToDate(packet.timestampEpochSeconds);
+  const observedAt = epochSecondsToDate(message.receivedAtEpochSeconds);
+  const sourceType = packet.type === sensorAlertPacketType ? "critical_alert" : "periodic_report";
+
+  const insertedReading = await client.query<{ id: number }>(
+    `
+      INSERT INTO sensor_readings (
+        device_id,
+        gateway_uplink_id,
+        source_type,
+        reported_at,
+        risk_level,
+        temperature_c,
+        humidity_pct,
+        voc_iaq,
+        pm25_ug_m3,
+        battery_pct,
+        config_revision_id,
+        raw_payload_metadata
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb)
+      RETURNING id
+    `,
+    [
+      device.id,
+      gatewayUplinkId,
+      sourceType,
+      reportedAt,
+      packet.riskLevel,
+      packet.temperatureC,
+      packet.humidityPct,
+      packet.bvocPpmRaw,
+      packet.pm25UgM3,
+      packet.batteryPct,
+      device.current_config_revision_id,
+      JSON.stringify(
+        buildGatewayProjectionMetadata(message, {
+          nodeReportedAt: reportedAt.toISOString(),
+          bvocPpmRaw: packet.bvocPpmRaw,
+          temperatureRaw: packet.temperatureRaw,
+          humidityRaw: packet.humidityRaw,
+          pm25Raw: packet.pm25Raw,
+        }),
+      ),
+    ],
+  );
+
+  const sensorReadingId = insertedReading.rows[0]?.id;
+  if (!sensorReadingId) {
+    throw new Error(`Unable to persist sensor reading for uplink ${message.uplinkId.toString()}`);
+  }
+
+  await client.query(
+    `
+      UPDATE devices
+      SET
+        current_ipv6 = $2,
+        last_seen_at = GREATEST(COALESCE(devices.last_seen_at, $3), $3),
+        latest_reported_at = CASE
+          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $4 THEN $4
+          ELSE devices.latest_reported_at
+        END,
+        latest_risk_level = CASE
+          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $4 THEN $5
+          ELSE devices.latest_risk_level
+        END,
+        latest_temperature_c = CASE
+          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $4 THEN $6
+          ELSE devices.latest_temperature_c
+        END,
+        latest_humidity_pct = CASE
+          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $4 THEN $7
+          ELSE devices.latest_humidity_pct
+        END,
+        latest_voc_iaq = CASE
+          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $4 THEN $8
+          ELSE devices.latest_voc_iaq
+        END,
+        latest_pm25_ug_m3 = CASE
+          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $4 THEN $9
+          ELSE devices.latest_pm25_ug_m3
+        END,
+        latest_battery_pct = CASE
+          WHEN devices.latest_reported_at IS NULL OR devices.latest_reported_at <= $4 THEN $10
+          ELSE devices.latest_battery_pct
+        END
+      WHERE id = $1
+    `,
+    [
+      device.id,
+      message.observedSrcIpv6,
+      observedAt,
+      reportedAt,
+      packet.riskLevel,
+      packet.temperatureC,
+      packet.humidityPct,
+      packet.bvocPpmRaw,
+      packet.pm25UgM3,
+      packet.batteryPct,
+    ],
+  );
+
+  await syncDeviceIpv6HistoryInDb(client, device.id, message.observedSrcIpv6, observedAt);
+
+  if (packet.type === sensorAlertPacketType) {
+    const alertDetails = buildGatewayProjectionMetadata(message, {
+      alertSource: "0x03",
+      bvocPpmRaw: packet.bvocPpmRaw,
+    });
+
+    const insertedAlert = await client.query<{ id: number }>(
+      `
+        INSERT INTO alerts (
+          device_id,
+          sensor_reading_id,
+          config_revision_id,
+          alert_type,
+          status,
+          severity,
+          title,
+          details,
+          occurred_at,
+          detected_at,
+          latest_event_at,
+          snapshot_reported_at,
+          snapshot_risk_level,
+          snapshot_temperature_c,
+          snapshot_humidity_pct,
+          snapshot_voc_iaq,
+          snapshot_pm25_ug_m3,
+          snapshot_battery_pct
+        )
+        VALUES ($1, $2, $3, 'critical_risk', 'open', 'critical', $4, $5::jsonb, $6, NOW(), NOW(), $6, $7, $8, $9, $10, $11, $12)
+        RETURNING id
+      `,
+      [
+        device.id,
+        sensorReadingId,
+        device.current_config_revision_id,
+        `Node ${packet.nodeId} critical alert`,
+        JSON.stringify(alertDetails),
+        reportedAt,
+        packet.riskLevel,
+        packet.temperatureC,
+        packet.humidityPct,
+        packet.bvocPpmRaw,
+        packet.pm25UgM3,
+        packet.batteryPct,
+      ],
+    );
+
+    const alertId = insertedAlert.rows[0]?.id;
+    if (alertId) {
+      await client.query(
+        `
+          INSERT INTO alert_events (
+            alert_id,
+            event_type,
+            new_status,
+            event_at,
+            note,
+            details
+          )
+          VALUES ($1, 'opened', 'open', NOW(), $2, $3::jsonb)
+        `,
+        [alertId, "Critical-risk alert projected from uplink 0x03.", JSON.stringify(alertDetails)],
+      );
+    }
+  }
+}
+
+async function projectParentUpdateUplinkInDb(
+  client: PoolClient,
+  gatewayUplinkId: number,
+  message: ParsedNodeUplinkEnvelope,
+  packet: ParsedParentUpdatePacket,
+) {
+  const deviceResult = await client.query<{ id: number }>(
+    `
+      SELECT id
+      FROM devices
+      WHERE node_id = $1
+      FOR UPDATE
+    `,
+    [packet.nodeId],
+  );
+
+  const device = deviceResult.rows[0];
+  if (!device) {
+    throw new BackhaulCodecError(
+      "invalid_field_value",
+      `Cannot project parent-update uplink for unknown node ${packet.nodeId}. Registration must arrive first.`,
+    );
+  }
+
+  const observedAt = epochSecondsToDate(message.receivedAtEpochSeconds);
+  const parentObservedAt = epochSecondsToDate(packet.timestampEpochSeconds);
+
+  await client.query(
+    `
+      UPDATE devices
+      SET
+        current_ipv6 = $2,
+        current_parent_ipv6 = $3,
+        last_seen_at = GREATEST(COALESCE(devices.last_seen_at, $4), $4)
+      WHERE id = $1
+    `,
+    [device.id, message.observedSrcIpv6, packet.parentIpv6, observedAt],
+  );
+
+  await syncDeviceIpv6HistoryInDb(client, device.id, message.observedSrcIpv6, observedAt);
+  await insertParentObservationInDb(client, {
+    deviceId: device.id,
+    gatewayUplinkId,
+    observedParentIpv6: packet.parentIpv6,
+    observedAt: parentObservedAt,
+    sourceType: "parent_update",
+    metadata: buildGatewayProjectionMetadata(message, {
+      parentObservedAt: parentObservedAt.toISOString(),
+    }),
+  });
+}
+
+async function projectGatewayUplinkInDb(
+  client: PoolClient,
+  gatewayUplinkId: number,
+  message: ParsedNodeUplinkEnvelope,
+) {
+  switch (message.decodedPayload.type) {
+    case registrationPacketType:
+      await projectRegistrationUplinkInDb(client, gatewayUplinkId, message, message.decodedPayload);
+      return;
+    case sensorReportPacketType:
+    case sensorAlertPacketType:
+      await projectSensorUplinkInDb(client, gatewayUplinkId, message, message.decodedPayload);
+      return;
+    case parentUpdatePacketType:
+      await projectParentUpdateUplinkInDb(client, gatewayUplinkId, message, message.decodedPayload);
+      return;
+    default:
+      throw new Error(`Unsupported projected packet type ${(message.decodedPayload as { type: number }).type}`);
+  }
+}
+
+async function persistGatewayRegistrationInDb(
+  message: ReturnType<typeof parseGatewayRegistrationMessage>,
+  requestMetadata: Record<string, string | number | boolean | null>,
+) {
+  if (!pool) {
+    throw new Error("Database is not configured.");
+  }
+
+  const reportedAt = epochSecondsToDate(message.timestampEpochSeconds);
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const gatewayResult = await client.query<{ id: number }>(
+      `
+        INSERT INTO gateways (
+          gateway_id,
+          current_latitude,
+          current_longitude,
+          current_sw_version_packed,
+          first_registered_at,
+          last_registered_at,
+          last_gateway_timestamp_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $5, $5)
+        ON CONFLICT (gateway_id)
+        DO UPDATE SET
+          current_latitude = CASE
+            WHEN gateways.last_gateway_timestamp_at IS NULL OR EXCLUDED.last_gateway_timestamp_at >= gateways.last_gateway_timestamp_at
+              THEN EXCLUDED.current_latitude
+            ELSE gateways.current_latitude
+          END,
+          current_longitude = CASE
+            WHEN gateways.last_gateway_timestamp_at IS NULL OR EXCLUDED.last_gateway_timestamp_at >= gateways.last_gateway_timestamp_at
+              THEN EXCLUDED.current_longitude
+            ELSE gateways.current_longitude
+          END,
+          current_sw_version_packed = CASE
+            WHEN gateways.last_gateway_timestamp_at IS NULL OR EXCLUDED.last_gateway_timestamp_at >= gateways.last_gateway_timestamp_at
+              THEN EXCLUDED.current_sw_version_packed
+            ELSE gateways.current_sw_version_packed
+          END,
+          first_registered_at = CASE
+            WHEN gateways.first_registered_at IS NULL THEN EXCLUDED.first_registered_at
+            ELSE LEAST(gateways.first_registered_at, EXCLUDED.first_registered_at)
+          END,
+          last_registered_at = CASE
+            WHEN gateways.last_registered_at IS NULL THEN EXCLUDED.last_registered_at
+            ELSE GREATEST(gateways.last_registered_at, EXCLUDED.last_registered_at)
+          END,
+          last_gateway_timestamp_at = GREATEST(
+            COALESCE(gateways.last_gateway_timestamp_at, EXCLUDED.last_gateway_timestamp_at),
+            EXCLUDED.last_gateway_timestamp_at
+          )
+        RETURNING id
+      `,
+      [
+        message.gatewayId,
+        message.latitude,
+        message.longitude,
+        message.swVersionPacked,
+        reportedAt,
+      ],
+    );
+
+    const gatewayRowId = gatewayResult.rows[0]?.id;
+    if (!gatewayRowId) {
+      throw new Error(`Unable to persist gateway ${message.gatewayId}`);
+    }
+
+    await client.query(
+      `
+        INSERT INTO gateway_registrations (
+          gateway_row_id,
+          reported_at,
+          latitude,
+          longitude,
+          sw_version_packed,
+          backhaul_version,
+          raw_message,
+          raw_payload_metadata
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
+      `,
+      [
+        gatewayRowId,
+        reportedAt,
+        message.latitude,
+        message.longitude,
+        message.swVersionPacked,
+        message.version,
+        message.rawMessage,
+        JSON.stringify(requestMetadata),
+      ],
+    );
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function ensureGatewayRowForUplink(
+  client: PoolClient,
+  gatewayId: number,
+) {
+  const gatewayResult = await client.query<{ id: number }>(
+    `
+      INSERT INTO gateways (gateway_id)
+      VALUES ($1)
+      ON CONFLICT (gateway_id)
+      DO UPDATE SET gateway_id = EXCLUDED.gateway_id
+      RETURNING id
+    `,
+    [gatewayId],
+  );
+
+  const gatewayRowId = gatewayResult.rows[0]?.id;
+  if (!gatewayRowId) {
+    throw new Error(`Unable to ensure gateway row for gateway ${gatewayId}`);
+  }
+
+  return gatewayRowId;
+}
+
+type PersistedUplinkReceipt = {
+  receiptBuffer: Buffer;
+  isDuplicate: boolean;
+  receiptStatus: "durable_ingest" | "permanent_reject";
+  rejectCode: StableRejectCode | null;
+};
+
+function createPermanentRejectReceiptBuffer(gatewayId: number, uplinkId: bigint, version: number) {
+  return encodeUplinkReceipt({
+    gatewayId,
+    uplinkId,
+    status: permanentRejectReceiptStatus,
+    version,
+  });
+}
+
+function normalizeRejectCode(error: BackhaulCodecError): StableRejectCode {
+  return error.code;
+}
+
+async function createStoredPermanentRejectInDb(
+  client: PoolClient,
+  options: {
+    gatewayUplinkId: number;
+    gatewayId: number;
+    uplinkId: bigint;
+    version: number;
+    rejectCode: StableRejectCode;
+    rejectDetail: string;
+    reason: "parse_or_validation_failure";
+  },
+) {
+  const receiptBuffer = createPermanentRejectReceiptBuffer(options.gatewayId, options.uplinkId, options.version);
+
+  await client.query(
+    `
+      UPDATE gateway_uplinks
+      SET
+        storage_status = 'rejected',
+        metadata = gateway_uplinks.metadata || $2::jsonb
+      WHERE id = $1
+    `,
+    [
+      options.gatewayUplinkId,
+      JSON.stringify({
+        terminalRejectCode: options.rejectCode,
+        terminalRejectReason: options.reason,
+      }),
+    ],
+  );
+
+  const receiptInsert = await client.query<{ id: number }>(
+    `
+      INSERT INTO gateway_uplink_receipts (
+        gateway_uplink_id,
+        status,
+        receipt_version,
+        receipt_payload,
+        reject_code,
+        reject_detail,
+        metadata
+      )
+      VALUES ($1, 'permanent_reject', $2, $3, $4, $5, $6::jsonb)
+      RETURNING id
+    `,
+    [
+      options.gatewayUplinkId,
+      options.version,
+      receiptBuffer,
+      options.rejectCode,
+      options.rejectDetail,
+      JSON.stringify({
+        reason: options.reason,
+        rejectCode: options.rejectCode,
+      }),
+    ],
+  );
+
+  await client.query(
+    `
+      INSERT INTO gateway_uplink_dead_letters (
+        gateway_uplink_id,
+        gateway_uplink_receipt_id,
+        reason_code,
+        reason_detail,
+        metadata
+      )
+      VALUES ($1, $2, $3, $4, $5::jsonb)
+    `,
+    [
+      options.gatewayUplinkId,
+      receiptInsert.rows[0]?.id ?? null,
+      options.rejectCode,
+      options.rejectDetail,
+      JSON.stringify({
+        origin: "api_v1_uplinks",
+        reason: options.reason,
+      }),
+    ],
+  );
+
+  return receiptBuffer;
+}
+
+async function persistGatewayUplinkInDb(
+  message: ReturnType<typeof parseNodeUplinkEnvelopeMessage>,
+  requestMetadata: Record<string, string | number | boolean | null>,
+): Promise<PersistedUplinkReceipt> {
+  if (!pool) {
+    throw new Error("Database is not configured.");
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const gatewayRowId = await ensureGatewayRowForUplink(client, message.gatewayId);
+    const uplinkIdText = message.uplinkId.toString();
+
+    const existingReceiptResult = await client.query<{
+      receipt_payload: Buffer | null;
+      status: "durable_ingest" | "permanent_reject";
+      reject_code: StableRejectCode | null;
+    }>(
+      `
+        SELECT receipt.receipt_payload, receipt.status, receipt.reject_code
+        FROM gateway_uplinks uplink
+        JOIN gateway_uplink_receipts receipt ON receipt.gateway_uplink_id = uplink.id
+        WHERE uplink.gateway_row_id = $1
+          AND uplink.uplink_id = $2::numeric(20,0)
+        FOR UPDATE
+      `,
+      [gatewayRowId, uplinkIdText],
+    );
+
+    const existingReceipt = existingReceiptResult.rows[0];
+    if (existingReceipt?.receipt_payload) {
+      await client.query(
+        `
+          UPDATE gateway_uplinks
+          SET
+            last_csp_received_at = NOW(),
+            delivery_attempt_count = delivery_attempt_count + 1,
+            metadata = gateway_uplinks.metadata || $3::jsonb
+          WHERE gateway_row_id = $1
+            AND uplink_id = $2::numeric(20,0)
+        `,
+        [
+          gatewayRowId,
+          uplinkIdText,
+          JSON.stringify({
+            lastDuplicateHttpContentLength: requestMetadata.httpContentLength ?? null,
+            lastDuplicateRemoteAddress: requestMetadata.remoteAddress ?? null,
+          }),
+        ],
+      );
+
+      await client.query("COMMIT");
+      return {
+        receiptBuffer: existingReceipt.receipt_payload,
+        isDuplicate: true,
+        receiptStatus: existingReceipt.status,
+        rejectCode: existingReceipt.reject_code,
+      };
+    }
+
+    const insertedUplink = await client.query<{ id: number }>(
+      `
+        INSERT INTO gateway_uplinks (
+          gateway_row_id,
+          uplink_id,
+          received_at,
+          observed_src_ipv6,
+          backhaul_version,
+          payload_len,
+          payload_type,
+          payload_version,
+          payload,
+          raw_envelope,
+          storage_status,
+          metadata
+        )
+        VALUES ($1, $2::numeric(20,0), $3, $4, $5, $6, $7, $8, $9, $10, 'received', $11::jsonb)
+        RETURNING id
+      `,
+      [
+        gatewayRowId,
+        uplinkIdText,
+        epochSecondsToDate(message.receivedAtEpochSeconds),
+        message.observedSrcIpv6,
+        message.version,
+        message.payloadLength,
+        message.decodedPayload.type,
+        message.decodedPayload.version,
+        message.payload,
+        message.rawEnvelope,
+        JSON.stringify(requestMetadata),
+      ],
+    );
+
+    const gatewayUplinkId = insertedUplink.rows[0]?.id;
+    if (!gatewayUplinkId) {
+      throw new Error(`Unable to persist uplink ${uplinkIdText} for gateway ${message.gatewayId}`);
+    }
+
+    await projectGatewayUplinkInDb(client, gatewayUplinkId, message);
+    await client.query(
+      `
+        UPDATE gateway_uplinks
+        SET
+          storage_status = 'projected',
+          metadata = gateway_uplinks.metadata || $2::jsonb
+        WHERE id = $1
+      `,
+      [
+        gatewayUplinkId,
+        JSON.stringify({
+          projectedAt: new Date().toISOString(),
+        }),
+      ],
+    );
+
+    const receiptBuffer = encodeUplinkReceipt({
+      gatewayId: message.gatewayId,
+      uplinkId: message.uplinkId,
+      status: durableIngestReceiptStatus,
+    });
+
+    await client.query(
+      `
+        INSERT INTO gateway_uplink_receipts (
+          gateway_uplink_id,
+          status,
+          receipt_version,
+          receipt_payload,
+          metadata
+        )
+        VALUES ($1, 'durable_ingest', $2, $3, $4::jsonb)
+      `,
+      [
+        gatewayUplinkId,
+        message.version,
+        receiptBuffer,
+        JSON.stringify({
+          reason: "raw_envelope_projected",
+        }),
+      ],
+    );
+
+    await client.query("COMMIT");
+    return {
+      receiptBuffer,
+      isDuplicate: false,
+      receiptStatus: "durable_ingest",
+      rejectCode: null,
+    };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function persistPermanentRejectUplinkInDb(
+  rawEnvelope: Buffer,
+  codecError: BackhaulCodecError,
+  requestMetadata: Record<string, string | number | boolean | null>,
+) {
+  if (!pool) {
+    throw new Error("Database is not configured.");
+  }
+
+  const type = rawEnvelope.length >= 1 ? rawEnvelope.readUInt8(0) : null;
+  const version = rawEnvelope.length >= 2 ? rawEnvelope.readUInt8(1) : null;
+  const gatewayId = rawEnvelope.length >= 4 ? rawEnvelope.readUInt16LE(2) : null;
+  const uplinkId = rawEnvelope.length >= 12 ? rawEnvelope.readBigUInt64LE(4) : null;
+  const rejectCode = normalizeRejectCode(codecError);
+  const receiptGatewayId = gatewayId ?? 0;
+  const receiptUplinkId = uplinkId ?? 0n;
+  const receiptBuffer = createPermanentRejectReceiptBuffer(receiptGatewayId, receiptUplinkId, version ?? 1);
+
+  if (gatewayId === null || uplinkId === null) {
+    return {
+      receiptBuffer,
+      isDuplicate: false,
+      receiptStatus: "permanent_reject" as const,
+      rejectCode,
+    };
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const gatewayRowId = await ensureGatewayRowForUplink(client, gatewayId);
+    const uplinkIdText = uplinkId.toString();
+
+    const existingReceiptResult = await client.query<{
+      receipt_payload: Buffer | null;
+      status: "durable_ingest" | "permanent_reject";
+      reject_code: StableRejectCode | null;
+    }>(
+      `
+        SELECT receipt.receipt_payload, receipt.status, receipt.reject_code
+        FROM gateway_uplinks uplink
+        JOIN gateway_uplink_receipts receipt ON receipt.gateway_uplink_id = uplink.id
+        WHERE uplink.gateway_row_id = $1
+          AND uplink.uplink_id = $2::numeric(20,0)
+        FOR UPDATE
+      `,
+      [gatewayRowId, uplinkIdText],
+    );
+
+    const existingReceipt = existingReceiptResult.rows[0];
+    if (existingReceipt?.receipt_payload) {
+      await client.query(
+        `
+          UPDATE gateway_uplinks
+          SET
+            last_csp_received_at = NOW(),
+            delivery_attempt_count = delivery_attempt_count + 1
+          WHERE gateway_row_id = $1
+            AND uplink_id = $2::numeric(20,0)
+        `,
+        [gatewayRowId, uplinkIdText],
+      );
+
+      await client.query("COMMIT");
+      return {
+        receiptBuffer: existingReceipt.receipt_payload,
+        isDuplicate: true,
+        receiptStatus: existingReceipt.status,
+        rejectCode: existingReceipt.reject_code,
+      };
+    }
+
+    const insertedUplink = await client.query<{ id: number }>(
+      `
+        INSERT INTO gateway_uplinks (
+          gateway_row_id,
+          uplink_id,
+          backhaul_version,
+          payload_len,
+          raw_envelope,
+          storage_status,
+          metadata
+        )
+        VALUES ($1, $2::numeric(20,0), $3, $4, $5, 'rejected', $6::jsonb)
+        RETURNING id
+      `,
+      [
+        gatewayRowId,
+        uplinkIdText,
+        version ?? 1,
+        Math.max(rawEnvelope.length - 34, 0),
+        rawEnvelope,
+        JSON.stringify({
+          ...requestMetadata,
+          parseFailureCode: rejectCode,
+          parseFailureMessage: codecError.message,
+        }),
+      ],
+    );
+
+    const gatewayUplinkId = insertedUplink.rows[0]?.id;
+    if (!gatewayUplinkId) {
+      throw new Error(`Unable to persist rejected uplink ${uplinkIdText} for gateway ${gatewayId}`);
+    }
+
+    await createStoredPermanentRejectInDb(client, {
+      gatewayUplinkId,
+      gatewayId,
+      uplinkId,
+      version: version ?? 1,
+      rejectCode,
+      rejectDetail: codecError.message,
+      reason: "parse_or_validation_failure",
+    });
+
+    await client.query("COMMIT");
+    return {
+      receiptBuffer,
+      isDuplicate: false,
+      receiptStatus: "permanent_reject" as const,
+      rejectCode,
+    };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 async function queryNodesFromDb(): Promise<NodeSummary[]> {
@@ -260,7 +1314,7 @@ async function queryDownlinksFromDb(): Promise<DashboardResponse["downlinks"]> {
         'Neighbor table distribution' AS command_name,
         d.node_id,
         d.node_id AS node_name,
-        nde.status,
+        nde.status::text AS status,
         nde.sent_at::text,
         nde.acknowledged_at::text,
         nn.revision_no,
@@ -275,7 +1329,7 @@ async function queryDownlinksFromDb(): Promise<DashboardResponse["downlinks"]> {
         'Daily time synchronization' AS command_name,
         d.node_id,
         d.node_id AS node_name,
-        tse.status,
+        tse.status::text AS status,
         tse.sent_at::text,
         tse.acknowledged_at::text,
         NULL AS revision_no,
@@ -289,7 +1343,7 @@ async function queryDownlinksFromDb(): Promise<DashboardResponse["downlinks"]> {
         'Threshold revision deployment' AS command_name,
         d.node_id,
         d.node_id AS node_name,
-        dcd.status,
+        dcd.status::text AS status,
         dcd.sent_at::text,
         dcd.acknowledged_at::text,
         cr.config_id AS revision_no,
@@ -313,6 +1367,42 @@ async function queryDownlinksFromDb(): Promise<DashboardResponse["downlinks"]> {
     acknowledgedAt: row.acknowledged_at,
     revisionNo: row.revision_no,
     summary: row.summary,
+  }));
+}
+
+async function queryGatewaysFromDb(): Promise<GatewayMarker[]> {
+  const result = await query<{
+    gateway_id: number;
+    current_latitude: string;
+    current_longitude: string;
+    current_sw_version_packed: number | null;
+    last_registered_at: string | null;
+  }>(
+    `
+      SELECT
+        gateway_id,
+        current_latitude::text,
+        current_longitude::text,
+        current_sw_version_packed,
+        last_registered_at::text
+      FROM gateways
+      WHERE current_latitude IS NOT NULL
+        AND current_longitude IS NOT NULL
+      ORDER BY gateway_id
+    `,
+  );
+
+  return result.rows.map((row: (typeof result.rows)[number]) => ({
+    id: `gateway-${row.gateway_id}`,
+    gatewayId: row.gateway_id,
+    location: {
+      lat: Number(row.current_latitude),
+      lng: Number(row.current_longitude),
+      label: formatCoordinatePair(Number(row.current_latitude), Number(row.current_longitude)),
+    },
+    lastRegisteredAt: row.last_registered_at,
+    softwareVersion:
+      row.current_sw_version_packed === null ? null : formatPackedVersion(row.current_sw_version_packed),
   }));
 }
 
@@ -473,10 +1563,11 @@ async function queryAlertsFromDb(nodes?: NodeSummary[]): Promise<AlertIncident[]
 
 async function getDashboardFromDb(): Promise<DashboardResponse> {
   const fleet = await queryNodesFromDb();
-  const [alertQueue, downlinks, recentPackets] = await Promise.all([
+  const [alertQueue, downlinks, recentPackets, gateways] = await Promise.all([
     queryAlertsFromDb(fleet),
     queryDownlinksFromDb(),
     getPacketHistoryFromDb({ limit: 5 }).then((response) => response.entries),
+    queryGatewaysFromDb(),
   ]);
   const neighborLinksResult = await query<{
     owner_node_id: number;
@@ -535,6 +1626,7 @@ async function getDashboardFromDb(): Promise<DashboardResponse> {
       pendingDownlinks: downlinks.filter((downlink) => downlink.status === "pending" || downlink.status === "sent").length,
     },
     fleet,
+    gateways,
     neighborLinks,
     alertQueue,
     downlinks,
@@ -549,7 +1641,7 @@ async function getNodeDetailFromDb(nodeId: NodeId): Promise<NodeDetail> {
     throw new Error(`Unknown node ${nodeId}`);
   }
 
-  const [neighborResult, readingsResult, timelineResult, ipv6Result, registrationResult] = await Promise.all([
+  const [neighborResult, readingsResult, timelineResult, ipv6Result, registrationResult, parentResult, currentParentResult] = await Promise.all([
     query<{
       revision_id: number;
       revision_no: number;
@@ -690,6 +1782,39 @@ async function getNodeDetailFromDb(nodeId: NodeId): Promise<NodeDetail> {
       `,
       [nodeId],
     ),
+    query<{
+      observed_at: string;
+      observed_parent_ipv6: string | null;
+      source_type: NodeDetail["parentObservations"][number]["sourceType"];
+    }>(
+      `
+        SELECT
+          observed_at::text,
+          CASE
+            WHEN observed_parent_ipv6 IS NULL THEN NULL
+            ELSE host(observed_parent_ipv6)
+          END AS observed_parent_ipv6,
+          source_type
+        FROM device_parent_observations observations
+        JOIN devices d ON d.id = observations.device_id
+        WHERE d.node_id = $1
+        ORDER BY observed_at DESC
+        LIMIT 20
+      `,
+      [nodeId],
+    ),
+    query<{ current_parent_ipv6: string | null }>(
+      `
+        SELECT
+          CASE
+            WHEN current_parent_ipv6 IS NULL THEN NULL
+            ELSE host(current_parent_ipv6)
+          END AS current_parent_ipv6
+        FROM devices
+        WHERE node_id = $1
+      `,
+      [nodeId],
+    ),
   ]);
 
   const neighborRows = neighborResult.rows.filter((row: (typeof neighborResult.rows)[number]) => row.neighbor_node_id);
@@ -759,6 +1884,7 @@ async function getNodeDetailFromDb(nodeId: NodeId): Promise<NodeDetail> {
 
   return {
     node,
+    currentParentIpv6: currentParentResult.rows[0]?.current_parent_ipv6 ?? null,
     currentNeighborRevision,
     recentReadings,
     alertTimeline,
@@ -774,6 +1900,11 @@ async function getNodeDetailFromDb(nodeId: NodeId): Promise<NodeDetail> {
       longitude: Number(row.longitude),
       firmwareVersion: row.firmware_version,
       batteryPct: row.battery_pct,
+    })),
+    parentObservations: parentResult.rows.map((row: (typeof parentResult.rows)[number]) => ({
+      observedAt: row.observed_at,
+      parentIpv6: row.observed_parent_ipv6,
+      sourceType: row.source_type,
     })),
   };
 }
@@ -945,7 +2076,7 @@ function buildSensorReadingDetail(row: {
     `Risk ${row.risk_level}`,
     `${Number(row.temperature_c).toFixed(1)}°C`,
     `${Number(row.humidity_pct).toFixed(0)}% RH`,
-    `VOC ${row.voc_iaq}`,
+    `VOC ${row.voc_iaq} ppm`,
     `PM2.5 ${Number(row.pm25_ug_m3).toFixed(1)}`,
   ].join(" · ");
 }
@@ -1020,11 +2151,38 @@ async function getPacketHistoryFromDb(options: PacketHistoryQuery = {}): Promise
           concat('Risk ', sr.risk_level),
           concat(sr.temperature_c::text, '°C'),
           concat(sr.humidity_pct::text, '% RH'),
-          concat('VOC ', sr.voc_iaq),
+          concat('VOC ', sr.voc_iaq, ' ppm'),
           concat('PM2.5 ', sr.pm25_ug_m3::text)
         ) AS detail
       FROM sensor_readings sr
       JOIN devices d ON d.id = sr.device_id
+
+      UNION ALL
+
+      SELECT
+        concat('parent-', observations.id) AS id,
+        observations.observed_at::text AS occurred_at,
+        d.node_id,
+        d.node_id::text AS node_name,
+        'uplink'::text AS direction,
+        '0x08'::text AS packet_code,
+        'parent_update'::text AS event_type,
+        'received'::text AS status,
+        concat('Parent update received from node ', d.node_id, '.') AS summary,
+        concat_ws(
+          ' · ',
+          CASE
+            WHEN observations.observed_parent_ipv6 IS NULL THEN 'Preferred parent cleared'
+            ELSE concat('Parent ', host(observations.observed_parent_ipv6))
+          END,
+          CASE
+            WHEN observations.source_type = 'registration' THEN 'Observed during registration'
+            ELSE 'Observed during parent update'
+          END
+        ) AS detail
+      FROM device_parent_observations observations
+      JOIN devices d ON d.id = observations.device_id
+      WHERE observations.source_type = 'parent_update'
 
       UNION ALL
 
@@ -1740,6 +2898,90 @@ app.get("/api/health", async (_request, response) => {
   });
 });
 
+app.post("/api/v1/gateways/register", octetStreamBody, async (request, response, next) => {
+  try {
+    if (!pool) {
+      response.status(503).json({ message: "Database is not configured." });
+      return;
+    }
+
+    if (!request.is("application/octet-stream")) {
+      response.status(415).json({ message: "Content-Type must be application/octet-stream." });
+      return;
+    }
+
+    const body = request.body;
+    if (!Buffer.isBuffer(body) || body.length === 0) {
+      response.status(400).json({ message: "Request body must contain one binary 0x81 gateway registration message." });
+      return;
+    }
+
+    const message = parseGatewayRegistrationMessage(body);
+    await persistGatewayRegistrationInDb(message, {
+      httpContentType: request.get("content-type") ?? null,
+      httpContentLength: body.length,
+      remoteAddress: request.ip || null,
+    });
+
+    response.status(204).end();
+  } catch (error) {
+    if (error instanceof BackhaulCodecError) {
+      response.status(400).json({ message: error.message, code: error.code });
+      return;
+    }
+    next(error);
+  }
+});
+
+app.post("/api/v1/uplinks", octetStreamBody, async (request, response, next) => {
+  try {
+    if (!pool) {
+      response.status(503).json({ message: "Database is not configured." });
+      return;
+    }
+
+    if (!request.is("application/octet-stream")) {
+      response.status(415).json({ message: "Content-Type must be application/octet-stream." });
+      return;
+    }
+
+    const body = request.body;
+    if (!Buffer.isBuffer(body) || body.length === 0) {
+      response.status(400).json({ message: "Request body must contain one binary 0x82 node uplink envelope." });
+      return;
+    }
+
+    const requestMetadata = {
+      httpContentType: request.get("content-type") ?? null,
+      httpContentLength: body.length,
+      remoteAddress: request.ip || null,
+    };
+
+    let receipt: PersistedUplinkReceipt;
+
+    try {
+      const message = parseNodeUplinkEnvelopeMessage(body);
+      receipt = await persistGatewayUplinkInDb(message, requestMetadata);
+    } catch (error) {
+      if (error instanceof BackhaulCodecError) {
+        receipt = await persistPermanentRejectUplinkInDb(body, error, requestMetadata);
+      } else {
+        throw error;
+      }
+    }
+
+    response
+      .status(200)
+      .type("application/octet-stream")
+      .set("X-PyroNet-Receipt-Status", receipt.receiptStatus)
+      .set("X-PyroNet-Receipt-Duplicate", String(receipt.isDuplicate))
+      .set("X-PyroNet-Reject-Code", receipt.rejectCode ?? "")
+      .send(receipt.receiptBuffer);
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.get("/api/dashboard", async (_request, response, next) => {
   try {
     response.json(await withSource(getDashboardFromDb, getMockDashboard));
@@ -1948,7 +3190,7 @@ app.put("/api/notifications/recipients/:recipientId", async (request, response, 
 });
 
 app.use((error: unknown, _request: express.Request, response: express.Response, _next: express.NextFunction) => {
-  const message = error instanceof Error ? error.message : "Unexpected server error";
+  const message = normalizePgError(error);
   response.status(500).json({ message });
 });
 

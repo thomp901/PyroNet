@@ -38,12 +38,12 @@ npm run build
 
 ```text
 server/             Express API with PostgreSQL queries and mock fallback
+server/mocks/       Server-only in-memory dataset used for local fallback
 src/api/            Typed frontend API clients and shared domain interfaces
 src/app/            App entry and router setup
 src/components/     Shared UI building blocks and layout
 src/features/       Map rendering and feature-specific helpers
 src/lib/            Runtime config, HTTP helper, formatters, async hooks
-src/mocks/          Shared in-memory backend used when no database is configured
 src/pages/          Routed operations pages
 src/styles/         Global ops-console styling
 schema.sql          PostgreSQL schema used by the API layer
@@ -63,10 +63,10 @@ schema.sql          PostgreSQL schema used by the API layer
 - `VITE_API_BASE_URL=/api` keeps the frontend pointed at the local API proxy by default.
 - `API_PORT=4000` controls the API server port.
 - `DATABASE_URL=postgres://...` enables live PostgreSQL reads and writes.
-- `VITE_USE_MOCK_API=true` forces the frontend to use the shared mock backend without hitting HTTP.
 
 ## Architecture notes
 
 - The frontend never talks to PostgreSQL directly.
 - The server exposes a stable resource layer for nodes, history, alerts, configuration, and notifications.
-- The mock backend and PostgreSQL-backed API return the same response shapes, so the UI can develop safely without coupling to raw SQL.
+- The frontend API clients always use HTTP and surface real request failures to the page-level error states.
+- The server-only mock backend and PostgreSQL-backed API return the same response shapes, so the UI can develop safely without coupling to raw SQL.

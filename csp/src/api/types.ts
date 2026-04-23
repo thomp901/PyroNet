@@ -5,6 +5,7 @@ export type AlertStatus = "open" | "acknowledged" | "cleared" | "derived";
 export type AlertIncidentType = "critical_alert" | "battery_health_low" | "offline";
 export type DownlinkStatus = "pending" | "sent" | "acknowledged" | "failed" | "timed_out";
 export type NeighborRevisionSource = "automatic" | "manual" | "imported";
+export type ParentObservationSource = "registration" | "parent_update";
 export type NotificationEventType =
   | "critical_risk"
   | "connectivity_loss"
@@ -13,17 +14,18 @@ export type NotificationEventType =
   | "time_sync_failure"
   | "nn_update_failure"
   | "config_update_failure";
-export type DeviceEventCode = "0x01" | "0x02" | "0x03" | "0x04" | "0x05" | "0x06" | "0x07";
+export type DeviceEventCode = "0x01" | "0x02" | "0x03" | "0x04" | "0x05" | "0x06" | "0x07" | "0x08";
 export type HistoryWindow = "24h" | "7d" | "30d";
 export type NodeId = number;
 export const packetDirections = ["uplink", "downlink"] as const;
 export type PacketDirection = (typeof packetDirections)[number];
-export const packetLogCodes = ["0x01", "0x02", "0x03", "0x04", "0x05", "0x06"] as const;
+export const packetLogCodes = ["0x01", "0x02", "0x03", "0x04", "0x05", "0x06", "0x08"] as const;
 export type PacketLogCode = (typeof packetLogCodes)[number];
 export const packetEventTypes = [
   "registration",
   "periodic_report",
   "critical_alert",
+  "parent_update",
   "neighbor_distribution",
   "time_sync",
   "config_deployment",
@@ -98,6 +100,14 @@ export interface MeshLink {
   points: [Coordinate, Coordinate];
 }
 
+export interface GatewayMarker {
+  id: string;
+  gatewayId: number;
+  location: Coordinate;
+  lastRegisteredAt: string | null;
+  softwareVersion: string | null;
+}
+
 export interface AlertIncident {
   id: string;
   incidentType: AlertIncidentType;
@@ -166,13 +176,21 @@ export interface Ipv6HistoryEntry {
   validTo: string | null;
 }
 
+export interface ParentObservation {
+  observedAt: string;
+  parentIpv6: string | null;
+  sourceType: ParentObservationSource;
+}
+
 export interface NodeDetail {
   node: NodeSummary;
+  currentParentIpv6: string | null;
   currentNeighborRevision: NeighborRevision | null;
   recentReadings: ReadingHistoryPoint[];
   alertTimeline: AlertTimelineEntry[];
   ipv6History: Ipv6HistoryEntry[];
   recentRegistrations: NodeRegistration[];
+  parentObservations: ParentObservation[];
 }
 
 export interface DashboardSummary {
@@ -201,6 +219,7 @@ export interface DownlinkActivity {
 export interface DashboardResponse {
   summary: DashboardSummary;
   fleet: NodeSummary[];
+  gateways: GatewayMarker[];
   neighborLinks: MeshLink[];
   alertQueue: AlertIncident[];
   downlinks: DownlinkActivity[];
