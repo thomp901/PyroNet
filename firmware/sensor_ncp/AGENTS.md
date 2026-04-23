@@ -53,8 +53,32 @@ python3 tools/capture_itm_text.py /dev/cu.usbmodemLS41069U4 3000000 --seconds 8
 ```
 
 - The exact macOS device node may vary between hosts or reconnects; identify the XDS110 aux port before capture if needed.
-- A verified decoded boot trace from this firmware is:
-  `SWO_SELF_TEST: CC1352P7_DIO16_ITM_CH0 phase=BOOT pulse_dio=28`
+- A passive capture after the board has already booted may only return a few raw bytes and no decoded text.
+- The working method to capture the boot trace is:
+  1. List the available modem devices, for example `ls -1 /dev/cu.usbmodem*`, and identify the XDS110 aux port.
+  2. Start the ITM capture first with a long enough window to span the reboot, for example:
+
+```sh
+cd /Users/diegosmacbook/Documents/PyroNet/firmware/sensor_ncp
+python3 tools/capture_itm_text.py /dev/cu.usbmodemLS41069U4 3000000 --seconds 30
+```
+
+  3. While that capture is still running, reflash the image to force a fresh boot:
+
+```sh
+cd /Users/diegosmacbook/Documents/PyroNet/firmware/sensor_ncp
+/Applications/ti/uniflash_9.5.0/dslite.sh \
+  --config=tools/cc1352p7_2pin_cJTAG_XDS110.ccxml \
+  -e \
+  freertos/ticlang/sensor_ncp.out
+```
+
+- A verified decoded boot trace from this firmware on that method is:
+  `SWO_SELF_TEST: CC1352P7_DIO16_ITM_CH0 phase=BOOT host_link=starting`
+- The same verified capture also included:
+  `PYRONET_NCP_INIT_OK`
+- And:
+  `HOST_UART_READY baud=115200`
 
 Reference:
 

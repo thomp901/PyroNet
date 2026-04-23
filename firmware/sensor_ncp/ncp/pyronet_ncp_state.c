@@ -36,6 +36,29 @@ typedef struct pyronet_ncp_state_context
 static pyronet_ncp_state_context_t pyronetNcpStateContext;
 static const uint8_t pyronetZeroIpv6[PYRONET_IPV6_ADDR_LEN] = {0};
 
+static const char *pyronetNcpMeshStatusName(mesh_connection_status_t status)
+{
+    switch (status)
+    {
+        case MESH_CONNECTED:
+            return "MESH_CONNECTED";
+        case MESH_CONNECTED_LOCAL:
+            return "MESH_CONNECTED_LOCAL";
+        case MESH_CONNECTED_GLOBAL:
+            return "MESH_CONNECTED_GLOBAL";
+        case MESH_BOOTSTRAP_STARTED:
+            return "MESH_BOOTSTRAP_STARTED";
+        case MESH_BOOTSTRAP_START_FAILED:
+            return "MESH_BOOTSTRAP_START_FAILED";
+        case MESH_BOOTSTRAP_FAILED:
+            return "MESH_BOOTSTRAP_FAILED";
+        case MESH_DISCONNECTED:
+            return "MESH_DISCONNECTED";
+        default:
+            return "MESH_STATUS_UNKNOWN";
+    }
+}
+
 static void pyronetNcpStateResetLocked(void)
 {
     pyronetNcpStateContext.interface_id = -1;
@@ -336,6 +359,7 @@ void pyronet_ncp_state_handle_network_status(mesh_connection_status_t status)
 {
     bool queue_registration = false;
     uint8_t reason = PYRONET_REG_REASON_JOIN;
+    uint8_t network_state;
 
     pyronetNcpStateLock();
 
@@ -375,7 +399,13 @@ void pyronet_ncp_state_handle_network_status(mesh_connection_status_t status)
             break;
     }
 
+    network_state = pyronetNcpStateContext.network_state;
     pyronetNcpStateUnlock();
+
+    (void)swoDebugPrintf("PYRONET_WISUN_STATUS status=%s host_state=%u queue_registration=%u",
+                         pyronetNcpMeshStatusName(status),
+                         (unsigned int)network_state,
+                         queue_registration ? 1U : 0U);
 
     if (queue_registration)
     {
