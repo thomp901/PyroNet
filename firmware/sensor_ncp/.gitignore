@@ -31,3 +31,8 @@
 /freertos/ticlang/*.obj
 /freertos/ticlang/*.out
 /freertos/ticlang/*.map
+/freertos/gcc/*.obj
+/freertos/gcc/*.out
+/freertos/gcc/*.map
+/freertos/iar/Debug/
+/freertos/iar/Obj/

@@ -16,7 +16,7 @@ ack_timeout_seconds = 2.0
 max_retransmit = 4
 
 [backhaul]
-base_url = "http://127.0.0.1:8080"
+base_url = "http://100.115.252.76:4000"
 http_timeout_seconds = 5.0
 registration_retry_base_delay_seconds = 5
 registration_retry_max_delay_seconds = 300

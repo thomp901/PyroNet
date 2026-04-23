@@ -1,192 +1,147 @@
-# PyroNet Services
+# PyroNet Gateway
 
-This workspace now contains:
+This repository now contains only the gateway runtime.
 
-- the gateway service for phases 1 and 2
-- the CSP ingest service for phase 3
-- the CSP control-plane workflows for phase 4
+The gateway accepts node traffic over CoAP, stores accepted uplinks durably in a local SQLite outbox, retries delivery to a remote backhaul service over HTTP, and exposes an HTTP API for downlinks that are converted into CoAP packets for target nodes.
 
-Phase 4 adds backend-only control logic for configuration rollout, nearest-neighbor computation and push, daily time sync, and stale-node monitoring. It does not add frontend/UI, notifications, long-term analytics, or node-application acknowledgements beyond gateway delivery results.
+## Runtime Flow
 
-## Phase 4 Flow
+1. Nodes send CoAP `POST` requests to the uplink resource.
+2. [pyronet_gateway/coap_intake.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/coap_intake.py:1) validates the CoAP datagram and extracts the node payload.
+3. [pyronet_gateway/service.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/service.py:1) parses the node packet, updates current node IPv6 and liveness in SQLite, and enqueues a backhaul envelope in the durable outbox.
+4. [pyronet_gateway/registration_worker.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/registration_worker.py:1) keeps the gateway registered with the remote backhaul.
+5. [pyronet_gateway/retry_worker.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/retry_worker.py:1) drains the outbox with exponential backoff until the remote service returns a terminal receipt.
+6. [pyronet_gateway/downlink_http_api.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/downlink_http_api.py:1) accepts JSON downlink requests and [pyronet_gateway/downlink_delivery_service.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/downlink_delivery_service.py:1) resolves `node_id -> current IPv6` before emitting CoAP back into the mesh.
 
-1. The CSP ingests gateway `0x81` and `0x82` traffic and maintains current node state in PostgreSQL.
-2. Control workflows operate in stable `node_id` space only.
-3. The CSP sends downlink intent to the gateway over the phase-2 HTTP API:
-   - `POST /api/v1/downlinks/config`
-   - `POST /api/v1/downlinks/nn-table`
-   - `POST /api/v1/downlinks/time-sync`
-4. Config rollout intent reaches the CSP through `POST /api/v1/control/configs`.
-5. The gateway resolves `node_id -> current IPv6` and emits CoAP into the mesh.
-6. The CSP records control intent, per-target attempts, scheduler runs, and connectivity transitions for operator visibility.
+## Key Components
 
-## Phase 4 Components
-
-- [pyronet_gateway/control_gateway_client.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/control_gateway_client.py:1)
-  HTTP client for the gateway’s downlink API.
-- [pyronet_gateway/config_workflow_service.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/config_workflow_service.py:1)
-  Monotonic `config_id` allocation, immutable config revision persistence, and per-target config push.
-- [pyronet_gateway/control_http_api.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/control_http_api.py:1)
-  Runtime HTTP surface for config rollout intent.
-- [pyronet_gateway/neighbor_compute_service.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/neighbor_compute_service.py:1)
-  Deterministic nearest-neighbor computation from stored node coordinates.
-- [pyronet_gateway/neighbor_push_service.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/neighbor_push_service.py:1)
-  Neighbor-set diffing, persistence, and push through the gateway.
-- [pyronet_gateway/time_sync_scheduler.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/time_sync_scheduler.py:1)
-  Daily time-sync run creation and per-node attempt persistence.
-- [pyronet_gateway/connectivity_monitor.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/connectivity_monitor.py:1)
-  Stale/healthy transition generation from `nodes.last_seen`.
-
-Persistence helpers for phase 4:
-
-- [pyronet_gateway/config_store.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/config_store.py:1)
-- [pyronet_gateway/neighbor_store.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/neighbor_store.py:1)
-- [pyronet_gateway/control_attempt_store.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/control_attempt_store.py:1)
-- [pyronet_gateway/scheduler_store.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/scheduler_store.py:1)
-- [pyronet_gateway/connectivity_event_store.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/connectivity_event_store.py:1)
-
-Runtime entrypoint:
-
-- [pyronet_gateway/app/control_bootstrap.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/app/control_bootstrap.py:1)
-
-## PostgreSQL Schema
-
-Phase 4 extends the phase-3 schema in [pyronet_gateway/db/migrations.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/db/migrations.py:1) with:
-
-- `control_sequences`
-- `risk_configs`
-- `risk_config_targets`
-- `neighbor_sets`
-- `neighbor_set_members`
-- `control_attempts`
-- `scheduler_runs`
-- `node_connectivity_events`
-- `nodes.connectivity_state`
-
-Important semantics:
-
-- `config_id` is allocated from `control_sequences` and remains monotonic.
-- `risk_configs` is immutable revision history.
-- `risk_config_targets` keeps the intended target set plus the latest transport outcome.
-- `neighbor_sets` stores the last successfully pushed effective set per node.
-- `control_attempts` is append-only and records both success and failure responses from the gateway.
-- `scheduler_runs` records time-sync job runs.
-- `node_connectivity_events` records only stale/healthy transitions.
-
-## Workflow Semantics
-
-### Config rollout
-
-- A new config revision is persisted before any push.
-- Runtime config rollout is exposed at `POST /api/v1/control/configs`.
-- Each target node receives a gateway request body containing the allocated `config_id`.
-- Gateway delivery is recorded as a transport outcome only.
-- Historical revisions are preserved.
-
-### Neighbor recompute
-
-- Neighbor sets are computed from persisted node coordinates using configurable radius and optional max-neighbor limits.
-- Selection is deterministic: distance first, then `node_id`.
-- Nodes without coordinates are skipped.
-- Only a successful gateway push updates the effective current set.
-- If a node’s last successful effective set is unchanged, no push attempt is sent.
-- Failed pushes remain retryable on the next recompute because they do not advance the effective set.
-
-### Time sync
-
-- A simple in-process loop runs time sync on a configurable interval.
-- Only nodes seen within the configured active window are targeted.
-- Each run is persisted in `scheduler_runs`.
-- On restart, the control plane restores the most recent completed time-sync run and will not rerun immediately if the interval has not elapsed.
-
-### Connectivity monitoring
-
-- Nodes are considered stale when `now - last_seen` exceeds the configured threshold.
-- Initial healthy state is tracked silently.
-- Stale and recovery transitions are written once per state change.
+- [pyronet_gateway/app/bootstrap.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/app/bootstrap.py:1)
+  Gateway process composition and main loop.
+- [pyronet_gateway/storage.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/storage.py:1)
+  SQLite schema, transaction helper, node-state store, outbox store, dead-letter store, and downlink audit storage.
+- [pyronet_gateway/backhaul_client.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/backhaul_client.py:1)
+  HTTP client for gateway registration and uplink delivery.
+- [pyronet_gateway/protocol/backhaul.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/protocol/backhaul.py:1)
+  Binary gateway-to-backhaul framing.
+- [pyronet_gateway/protocol/node_packets.py](/home/admin/border_router/pyronet_gateway/pyronet_gateway/protocol/node_packets.py:1)
+  Binary node packet parsing.
 
 ## Config
 
-Gateway phase 1/2 example config remains in [config.example.toml](/home/admin/border_router/pyronet_gateway/config.example.toml:1).
-
-CSP example config is in [csp.example.toml](/home/admin/border_router/pyronet_gateway/csp.example.toml:1).
-
-Relevant CSP sections:
-
-- `[postgres]`
-  `dsn`
-- `[csp_http_api]`
-  phase-3 ingest bind host/port
-- `[control_http_api]`
-  phase-4 config rollout bind host/port
-- `[gateway_api]`
-  gateway base URL and timeout for phase-4 control requests
-- `[control]`
-  scheduler poll interval
-- `[neighbor_policy]`
-  radius, max neighbors, recompute interval
-- `[time_sync]`
-  schedule interval and active-node window
-- `[connectivity]`
-  stale threshold and scan interval
+Example config lives in [config.example.toml](/home/admin/border_router/pyronet_gateway/config.example.toml:1).
 
 Environment overrides:
 
-- `PYRONET_CSP_POSTGRES_DSN`
-- `PYRONET_CSP_HTTP_BIND_HOST`
-- `PYRONET_CSP_HTTP_PORT`
-- `PYRONET_CSP_CONTROL_HTTP_BIND_HOST`
-- `PYRONET_CSP_CONTROL_HTTP_PORT`
-- `PYRONET_CSP_CONTROL_HTTP_MAX_REQUEST_BODY_BYTES`
-- `PYRONET_CSP_GATEWAY_BASE_URL`
-- `PYRONET_CSP_GATEWAY_HTTP_TIMEOUT_SECONDS`
-- `PYRONET_CSP_CONTROL_SCHEDULER_POLL_INTERVAL_SECONDS`
-- `PYRONET_CSP_NEIGHBOR_RADIUS_METERS`
-- `PYRONET_CSP_NEIGHBOR_MAX_NEIGHBORS`
-- `PYRONET_CSP_NEIGHBOR_RECOMPUTE_INTERVAL_SECONDS`
-- `PYRONET_CSP_TIME_SYNC_INTERVAL_SECONDS`
-- `PYRONET_CSP_TIME_SYNC_ACTIVE_NODE_WINDOW_SECONDS`
-- `PYRONET_CSP_CONNECTIVITY_STALE_AFTER_SECONDS`
-- `PYRONET_CSP_CONNECTIVITY_POLL_INTERVAL_SECONDS`
+- `PYRONET_GATEWAY_ID`
+- `PYRONET_GATEWAY_LATITUDE`
+- `PYRONET_GATEWAY_LONGITUDE`
+- `PYRONET_SW_VERSION_OVERRIDE`
+- `PYRONET_COAP_BIND_HOST`
+- `PYRONET_COAP_BIND_PORT`
+- `PYRONET_COAP_RESOURCE_PATH`
+- `PYRONET_COAP_DUPLICATE_CACHE_TTL_SECONDS`
+- `PYRONET_COAP_DUPLICATE_CACHE_MAX_ENTRIES`
+- `PYRONET_COAP_DOWNLINK_PORT`
+- `PYRONET_COAP_DOWNLINK_RESOURCE_PATH`
+- `PYRONET_COAP_ACK_TIMEOUT_SECONDS`
+- `PYRONET_COAP_MAX_RETRANSMIT`
+- `PYRONET_BACKHAUL_BASE_URL`
+- `PYRONET_HTTP_TIMEOUT_SECONDS`
+- `PYRONET_REGISTER_RETRY_BASE_DELAY_SECONDS`
+- `PYRONET_REGISTER_RETRY_MAX_DELAY_SECONDS`
+- `PYRONET_UPLINK_RETRY_BASE_DELAY_SECONDS`
+- `PYRONET_UPLINK_RETRY_MAX_DELAY_SECONDS`
+- `PYRONET_DB_PATH`
+- `PYRONET_WORKER_POLL_INTERVAL_SECONDS`
+- `PYRONET_LOG_LEVEL`
+- `PYRONET_HTTP_API_BIND_HOST`
+- `PYRONET_HTTP_API_PORT`
+- `PYRONET_HTTP_API_MAX_REQUEST_BODY_BYTES`
 
 ## Local Run
-
-Gateway service:
 
 ```bash
 python3 -m pyronet_gateway --config ./config.example.toml
 ```
 
-CSP ingest-only service:
+Equivalent `make` target:
 
 ```bash
-python3 -m pyronet_gateway.app.csp_bootstrap --config ./csp.example.toml
+make run
 ```
 
-CSP ingest + control-plane runtime:
+Override the config file when needed:
 
 ```bash
-python3 -m pyronet_gateway.app.control_bootstrap --config ./csp.example.toml
+make run CONFIG=/path/to/gateway.toml
 ```
 
-The CSP runtime expects `psycopg` plus a reachable PostgreSQL DSN. Tests use in-memory stores and mocked gateway HTTP responses instead of a live database or gateway.
+## Developer Workflow
+
+```bash
+make install-dev
+make check
+```
+
+Useful targets:
+
+- `make lint`
+- `make format`
+- `make run`
+- `make live-decode`
+- `make test`
+- `make test-live-backhaul`
+- `make db-path`
+- `make db-tables`
+- `make db-shell`
+- `make db-downlinks`
+- `make pre-commit-install`
+- `make pre-commit-run`
+- `make check` runs `ruff` plus the unit test suite.
+- `pre-commit` requires `pyronet_gateway` to be inside a Git repository root. If this directory is copied outside Git, `make pre-commit-run` will fail even though the configuration is valid.
+- The DB helper targets default to `./pyronet-gateway.sqlite3`; override with `DB_PATH=/path/to/file.sqlite3` if your runtime config uses a different SQLite file.
+
+## Live Packet Decode
+
+For passive live decode of PyroNet CoAP traffic on Linux, run:
+
+```bash
+sudo make live-decode CONFIG=./config.example.toml
+```
+
+By default this sniffs `tun0`, decodes CoAP payloads for `/uplink` and `/downlink`, and prints human-readable PyroNet packet fields without rebinding the gateway socket.
+
+Pass extra flags through `LIVE_DECODE_ARGS`, for example:
+
+```bash
+sudo make live-decode CONFIG=./config.example.toml LIVE_DECODE_ARGS="--show-acks"
+```
+
+To also show backhaul queue/retry/delivery state from the local SQLite outbox:
+
+```bash
+sudo make live-decode CONFIG=./config.example.toml LIVE_DECODE_ARGS="--show-backhaul"
+```
 
 ## Test Strategy
 
-Phase 3 tests remain in [tests/test_csp_ingest_phase3.py](/home/admin/border_router/pyronet_gateway/tests/test_csp_ingest_phase3.py:1).
+Current tests live in:
 
-Phase 4 tests are in [tests/test_control_plane_phase4.py](/home/admin/border_router/pyronet_gateway/tests/test_control_plane_phase4.py:1). They cover:
+- [tests/test_gateway_service.py](/home/admin/border_router/pyronet_gateway/tests/test_gateway_service.py:1) for uplink intake, outbox persistence, retry behavior, and HTTP backhaul classification.
+- [tests/test_downlink_phase2.py](/home/admin/border_router/pyronet_gateway/tests/test_downlink_phase2.py:1) for downlink encoding, validation, delivery routing, and HTTP API behavior.
+- [tests/test_backhaul_live.py](/home/admin/border_router/pyronet_gateway/tests/test_backhaul_live.py:1) for opt-in live backhaul sends against a real endpoint.
 
-- monotonic `config_id` allocation
-- runtime config-rollout HTTP entrypoint behavior
-- config revision persistence and per-node target persistence
-- correct config push request bodies
-- deterministic neighbor computation
-- unchanged neighbor-set skip behavior
-- changed neighbor-set push behavior
-- failed neighbor push retryability
-- time-sync run persistence and per-node requests
-- restart-safe time-sync scheduling state restore
-- stale and healthy connectivity transitions
-- gateway failure persistence
-- end-to-end control workflow behavior with mocked gateway HTTP responses
+Live backhaul test guard:
+
+- `tests/test_backhaul_live.py` will not send anything unless `PYRONET_RUN_LIVE_BACKHAUL_TESTS=1`.
+- It also requires `PYRONET_LIVE_BACKHAUL_BASE_URL` to be set explicitly, so it cannot accidentally use the default runtime base URL.
+- The live node-flow test sends in this order: gateway `0x81` registration, node `0x01` registration uplink, then one follow-up `0x02`, `0x03`, or `0x08` uplink.
+- Optional overrides: `PYRONET_LIVE_BACKHAUL_TIMEOUT_SECONDS`, `PYRONET_LIVE_BACKHAUL_GATEWAY_ID`, `PYRONET_LIVE_BACKHAUL_VERSION`, `PYRONET_LIVE_BACKHAUL_LATITUDE`, `PYRONET_LIVE_BACKHAUL_LONGITUDE`, `PYRONET_LIVE_BACKHAUL_SW_VERSION`, `PYRONET_LIVE_BACKHAUL_OBSERVED_SRC_IPV6`, `PYRONET_LIVE_BACKHAUL_NODE_ID`, `PYRONET_LIVE_BACKHAUL_PARENT_IPV6`, and `PYRONET_LIVE_BACKHAUL_FOLLOWUP_PACKET_TYPE`.
+
+Example on-demand invocation:
+
+```bash
+PYRONET_RUN_LIVE_BACKHAUL_TESTS=1 \
+PYRONET_LIVE_BACKHAUL_BASE_URL=http://example.test:4000 \
+make test-live-backhaul
+```

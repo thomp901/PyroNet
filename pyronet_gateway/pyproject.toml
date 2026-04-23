@@ -1,0 +1,17 @@
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+src = ["pyronet_gateway", "tests"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["pyronet_gateway"]
+

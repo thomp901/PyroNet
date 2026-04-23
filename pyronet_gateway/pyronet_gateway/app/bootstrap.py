@@ -47,10 +47,11 @@ class GatewayApplication:
             max_retransmit=config.coap.max_retransmit,
         )
         self.downlink_delivery_service = DownlinkDeliveryService(
+            gateway_id=config.gateway_id,
+            backhaul_version=config.backhaul_version,
             node_state_store=self.service.node_state_store,
-            audit_store=self.service.downlink_audit_store,
+            result_store=self.service.downlink_audit_store,
             coap_downlink_client=self.coap_downlink_client,
-            node_packet_version=config.node_packet_version,
         )
         self.downlink_http_api = DownlinkHttpApi(
             delivery_service=self.downlink_delivery_service,

@@ -7,13 +7,22 @@ from dataclasses import dataclass
 TYPE_GATEWAY_REGISTRATION = 0x81
 TYPE_NODE_UPLINK_ENVELOPE = 0x82
 TYPE_UPLINK_RECEIPT = 0x83
+TYPE_DOWNLINK_REQUEST = 0x84
+TYPE_DOWNLINK_RESULT = 0x85
 
 RECEIPT_DURABLE_INGEST = 0x00
 RECEIPT_PERMANENT_REJECT = 0x01
 
+DOWNLINK_STATUS_DELIVERED = 0x00
+DOWNLINK_STATUS_UNKNOWN_NODE = 0x01
+DOWNLINK_STATUS_MESH_DELIVERY_FAILED = 0x02
+DOWNLINK_STATUS_PERMANENT_REJECT = 0x03
+
 _GATEWAY_REGISTRATION = struct.Struct("<BBHIffH")
 _NODE_UPLINK_HEADER = struct.Struct("<BBHQI16sH")
 _UPLINK_RECEIPT = struct.Struct("<BBHQB")
+_DOWNLINK_REQUEST_HEADER = struct.Struct("<BBHQHIH")
+_DOWNLINK_RESULT = struct.Struct("<BBHQHBI")
 
 
 class BackhaulParseError(ValueError):
@@ -134,5 +143,111 @@ class UplinkReceipt:
         )
 
 
+@dataclass(frozen=True)
+class DownlinkRequest:
+    version: int
+    gateway_id: int
+    downlink_id: int
+    target_node_id: int
+    created_at: int
+    payload: bytes
+
+    def to_bytes(self) -> bytes:
+        return _DOWNLINK_REQUEST_HEADER.pack(
+            TYPE_DOWNLINK_REQUEST,
+            self.version,
+            self.gateway_id,
+            self.downlink_id,
+            self.target_node_id,
+            self.created_at,
+            len(self.payload),
+        ) + self.payload
+
+    @classmethod
+    def from_bytes(cls, raw: bytes) -> "DownlinkRequest":
+        if len(raw) < _DOWNLINK_REQUEST_HEADER.size:
+            raise BackhaulParseError("downlink request shorter than header")
+        unpacked = _DOWNLINK_REQUEST_HEADER.unpack(raw[: _DOWNLINK_REQUEST_HEADER.size])
+        if unpacked[0] != TYPE_DOWNLINK_REQUEST:
+            raise BackhaulParseError(f"unexpected message type 0x{unpacked[0]:02x}")
+        payload_len = unpacked[6]
+        payload = raw[_DOWNLINK_REQUEST_HEADER.size :]
+        if len(payload) != payload_len:
+            raise BackhaulParseError("payload length does not match downlink request header")
+        return cls(
+            version=unpacked[1],
+            gateway_id=unpacked[2],
+            downlink_id=unpacked[3],
+            target_node_id=unpacked[4],
+            created_at=unpacked[5],
+            payload=payload,
+        )
+
+
+@dataclass(frozen=True)
+class DownlinkRequestIdentity:
+    version: int
+    gateway_id: int
+    downlink_id: int
+    target_node_id: int
+    created_at: int
+
+
+@dataclass(frozen=True)
+class DownlinkResult:
+    version: int
+    gateway_id: int
+    downlink_id: int
+    target_node_id: int
+    status: int
+    completed_at: int
+
+    def to_bytes(self) -> bytes:
+        return _DOWNLINK_RESULT.pack(
+            TYPE_DOWNLINK_RESULT,
+            self.version,
+            self.gateway_id,
+            self.downlink_id,
+            self.target_node_id,
+            self.status,
+            self.completed_at,
+        )
+
+    @classmethod
+    def from_bytes(cls, raw: bytes) -> "DownlinkResult":
+        if len(raw) != _DOWNLINK_RESULT.size:
+            raise BackhaulParseError(f"downlink result length {len(raw)} != {_DOWNLINK_RESULT.size}")
+        unpacked = _DOWNLINK_RESULT.unpack(raw)
+        if unpacked[0] != TYPE_DOWNLINK_RESULT:
+            raise BackhaulParseError(f"unexpected message type 0x{unpacked[0]:02x}")
+        return cls(
+            version=unpacked[1],
+            gateway_id=unpacked[2],
+            downlink_id=unpacked[3],
+            target_node_id=unpacked[4],
+            status=unpacked[5],
+            completed_at=unpacked[6],
+        )
+
+
+def decode_downlink_request_identity(raw: bytes) -> DownlinkRequestIdentity | None:
+    if len(raw) < _DOWNLINK_REQUEST_HEADER.size:
+        return None
+    unpacked = _DOWNLINK_REQUEST_HEADER.unpack(raw[: _DOWNLINK_REQUEST_HEADER.size])
+    if unpacked[0] != TYPE_DOWNLINK_REQUEST:
+        return None
+    return DownlinkRequestIdentity(
+        version=unpacked[1],
+        gateway_id=unpacked[2],
+        downlink_id=unpacked[3],
+        target_node_id=unpacked[4],
+        created_at=unpacked[5],
+    )
+
+
 def node_uplink_header_size() -> int:
     return _NODE_UPLINK_HEADER.size
+
+
+def downlink_request_header_size() -> int:
+    return _DOWNLINK_REQUEST_HEADER.size

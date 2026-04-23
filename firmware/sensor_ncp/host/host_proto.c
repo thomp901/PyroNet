@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-static void hostProtoDiscard(struct host_proto_parser *parser, size_t count)
+static void hostProtoDiscard(host_proto_parser_t *parser, size_t count)
 {
     if (count >= parser->length)
     {
@@ -14,7 +14,7 @@ static void hostProtoDiscard(struct host_proto_parser *parser, size_t count)
     parser->length -= count;
 }
 
-static void hostProtoSeekNextSof(struct host_proto_parser *parser)
+static void hostProtoSeekNextSof(host_proto_parser_t *parser)
 {
     size_t index;
 
@@ -123,7 +123,7 @@ bool host_proto_encode_frame(uint8_t type,
     return true;
 }
 
-void host_proto_parser_init(struct host_proto_parser *parser)
+void host_proto_parser_init(host_proto_parser_t *parser)
 {
     if (parser == NULL)
     {
@@ -133,7 +133,7 @@ void host_proto_parser_init(struct host_proto_parser *parser)
     parser->length = 0U;
 }
 
-bool host_proto_parser_push(struct host_proto_parser *parser, uint8_t byte, struct host_frame *out_frame)
+bool host_proto_parser_push(host_proto_parser_t *parser, uint8_t byte, host_frame_t *out_frame)
 {
     if ((parser == NULL) || (out_frame == NULL))
     {
@@ -224,19 +224,41 @@ const char *host_proto_type_name(uint8_t type)
 {
     switch (type)
     {
-        case HOST_MSG_HELLO:
+        case PYRONET_HOST_MSG_HELLO:
             return "HELLO";
-        case HOST_MSG_HELLO_ACK:
+        case PYRONET_HOST_MSG_HELLO_ACK:
             return "HELLO_ACK";
-        case HOST_MSG_PING:
+        case PYRONET_HOST_MSG_PING:
             return "PING";
-        case HOST_MSG_PONG:
+        case PYRONET_HOST_MSG_PONG:
             return "PONG";
-        case HOST_MSG_GET_STATUS:
+        case PYRONET_HOST_MSG_GET_STATUS:
             return "GET_STATUS";
-        case HOST_MSG_STATUS:
+        case PYRONET_HOST_MSG_STATUS:
             return "STATUS";
-        case HOST_MSG_ERROR:
+        case PYRONET_HOST_MSG_SEND_REGISTRATION:
+            return "SEND_REGISTRATION";
+        case PYRONET_HOST_MSG_SEND_SENSOR_REPORT:
+            return "SEND_SENSOR_REPORT";
+        case PYRONET_HOST_MSG_SEND_SENSOR_ALERT:
+            return "SEND_SENSOR_ALERT";
+        case PYRONET_HOST_MSG_SEND_NEIGHBOR_ALERT:
+            return "SEND_NEIGHBOR_ALERT";
+        case PYRONET_HOST_MSG_REQUEST_PARENT_UPDATE:
+            return "REQUEST_PARENT_UPDATE";
+        case PYRONET_HOST_MSG_REGISTRATION_NEEDED:
+            return "REGISTRATION_NEEDED";
+        case PYRONET_HOST_MSG_PARENT_CHANGED:
+            return "PARENT_CHANGED";
+        case PYRONET_HOST_MSG_TX_RESULT:
+            return "TX_RESULT";
+        case PYRONET_HOST_MSG_TIME_SYNC_UPDATE:
+            return "TIME_SYNC_UPDATE";
+        case PYRONET_HOST_MSG_NEIGHBOR_ALERT_RX:
+            return "NEIGHBOR_ALERT_RX";
+        case PYRONET_HOST_MSG_CONFIG_UPDATE_RX:
+            return "CONFIG_UPDATE_RX";
+        case PYRONET_HOST_MSG_ERROR:
             return "ERROR";
         default:
             return "UNKNOWN";

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from .config import GatewayConfig
 from .protocol.backhaul import GatewayRegistration
-from .protocol.node_packets import TYPE_NEIGHBOR_ALERT, parse_node_packet, packet_type
+from .protocol.node_packets import TYPE_NEIGHBOR_ALERT, packet_type, parse_node_packet
 from .storage import (
     SQLiteDatabase,
     SQLiteDeadLetterStore,
@@ -39,7 +39,7 @@ class GatewayService:
     ) -> IntakeDecision:
         msg_type = packet_type(raw_node_packet)
         if msg_type == TYPE_NEIGHBOR_ALERT:
-            return IntakeDecision(accepted=False, reason="neighbor alert ignored for CSP forwarding")
+            return IntakeDecision(accepted=False, reason="neighbor alert ignored for backhaul forwarding")
 
         parsed = parse_node_packet(raw_node_packet)
 
