@@ -1,52 +1,17 @@
-import { isIP } from "node:net";
+import {
+  buildGatewayRegistrationMessage,
+  buildNodeUplinkEnvelope,
+  clamp,
+  defaultApiPort,
+  nextUplinkId,
+  postGatewayRegistration,
+  postNodeUplink,
+  toNumber,
+  encodeFirmwareVersion,
+  encodeIpv6,
+} from "./testBackhaulUtils";
 
 export {};
-
-const defaultApiPort = Number(process.env.API_PORT ?? "4000");
-
-function toNumber(value: string | undefined, fallback: number) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-
-function clamp(value: number, minimum: number, maximum: number) {
-  return Math.min(maximum, Math.max(minimum, value));
-}
-
-function encodeFirmwareVersion(value: string) {
-  const [majorRaw, minorRaw] = value.split(".");
-  const major = clamp(Math.round(toNumber(majorRaw, 3)), 0, 255);
-  const minor = clamp(Math.round(toNumber(minorRaw, 0)), 0, 255);
-  return (major << 8) | minor;
-}
-
-function encodeIpv6(value: string | null) {
-  if (!value) {
-    return Buffer.alloc(16);
-  }
-
-  if (isIP(value) !== 6) {
-    throw new Error(`Invalid IPv6 address: ${value}`);
-  }
-
-  const [headRaw, tailRaw] = value.split("::");
-  const head = headRaw ? headRaw.split(":").filter(Boolean) : [];
-  const tail = tailRaw ? tailRaw.split(":").filter(Boolean) : [];
-  const missingCount = 8 - (head.length + tail.length);
-  const groups = [
-    ...head.map((group) => Number.parseInt(group, 16)),
-    ...Array.from({ length: Math.max(missingCount, 0) }, () => 0),
-    ...tail.map((group) => Number.parseInt(group, 16)),
-  ];
-
-  if (groups.length !== 8 || groups.some((group) => !Number.isInteger(group) || group < 0 || group > 0xffff)) {
-    throw new Error(`Unable to encode IPv6 address: ${value}`);
-  }
-
-  const buffer = Buffer.alloc(16);
-  groups.forEach((group, index) => buffer.writeUInt16BE(group, index * 2));
-  return buffer;
-}
 
 function buildRegistrationPayload({
   nodeId,
@@ -72,7 +37,7 @@ function buildRegistrationPayload({
   buffer.writeUInt16LE(encodeFirmwareVersion(firmwareVersion), 12);
   buffer.writeUInt8(batteryPct, 14);
   encodeIpv6(parentIpv6).copy(buffer, 15);
-  return buffer.toString("hex");
+  return buffer;
 }
 
 async function main() {
@@ -80,7 +45,18 @@ async function main() {
   const apiBaseUrl = process.argv[3]?.trim() || `http://127.0.0.1:${defaultApiPort}`;
   const sourceIpv6 = process.argv[4]?.trim() || `2001:db8:100::${nodeId.toString(16)}`;
   const parentIpv6 = process.argv[5]?.trim() || "2001:db8:100::1";
-  const receivedAt = new Date();
+  const gatewayId = clamp(Math.round(toNumber(process.argv[6], 9001)), 1, 65_535);
+  const observedAt = new Date();
+
+  const gatewayMessage = buildGatewayRegistrationMessage({
+    gatewayId,
+    reportedAt: observedAt,
+    wisunIpv6: "2001:db8:200::1",
+    latitude: 40.4237,
+    longitude: -86.9212,
+    softwareVersion: "3.1",
+  });
+
   const payload = buildRegistrationPayload({
     nodeId,
     latitude: 40.4237,
@@ -90,44 +66,31 @@ async function main() {
     parentIpv6: parentIpv6.toLowerCase() === "none" ? null : parentIpv6,
   });
 
-  console.info("[registration:packet] Sending 0x01 registration packet", {
-    nodeId,
-    apiBaseUrl,
-    sourceIpv6,
-    parentIpv6: parentIpv6.toLowerCase() === "none" ? null : parentIpv6,
-    receivedAt: receivedAt.toISOString(),
+  const envelope = buildNodeUplinkEnvelope({
+    gatewayId,
+    uplinkId: nextUplinkId(),
+    receivedAt: observedAt,
+    observedSrcIpv6: sourceIpv6,
     payload,
   });
 
-  const response = await fetch(`${apiBaseUrl}/api/packets/ingest`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      payload,
-      encoding: "hex",
-      sourceIpv6,
-      receivedAt: receivedAt.toISOString(),
-    }),
+  console.info("[registration:packet] Sending gateway registration and 0x01 node registration", {
+    nodeId,
+    gatewayId,
+    apiBaseUrl,
+    sourceIpv6,
+    parentIpv6: parentIpv6.toLowerCase() === "none" ? null : parentIpv6,
+    observedAt: observedAt.toISOString(),
   });
 
-  const raw = await response.text();
-  let body: unknown = raw;
-  try {
-    body = JSON.parse(raw);
-  } catch {
-    // Keep raw text when the response is not JSON.
-  }
+  await postGatewayRegistration(apiBaseUrl, gatewayMessage);
+  await postNodeUplink(apiBaseUrl, envelope);
 
-  if (!response.ok) {
-    throw new Error(`Packet ingest failed with ${response.status}: ${typeof body === "string" ? body : JSON.stringify(body)}`);
-  }
-
-  console.info("[registration:packet] Packet ingest accepted", body);
+  console.info("[registration:packet] Registration uplink accepted.");
+  console.info("[registration:packet] If Node Join / Rejoin email is enabled, you should now see a new delivery attempt.");
 }
 
 main().catch((error) => {
-  console.error("[registration:packet] Unable to send 0x01 registration packet", error);
+  console.error("[registration:packet] Unable to send registration test packet", error);
   process.exitCode = 1;
 });

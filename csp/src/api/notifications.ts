@@ -1,5 +1,5 @@
-import type { NotificationRecipientUpdate, NotificationSettingsResponse } from "./types";
-import { apiGet, apiPut } from "../lib/http";
+import type { NotificationRecipientUpdate, NotificationRecipientWrite, NotificationSettingsResponse } from "./types";
+import { apiGet, apiPost, apiPut } from "../lib/http";
 
 export async function getNotificationSettings() {
   return apiGet<NotificationSettingsResponse>("/notifications");
@@ -10,4 +10,8 @@ export async function updateNotificationRecipient(recipientId: string, update: N
     `/notifications/recipients/${encodeURIComponent(recipientId)}`,
     update,
   );
+}
+
+export async function createNotificationRecipient(recipient: NotificationRecipientWrite) {
+  return apiPost<NotificationSettingsResponse, NotificationRecipientWrite>("/notifications/recipients", recipient);
 }

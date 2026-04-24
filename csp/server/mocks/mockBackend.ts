@@ -1573,6 +1573,21 @@ export function getMockNotificationSettings(): NotificationSettingsResponse {
   };
 }
 
+export function createMockNotificationRecipient(update: NotificationRecipientUpdate): NotificationSettingsResponse {
+  const nextId = `rec-${String(notificationRecipients.length + 1).padStart(3, "0")}`;
+  const displayName = update.displayName.trim() || update.emailAddress.trim();
+
+  notificationRecipients.push({
+    id: nextId,
+    displayName,
+    emailAddress: update.emailAddress.trim(),
+    isEnabled: update.isEnabled,
+  });
+
+  notificationPreferences.set(nextId, update.enabledEventTypes);
+  return getMockNotificationSettings();
+}
+
 export function updateMockNotificationRecipient(
   recipientId: string,
   update: NotificationRecipientUpdate,
@@ -1582,6 +1597,8 @@ export function updateMockNotificationRecipient(
     throw new Error(`Unknown recipient ${recipientId}`);
   }
 
+  recipient.displayName = update.displayName.trim() || update.emailAddress.trim();
+  recipient.emailAddress = update.emailAddress.trim();
   recipient.isEnabled = update.isEnabled;
   notificationPreferences.set(recipientId, update.enabledEventTypes);
   return getMockNotificationSettings();

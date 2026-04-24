@@ -2,7 +2,13 @@ export type ConnectivityStatus = "online" | "degraded" | "offline";
 export type SensorReadingSource = "periodic_report" | "critical_alert";
 export type AlertSeverity = "info" | "warning" | "critical";
 export type AlertStatus = "open" | "acknowledged" | "cleared" | "derived";
-export type AlertIncidentType = "critical_alert" | "battery_health_low" | "offline";
+export type AlertIncidentType =
+  | "critical_alert"
+  | "battery_health_low"
+  | "offline"
+  | "time_sync_failure"
+  | "nn_update_failure"
+  | "config_update_failure";
 export type DownlinkStatus = "pending" | "sent" | "acknowledged" | "failed" | "timed_out";
 export type NeighborRevisionSource = "automatic" | "manual" | "imported";
 export type ParentObservationSource = "registration" | "parent_update";
@@ -369,7 +375,7 @@ export interface NotificationDelivery {
   recipientName: string;
   eventType: NotificationEventType;
   subject: string;
-  status: "queued" | "sent" | "failed" | "skipped";
+  status: "queued" | "accepted" | "sent" | "failed" | "skipped";
   occurredAt: string;
   deliveredAt: string | null;
   nodeId: NodeId | null;
@@ -382,7 +388,11 @@ export interface NotificationSettingsResponse {
   deliveries: NotificationDelivery[];
 }
 
-export interface NotificationRecipientUpdate {
+export interface NotificationRecipientWrite {
+  displayName: string;
+  emailAddress: string;
   isEnabled: boolean;
   enabledEventTypes: NotificationEventType[];
 }
+
+export interface NotificationRecipientUpdate extends NotificationRecipientWrite {}

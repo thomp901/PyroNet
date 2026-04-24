@@ -72,6 +72,7 @@ import { parseGatewayId } from "../src/lib/gatewayId";
 import { parseNodeId } from "../src/lib/nodeId";
 import {
   createMockConfigRevision,
+  createMockNotificationRecipient,
   createMockNeighborDistribution,
   createMockThresholdPush,
   createMockTimeSync,
@@ -88,6 +89,7 @@ import {
   updateMockNeighborRevision,
   updateMockNotificationRecipient,
 } from "./mocks/mockBackend";
+import { sendEmail } from "./email";
 
 const app = express();
 const port = Number(process.env.API_PORT ?? "4000");
@@ -103,7 +105,12 @@ const gatewayDownlinkTimeoutMs = parsePositiveInteger(process.env.GATEWAY_DOWNLI
 const gatewayDownlinkRetryDelayMs = parsePositiveInteger(process.env.GATEWAY_DOWNLINK_RETRY_DELAY_MS, 15_000);
 const degradedThresholdMs = 2 * 60 * 1000;
 const offlineThresholdMs = 5 * 60 * 1000;
+const downlinkFailureTimeoutMs = 15 * 60 * 1000;
+const batteryDegradationOpenThresholdPct = 20;
+const batteryDegradationClearThresholdPct = 25;
+const notificationEvaluationIntervalMs = parsePositiveInteger(process.env.NOTIFICATION_EVALUATION_INTERVAL_MS, 30_000);
 let isGatewayDownlinkDispatchInFlight = false;
+let isNotificationEvaluationInFlight = false;
 const notificationEventTypes: NotificationEventType[] = [
   "critical_risk",
   "connectivity_loss",
@@ -268,6 +275,35 @@ interface RoutedDeviceTarget {
   downlinkUrl: string;
 }
 
+interface PendingNotificationDispatch {
+  eventType: NotificationEventType;
+  alertId: number | null;
+  deviceId: number | null;
+  occurredAt: Date;
+  subject: string;
+  text: string;
+}
+
+interface AlertUpsertOptions {
+  deviceId: number;
+  alertType: "connectivity_loss" | "battery_degradation" | "time_sync_failure" | "nn_update_failure" | "config_update_failure";
+  severity: "warning" | "critical";
+  title: string;
+  occurredAt: Date;
+  details: Record<string, unknown>;
+  sourceEventId?: string | null;
+  note: string;
+  snapshot?: {
+    reportedAt?: Date | null;
+    riskLevel?: number | null;
+    temperatureC?: number | null;
+    humidityPct?: number | null;
+    vocIaq?: number | null;
+    pm25UgM3?: number | null;
+    batteryPct?: number | null;
+  };
+}
+
 async function query<T extends QueryResultRow>(text: string, values: unknown[] = []) {
   if (!pool) {
     throw new Error("Database is not configured.");
@@ -277,6 +313,10 @@ async function query<T extends QueryResultRow>(text: string, values: unknown[] =
 
 function epochSecondsToDate(epochSeconds: number) {
   return new Date(epochSeconds * 1000);
+}
+
+function toEpochSeconds(date: Date) {
+  return Math.floor(date.getTime() / 1000);
 }
 
 function normalizePgError(error: unknown) {
@@ -445,7 +485,7 @@ async function projectRegistrationUplinkInDb(
   message: ParsedNodeUplinkEnvelope,
   requestMetadata: Record<string, string | number | boolean | null>,
   packet: ParsedRegistrationPacket,
-) {
+): Promise<PendingNotificationDispatch[]> {
   const observedAt = epochSecondsToDate(message.receivedAtEpochSeconds);
   const firmwareVersion = formatPackedVersion(packet.fwVersionPacked);
 
@@ -565,6 +605,17 @@ async function projectRegistrationUplinkInDb(
       },
     });
   }
+
+  return [
+    {
+      eventType: "system",
+      alertId: null,
+      deviceId,
+      occurredAt: observedAt,
+      subject: `Node ${packet.nodeId} join / rejoin detected`,
+      text: `PyroNet recorded a node join / rejoin event for node ${packet.nodeId}. Firmware ${firmwareVersion}, battery ${packet.batteryPct}%.`,
+    },
+  ];
 }
 
 async function projectSensorUplinkInDb(
@@ -573,7 +624,8 @@ async function projectSensorUplinkInDb(
   gatewayUplinkId: number,
   message: ParsedNodeUplinkEnvelope,
   packet: ParsedSensorPacket,
-) {
+): Promise<PendingNotificationDispatch[]> {
+  const pendingNotifications: PendingNotificationDispatch[] = [];
   const deviceResult = await client.query<{
     id: number;
     current_config_revision_id: number | null;
@@ -702,6 +754,47 @@ async function projectSensorUplinkInDb(
 
   await syncDeviceIpv6HistoryInDb(client, device.id, message.observedSrcIpv6, observedAt);
 
+  if (packet.batteryPct !== null && packet.batteryPct <= batteryDegradationOpenThresholdPct) {
+    const batteryAlert = await upsertOperationalAlertInDb(client, {
+      deviceId: device.id,
+      alertType: "battery_degradation",
+      severity: "warning",
+      title: `Battery degradation detected for node ${packet.nodeId}`,
+      occurredAt: reportedAt,
+      details: {
+        batteryPct: packet.batteryPct,
+        openThresholdPct: batteryDegradationOpenThresholdPct,
+      },
+      note: "Battery-degradation alert opened because the reported battery percentage crossed the warning threshold.",
+      snapshot: {
+        reportedAt,
+        riskLevel: packet.riskLevel,
+        temperatureC: packet.temperatureC,
+        humidityPct: packet.humidityPct,
+        vocIaq: packet.bvocPpmRaw,
+        pm25UgM3: packet.pm25UgM3,
+        batteryPct: packet.batteryPct,
+      },
+    });
+
+    if (batteryAlert.newlyOpened) {
+      pendingNotifications.push({
+        eventType: "battery_degradation",
+        alertId: batteryAlert.alertId,
+        deviceId: device.id,
+        occurredAt: reportedAt,
+        subject: `Battery degradation detected for node ${packet.nodeId}`,
+        text: `PyroNet detected battery degradation for node ${packet.nodeId}. Reported battery is ${packet.batteryPct}% which is at or below the ${batteryDegradationOpenThresholdPct}% threshold.`,
+      });
+    }
+  } else if (packet.batteryPct !== null && packet.batteryPct >= batteryDegradationClearThresholdPct) {
+    await clearOperationalAlertInDb(client, {
+      deviceId: device.id,
+      alertType: "battery_degradation",
+      note: "Battery-degradation alert cleared because the reported battery recovered above the clear threshold.",
+    });
+  }
+
   if (packet.type === sensorAlertPacketType) {
     const alertDetails = buildGatewayProjectionMetadata(message, {
       alertSource: "0x03",
@@ -765,8 +858,19 @@ async function projectSensorUplinkInDb(
         `,
         [alertId, "Critical-risk alert projected from uplink 0x03.", JSON.stringify(alertDetails)],
       );
+
+      pendingNotifications.push({
+        eventType: "critical_risk",
+        alertId,
+        deviceId: device.id,
+        occurredAt: reportedAt,
+        subject: `Critical risk detected at node ${packet.nodeId}`,
+        text: `PyroNet detected a critical risk alert from node ${packet.nodeId}. Risk ${packet.riskLevel}. Temp ${packet.temperatureC.toFixed(1)}C, RH ${packet.humidityPct.toFixed(1)}%, VOC ${packet.bvocPpmRaw}, PM2.5 ${packet.pm25UgM3.toFixed(1)}.`,
+      });
     }
   }
+
+  return pendingNotifications;
 }
 
 async function projectParentUpdateUplinkInDb(
@@ -830,10 +934,10 @@ async function projectGatewayUplinkInDb(
   gatewayUplinkId: number,
   message: ParsedNodeUplinkEnvelope,
   requestMetadata: Record<string, string | number | boolean | null>,
-) {
+): Promise<PendingNotificationDispatch[]> {
   switch (message.decodedPayload.type) {
     case registrationPacketType:
-      await projectRegistrationUplinkInDb(
+      return projectRegistrationUplinkInDb(
         client,
         gatewayRowId,
         gatewayUplinkId,
@@ -841,17 +945,571 @@ async function projectGatewayUplinkInDb(
         requestMetadata,
         message.decodedPayload,
       );
-      return;
     case sensorReportPacketType:
     case sensorAlertPacketType:
-      await projectSensorUplinkInDb(client, gatewayRowId, gatewayUplinkId, message, message.decodedPayload);
-      return;
+      return projectSensorUplinkInDb(client, gatewayRowId, gatewayUplinkId, message, message.decodedPayload);
     case parentUpdatePacketType:
       await projectParentUpdateUplinkInDb(client, gatewayRowId, gatewayUplinkId, message, message.decodedPayload);
-      return;
+      return [];
     default:
       throw new Error(`Unsupported projected packet type ${(message.decodedPayload as { type: number }).type}`);
   }
+}
+
+async function deliverNotificationDispatch(dispatch: PendingNotificationDispatch) {
+  const recipients = await query<{
+    id: number;
+    display_name: string | null;
+    email_address: string;
+  }>(
+    `
+      SELECT recipient.id, recipient.display_name, recipient.email_address
+      FROM notification_recipients recipient
+      JOIN notification_preferences preference ON preference.recipient_id = recipient.id
+      WHERE recipient.is_enabled = TRUE
+        AND preference.event_type = $1
+        AND preference.is_enabled = TRUE
+      ORDER BY recipient.id
+    `,
+    [dispatch.eventType],
+  );
+
+  for (const recipient of recipients.rows) {
+    const queuedAt = new Date();
+
+    try {
+      const result = await sendEmail({
+        to: recipient.email_address,
+        subject: dispatch.subject,
+        text: dispatch.text,
+      });
+      const attemptedAt = new Date();
+
+      await query(
+        `
+          INSERT INTO notification_deliveries (
+            recipient_id,
+            event_type,
+            alert_id,
+            device_id,
+            event_occurred_at,
+            subject,
+            status,
+            queued_at,
+            attempted_at,
+            delivered_at,
+            provider_message_id,
+            payload_snapshot
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, 'accepted', $7, $8, $9, $10, $11::jsonb)
+        `,
+        [
+          recipient.id,
+          dispatch.eventType,
+          dispatch.alertId,
+          dispatch.deviceId,
+          dispatch.occurredAt,
+          dispatch.subject,
+          queuedAt,
+          attemptedAt,
+          attemptedAt,
+          result.providerMessageId,
+          JSON.stringify({
+            to: recipient.email_address,
+            recipientName: recipient.display_name,
+            response: result.response,
+            acceptedRecipients: result.acceptedRecipients,
+            rejectedRecipients: result.rejectedRecipients,
+          }),
+        ],
+      );
+    } catch (error) {
+      await query(
+        `
+          INSERT INTO notification_deliveries (
+            recipient_id,
+            event_type,
+            alert_id,
+            device_id,
+            event_occurred_at,
+            subject,
+            status,
+            queued_at,
+            attempted_at,
+            failure_reason,
+            payload_snapshot
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, 'failed', $7, $8, $9, $10::jsonb)
+        `,
+        [
+          recipient.id,
+          dispatch.eventType,
+          dispatch.alertId,
+          dispatch.deviceId,
+          dispatch.occurredAt,
+          dispatch.subject,
+          queuedAt,
+          new Date(),
+          error instanceof Error ? error.message : "Unable to deliver notification.",
+          JSON.stringify({
+            to: recipient.email_address,
+            recipientName: recipient.display_name,
+          }),
+        ],
+      );
+    }
+  }
+}
+
+async function deliverPendingNotifications(dispatches: PendingNotificationDispatch[]) {
+  for (const dispatch of dispatches) {
+    try {
+      await deliverNotificationDispatch(dispatch);
+    } catch (error) {
+      console.error("[notifications] Unable to process dispatch", {
+        eventType: dispatch.eventType,
+        alertId: dispatch.alertId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+}
+
+async function upsertOperationalAlertInDb(
+  client: PoolClient,
+  options: AlertUpsertOptions,
+): Promise<{ alertId: number; newlyOpened: boolean }> {
+  const sourceEventId = options.sourceEventId ?? null;
+  const existingResult = await client.query<{ id: number }>(
+    `
+      SELECT id
+      FROM alerts
+      WHERE device_id = $1
+        AND alert_type = $2
+        AND status IN ('open', 'acknowledged')
+        AND ($3::text IS NULL OR details->>'sourceEventId' = $3)
+      ORDER BY id DESC
+      LIMIT 1
+      FOR UPDATE
+    `,
+    [options.deviceId, options.alertType, sourceEventId],
+  );
+
+  const snapshot = options.snapshot ?? {};
+  const details = {
+    ...options.details,
+    ...(sourceEventId ? { sourceEventId } : {}),
+  };
+
+  const existingAlertId = existingResult.rows[0]?.id;
+  if (existingAlertId) {
+    await client.query(
+      `
+        UPDATE alerts
+        SET
+          latest_event_at = GREATEST(latest_event_at, $2),
+          details = $3::jsonb,
+          snapshot_reported_at = COALESCE($4, snapshot_reported_at),
+          snapshot_risk_level = COALESCE($5, snapshot_risk_level),
+          snapshot_temperature_c = COALESCE($6, snapshot_temperature_c),
+          snapshot_humidity_pct = COALESCE($7, snapshot_humidity_pct),
+          snapshot_voc_iaq = COALESCE($8, snapshot_voc_iaq),
+          snapshot_pm25_ug_m3 = COALESCE($9, snapshot_pm25_ug_m3),
+          snapshot_battery_pct = COALESCE($10, snapshot_battery_pct)
+        WHERE id = $1
+      `,
+      [
+        existingAlertId,
+        options.occurredAt,
+        JSON.stringify(details),
+        snapshot.reportedAt ?? null,
+        snapshot.riskLevel ?? null,
+        snapshot.temperatureC ?? null,
+        snapshot.humidityPct ?? null,
+        snapshot.vocIaq ?? null,
+        snapshot.pm25UgM3 ?? null,
+        snapshot.batteryPct ?? null,
+      ],
+    );
+
+    return {
+      alertId: existingAlertId,
+      newlyOpened: false,
+    };
+  }
+
+  const insertedAlert = await client.query<{ id: number }>(
+    `
+      INSERT INTO alerts (
+        device_id,
+        alert_type,
+        status,
+        severity,
+        title,
+        details,
+        occurred_at,
+        detected_at,
+        latest_event_at,
+        snapshot_reported_at,
+        snapshot_risk_level,
+        snapshot_temperature_c,
+        snapshot_humidity_pct,
+        snapshot_voc_iaq,
+        snapshot_pm25_ug_m3,
+        snapshot_battery_pct
+      )
+      VALUES ($1, $2, 'open', $3, $4, $5::jsonb, $6, NOW(), NOW(), $7, $8, $9, $10, $11, $12, $13)
+      RETURNING id
+    `,
+    [
+      options.deviceId,
+      options.alertType,
+      options.severity,
+      options.title,
+      JSON.stringify(details),
+      options.occurredAt,
+      snapshot.reportedAt ?? null,
+      snapshot.riskLevel ?? null,
+      snapshot.temperatureC ?? null,
+      snapshot.humidityPct ?? null,
+      snapshot.vocIaq ?? null,
+      snapshot.pm25UgM3 ?? null,
+      snapshot.batteryPct ?? null,
+    ],
+  );
+
+  const alertId = insertedAlert.rows[0]?.id;
+  if (!alertId) {
+    throw new Error(`Unable to create ${options.alertType} alert.`);
+  }
+
+  await client.query(
+    `
+      INSERT INTO alert_events (
+        alert_id,
+        event_type,
+        new_status,
+        event_at,
+        note,
+        details
+      )
+      VALUES ($1, 'opened', 'open', NOW(), $2, $3::jsonb)
+    `,
+    [alertId, options.note, JSON.stringify(details)],
+  );
+
+  return {
+    alertId,
+    newlyOpened: true,
+  };
+}
+
+async function clearOperationalAlertInDb(
+  client: PoolClient,
+  options: {
+    deviceId: number;
+    alertType: "connectivity_loss" | "battery_degradation";
+    note: string;
+  },
+) {
+  const existing = await client.query<{ id: number }>(
+    `
+      SELECT id
+      FROM alerts
+      WHERE device_id = $1
+        AND alert_type = $2
+        AND status IN ('open', 'acknowledged')
+      ORDER BY id DESC
+      LIMIT 1
+      FOR UPDATE
+    `,
+    [options.deviceId, options.alertType],
+  );
+
+  const alertId = existing.rows[0]?.id;
+  if (!alertId) {
+    return;
+  }
+
+  await client.query(
+    `
+      UPDATE alerts
+      SET
+        status = 'cleared',
+        cleared_at = NOW(),
+        latest_event_at = NOW()
+      WHERE id = $1
+    `,
+    [alertId],
+  );
+
+  await client.query(
+    `
+      INSERT INTO alert_events (
+        alert_id,
+        event_type,
+        new_status,
+        event_at,
+        note,
+        details
+      )
+      VALUES ($1, 'cleared', 'cleared', NOW(), $2, '{}'::jsonb)
+    `,
+    [alertId, options.note],
+  );
+}
+
+async function evaluateDerivedNotificationsInDb() {
+  if (!pool || isNotificationEvaluationInFlight) {
+    return;
+  }
+
+  isNotificationEvaluationInFlight = true;
+  const client = await pool.connect();
+  const pendingDispatches: PendingNotificationDispatch[] = [];
+
+  try {
+    await client.query("BEGIN");
+
+    const offlineDevices = await client.query<{
+      id: number;
+      node_id: number;
+      last_seen_at: string;
+    }>(
+      `
+        SELECT id, node_id, last_seen_at::text
+        FROM devices
+        WHERE last_seen_at IS NOT NULL
+          AND last_seen_at <= NOW() - ($1 * interval '1 millisecond')
+        ORDER BY node_id
+      `,
+      [offlineThresholdMs],
+    );
+
+    for (const device of offlineDevices.rows) {
+      const occurredAt = new Date(new Date(device.last_seen_at).getTime() + offlineThresholdMs);
+      const alert = await upsertOperationalAlertInDb(client, {
+        deviceId: device.id,
+        alertType: "connectivity_loss",
+        severity: "warning",
+        title: `${device.node_id} silent for 5 minutes`,
+        occurredAt,
+        details: {
+          thresholdMinutes: 5,
+          lastSeenAt: device.last_seen_at,
+        },
+        note: "Connectivity-loss alert opened because the node missed the offline threshold.",
+      });
+
+      if (alert.newlyOpened) {
+        pendingDispatches.push({
+          eventType: "connectivity_loss",
+          alertId: alert.alertId,
+          deviceId: device.id,
+          occurredAt,
+          subject: `Connectivity loss detected for node ${device.node_id}`,
+          text: `PyroNet detected connectivity loss for node ${device.node_id}. The node has not been seen for at least 5 minutes.`,
+        });
+      }
+    }
+
+    const recoveredDevices = await client.query<{ id: number }>(
+      `
+        SELECT DISTINCT d.id
+        FROM alerts a
+        JOIN devices d ON d.id = a.device_id
+        WHERE a.alert_type = 'connectivity_loss'
+          AND a.status IN ('open', 'acknowledged')
+          AND (d.last_seen_at IS NULL OR d.last_seen_at > NOW() - ($1 * interval '1 millisecond'))
+      `,
+      [offlineThresholdMs],
+    );
+
+    for (const device of recoveredDevices.rows) {
+      await clearOperationalAlertInDb(client, {
+        deviceId: device.id,
+        alertType: "connectivity_loss",
+        note: "Connectivity-loss alert cleared because the node checked back in.",
+      });
+    }
+
+    await client.query(
+      `
+        UPDATE time_sync_events
+        SET
+          status = 'timed_out',
+          result_message = COALESCE(result_message, 'Time sync command timed out without acknowledgement.'),
+          payload_metadata = payload_metadata || jsonb_build_object('timedOutAt', NOW()::text)
+        WHERE status = 'pending'
+          AND sent_at <= NOW() - ($1 * interval '1 millisecond')
+      `,
+      [downlinkFailureTimeoutMs],
+    );
+
+    await client.query(
+      `
+        UPDATE nn_distribution_events
+        SET
+          status = 'timed_out',
+          payload_metadata = payload_metadata || jsonb_build_object('timedOutAt', NOW()::text)
+        WHERE status = 'pending'
+          AND sent_at <= NOW() - ($1 * interval '1 millisecond')
+      `,
+      [downlinkFailureTimeoutMs],
+    );
+
+    await client.query(
+      `
+        UPDATE device_config_deployments
+        SET
+          status = 'timed_out',
+          payload_metadata = payload_metadata || jsonb_build_object('timedOutAt', NOW()::text)
+        WHERE status = 'pending'
+          AND sent_at <= NOW() - ($1 * interval '1 millisecond')
+      `,
+      [downlinkFailureTimeoutMs],
+    );
+
+    const timeSyncFailures = await client.query<{
+      id: number;
+      device_id: number;
+      node_id: number;
+      status: "failed" | "timed_out";
+      sent_at: string;
+      result_message: string | null;
+    }>(
+      `
+        SELECT tse.id, tse.device_id, d.node_id, tse.status, tse.sent_at::text, tse.result_message
+        FROM time_sync_events tse
+        JOIN devices d ON d.id = tse.device_id
+        WHERE tse.status IN ('failed', 'timed_out')
+        ORDER BY tse.id
+      `,
+    );
+
+    for (const failure of timeSyncFailures.rows) {
+      const alert = await upsertOperationalAlertInDb(client, {
+        deviceId: failure.device_id,
+        alertType: "time_sync_failure",
+        severity: "warning",
+        title: `Time sync failure for node ${failure.node_id}`,
+        occurredAt: new Date(failure.sent_at),
+        details: {
+          status: failure.status,
+          resultMessage: failure.result_message,
+        },
+        sourceEventId: String(failure.id),
+        note: "Time-sync failure alert opened from a failed or timed-out downlink event.",
+      });
+
+      if (alert.newlyOpened) {
+        pendingDispatches.push({
+          eventType: "time_sync_failure",
+          alertId: alert.alertId,
+          deviceId: failure.device_id,
+          occurredAt: new Date(failure.sent_at),
+          subject: `Time sync failure for node ${failure.node_id}`,
+          text:
+            failure.result_message ??
+            `PyroNet detected a ${failure.status.replace("_", " ")} time sync command for node ${failure.node_id}.`,
+        });
+      }
+    }
+
+    const nnFailures = await client.query<{
+      id: number;
+      device_id: number;
+      node_id: number;
+      status: "failed" | "timed_out";
+      sent_at: string;
+    }>(
+      `
+        SELECT nde.id, nde.device_id, d.node_id, nde.status, nde.sent_at::text
+        FROM nn_distribution_events nde
+        JOIN devices d ON d.id = nde.device_id
+        WHERE nde.status IN ('failed', 'timed_out')
+        ORDER BY nde.id
+      `,
+    );
+
+    for (const failure of nnFailures.rows) {
+      const alert = await upsertOperationalAlertInDb(client, {
+        deviceId: failure.device_id,
+        alertType: "nn_update_failure",
+        severity: "warning",
+        title: `Neighbor update failure for node ${failure.node_id}`,
+        occurredAt: new Date(failure.sent_at),
+        details: {
+          status: failure.status,
+        },
+        sourceEventId: String(failure.id),
+        note: "Neighbor-update failure alert opened from a failed or timed-out downlink event.",
+      });
+
+      if (alert.newlyOpened) {
+        pendingDispatches.push({
+          eventType: "nn_update_failure",
+          alertId: alert.alertId,
+          deviceId: failure.device_id,
+          occurredAt: new Date(failure.sent_at),
+          subject: `Neighbor update failure for node ${failure.node_id}`,
+          text: `PyroNet detected a ${failure.status.replace("_", " ")} neighbor update command for node ${failure.node_id}.`,
+        });
+      }
+    }
+
+    const configFailures = await client.query<{
+      id: number;
+      device_id: number;
+      node_id: number;
+      status: "failed" | "timed_out";
+      sent_at: string;
+    }>(
+      `
+        SELECT dcd.id, dcd.device_id, d.node_id, dcd.status, dcd.sent_at::text
+        FROM device_config_deployments dcd
+        JOIN devices d ON d.id = dcd.device_id
+        WHERE dcd.status IN ('failed', 'timed_out')
+        ORDER BY dcd.id
+      `,
+    );
+
+    for (const failure of configFailures.rows) {
+      const alert = await upsertOperationalAlertInDb(client, {
+        deviceId: failure.device_id,
+        alertType: "config_update_failure",
+        severity: "warning",
+        title: `Config update failure for node ${failure.node_id}`,
+        occurredAt: new Date(failure.sent_at),
+        details: {
+          status: failure.status,
+        },
+        sourceEventId: String(failure.id),
+        note: "Config-update failure alert opened from a failed or timed-out downlink event.",
+      });
+
+      if (alert.newlyOpened) {
+        pendingDispatches.push({
+          eventType: "config_update_failure",
+          alertId: alert.alertId,
+          deviceId: failure.device_id,
+          occurredAt: new Date(failure.sent_at),
+          subject: `Config update failure for node ${failure.node_id}`,
+          text: `PyroNet detected a ${failure.status.replace("_", " ")} config update command for node ${failure.node_id}.`,
+        });
+      }
+    }
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+    isNotificationEvaluationInFlight = false;
+  }
+
+  await deliverPendingNotifications(pendingDispatches);
 }
 
 async function resolveRoutedDeviceTargetsInDb(
@@ -1080,10 +1738,6 @@ function resolveGatewayDownlinkUrlFromRequest(request: express.Request) {
     normalizeGatewayDownlinkUrl(request.get("x-pyronet-downlink-url")) ??
     deriveGatewayDownlinkUrlFromRemoteAddress(request.ip || null)
   );
-}
-
-function toEpochSeconds(value: Date) {
-  return Math.floor(value.getTime() / 1000);
 }
 
 async function reserveGatewayDownlinkIdInDb(client: PoolClient) {
@@ -1706,6 +2360,22 @@ function startGatewayDownlinkDispatcher() {
   timer.unref?.();
 }
 
+function startNotificationEvaluator() {
+  if (!pool) {
+    return;
+  }
+
+  const runEvaluation = () => {
+    void evaluateDerivedNotificationsInDb().catch((error) => {
+      console.error("[notifications] Evaluation failed", error);
+    });
+  };
+
+  runEvaluation();
+  const timer = setInterval(runEvaluation, notificationEvaluationIntervalMs);
+  timer.unref?.();
+}
+
 async function ensureGatewayRowForUplink(
   client: PoolClient,
   gatewayId: number,
@@ -1942,7 +2612,7 @@ async function persistGatewayUplinkInDb(
       throw new Error(`Unable to persist uplink ${uplinkIdText} for gateway ${message.gatewayId}`);
     }
 
-    await projectGatewayUplinkInDb(client, gatewayRowId, gatewayUplinkId, message, requestMetadata);
+    const pendingNotifications = await projectGatewayUplinkInDb(client, gatewayRowId, gatewayUplinkId, message, requestMetadata);
     await client.query(
       `
         UPDATE gateway_uplinks
@@ -1987,6 +2657,7 @@ async function persistGatewayUplinkInDb(
     );
 
     await client.query("COMMIT");
+    void deliverPendingNotifications(pendingNotifications);
     return {
       receiptBuffer,
       isDuplicate: false,
@@ -2494,7 +3165,14 @@ async function queryAlertsFromDb(nodes?: NodeSummary[]): Promise<AlertIncident[]
   const result = await query<{
     id: number;
     node_id: number;
-    alert_type: "critical_risk" | "connectivity_loss" | "battery_degradation" | "system";
+    alert_type:
+      | "critical_risk"
+      | "connectivity_loss"
+      | "battery_degradation"
+      | "time_sync_failure"
+      | "nn_update_failure"
+      | "config_update_failure"
+      | "system";
     title: string;
     severity: AlertIncident["severity"];
     status: "open" | "acknowledged" | "cleared";
@@ -2539,7 +3217,7 @@ async function queryAlertsFromDb(nodes?: NodeSummary[]): Promise<AlertIncident[]
         (
           SELECT count(*)::text
           FROM notification_deliveries nd
-          WHERE nd.alert_id = a.id AND nd.status = 'sent'
+          WHERE nd.alert_id = a.id AND nd.status IN ('accepted', 'sent')
         ) AS sent_count,
         (
           SELECT count(*)::text
@@ -2554,6 +3232,12 @@ async function queryAlertsFromDb(nodes?: NodeSummary[]): Promise<AlertIncident[]
     `,
   );
 
+  const directConnectivityNodeIds = new Set(
+    result.rows
+      .filter((row: (typeof result.rows)[number]) => row.alert_type === "connectivity_loss" && row.status !== "cleared")
+      .map((row: (typeof result.rows)[number]) => row.node_id),
+  );
+
   const directAlerts: AlertIncident[] = result.rows.flatMap((row: (typeof result.rows)[number]) => {
     const incidentMeta =
       row.alert_type === "critical_risk"
@@ -2566,11 +3250,39 @@ async function queryAlertsFromDb(nodes?: NodeSummary[]): Promise<AlertIncident[]
         : row.alert_type === "battery_degradation"
           ? {
               incidentType: "battery_health_low" as const,
-              eventCode: "battery-health-low" as const,
+            eventCode: "battery-health-low" as const,
+            sourceType: "periodic_report" as const,
+            severity: "warning" as const,
+          }
+        : row.alert_type === "connectivity_loss"
+          ? {
+              incidentType: "offline" as const,
+              eventCode: "derived-offline" as const,
               sourceType: "periodic_report" as const,
               severity: "warning" as const,
             }
-          : null;
+          : row.alert_type === "time_sync_failure"
+            ? {
+                incidentType: "time_sync_failure" as const,
+                eventCode: "derived-offline" as const,
+                sourceType: "periodic_report" as const,
+                severity: "warning" as const,
+              }
+            : row.alert_type === "nn_update_failure"
+              ? {
+                  incidentType: "nn_update_failure" as const,
+                  eventCode: "derived-offline" as const,
+                  sourceType: "periodic_report" as const,
+                  severity: "warning" as const,
+                }
+              : row.alert_type === "config_update_failure"
+                ? {
+                    incidentType: "config_update_failure" as const,
+                    eventCode: "derived-offline" as const,
+                    sourceType: "periodic_report" as const,
+                    severity: "warning" as const,
+                  }
+        : null;
 
     if (!incidentMeta) {
       return [];
@@ -2616,7 +3328,7 @@ async function queryAlertsFromDb(nodes?: NodeSummary[]): Promise<AlertIncident[]
   });
 
   const offlineIncidents = fleet
-    .filter((node) => node.connectivity === "offline" && node.lastSeenAt)
+    .filter((node) => node.connectivity === "offline" && node.lastSeenAt && !directConnectivityNodeIds.has(node.nodeId))
     .map((node) => {
       const derivedAt = new Date(timestampMs(node.lastSeenAt) + offlineThresholdMs).toISOString();
       return {
@@ -3648,6 +4360,7 @@ async function getConfigurationFromDb(): Promise<ConfigurationResponse> {
 }
 
 async function getNotificationsFromDb(): Promise<NotificationSettingsResponse> {
+  await evaluateDerivedNotificationsInDb();
   const [recipientsResult, deliveriesResult] = await Promise.all([
     query<{
       id: number;
@@ -4134,10 +4847,18 @@ async function updateRecipientInDb(
   }
 
   const numericRecipientId = Number(recipientId);
-  await query("UPDATE notification_recipients SET is_enabled = $2, updated_at = NOW() WHERE id = $1", [
-    numericRecipientId,
-    update.isEnabled,
-  ]);
+  await query(
+    `
+      UPDATE notification_recipients
+      SET
+        display_name = NULLIF(BTRIM($2), ''),
+        email_address = BTRIM($3),
+        is_enabled = $4,
+        updated_at = NOW()
+      WHERE id = $1
+    `,
+    [numericRecipientId, update.displayName, update.emailAddress, update.isEnabled],
+  );
 
   for (const eventType of notificationEventTypes) {
     await query(
@@ -4148,6 +4869,40 @@ async function updateRecipientInDb(
         DO UPDATE SET is_enabled = EXCLUDED.is_enabled, updated_at = NOW()
       `,
       [numericRecipientId, eventType, update.enabledEventTypes.includes(eventType)],
+    );
+  }
+
+  return getNotificationsFromDb();
+}
+
+async function createRecipientInDb(update: NotificationRecipientUpdate): Promise<NotificationSettingsResponse> {
+  if (!pool) {
+    throw new Error("Database is not configured.");
+  }
+
+  const result = await query<{ id: number }>(
+    `
+      INSERT INTO notification_recipients (display_name, email_address, is_enabled)
+      VALUES (NULLIF(BTRIM($1), ''), BTRIM($2), $3)
+      RETURNING id
+    `,
+    [update.displayName, update.emailAddress, update.isEnabled],
+  );
+
+  const recipientId = result.rows[0]?.id;
+  if (!recipientId) {
+    throw new Error("Unable to create notification recipient.");
+  }
+
+  for (const eventType of notificationEventTypes) {
+    await query(
+      `
+        INSERT INTO notification_preferences (recipient_id, event_type, is_enabled, updated_at)
+        VALUES ($1, $2, $3, NOW())
+        ON CONFLICT (recipient_id, event_type)
+        DO UPDATE SET is_enabled = EXCLUDED.is_enabled, updated_at = NOW()
+      `,
+      [recipientId, eventType, update.enabledEventTypes.includes(eventType)],
     );
   }
 
@@ -4486,6 +5241,20 @@ app.get("/api/notifications", async (_request, response, next) => {
   }
 });
 
+app.post("/api/notifications/recipients", async (request, response, next) => {
+  try {
+    const body = request.body as NotificationRecipientUpdate;
+    response.json(
+      await withSource(
+        () => createRecipientInDb(body),
+        () => createMockNotificationRecipient(body),
+      ),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.put("/api/notifications/recipients/:recipientId", async (request, response, next) => {
   try {
     const body = request.body as NotificationRecipientUpdate;
@@ -4507,5 +5276,6 @@ app.use((error: unknown, _request: express.Request, response: express.Response, 
 
 app.listen(port, () => {
   startGatewayDownlinkDispatcher();
+  startNotificationEvaluator();
   process.stdout.write(`PyroNet API listening on http://localhost:${port}\n`);
 });
