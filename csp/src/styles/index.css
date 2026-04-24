@@ -293,6 +293,12 @@ table {
   gap: 16px;
 }
 
+.notifications-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
 .dashboard-grid-stack {
   align-items: start;
   grid-template-columns: minmax(0, 1.08fr) minmax(0, 1.12fr);
@@ -883,6 +889,89 @@ table {
   gap: 14px;
 }
 
+.notification-card {
+  display: grid;
+  gap: 18px;
+}
+
+.notification-card-heading {
+  margin-bottom: 0;
+}
+
+.notification-recipient-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.notification-recipient-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 243, 233, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+}
+
+.notification-recipient-toggle input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.notification-sms-field input:disabled {
+  color: rgba(248, 243, 233, 0.52);
+}
+
+.notification-preferences-table table,
+.notification-deliveries-table table {
+  min-width: 0;
+}
+
+.notification-preferences-table th:nth-child(2),
+.notification-preferences-table th:nth-child(3),
+.notification-preferences-table td:nth-child(2),
+.notification-preferences-table td:nth-child(3) {
+  width: 96px;
+  text-align: center;
+}
+
+.notification-preference-cell input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.notification-support-note {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.notification-card-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.notification-status-queued {
+  background: rgba(237, 181, 74, 0.16);
+  color: #ffd986;
+  border-color: rgba(237, 181, 74, 0.32);
+}
+
+.notification-status-accepted,
+.notification-status-sent {
+  background: rgba(79, 157, 103, 0.16);
+  color: #a9e0b8;
+  border-color: rgba(79, 157, 103, 0.32);
+}
+
+.notification-status-failed,
+.notification-status-skipped {
+  background: rgba(203, 58, 40, 0.18);
+  color: #ffb1a6;
+  border-color: rgba(203, 58, 40, 0.32);
+}
+
 .threshold-groups {
   display: grid;
   gap: 16px;
@@ -1256,6 +1345,12 @@ textarea {
   padding: 12px 14px;
 }
 
+.inline-status-error {
+  border-color: rgba(203, 58, 40, 0.34);
+  background: rgba(203, 58, 40, 0.14);
+  color: #ffcec6;
+}
+
 .state-card {
   display: grid;
   justify-items: center;
@@ -1298,6 +1393,7 @@ textarea {
   }
 
   .dashboard-grid,
+  .notifications-grid,
   .alerts-grid,
   .split-grid {
     grid-template-columns: 1fr;
@@ -1330,6 +1426,10 @@ textarea {
 
   .form-grid,
   .detail-list {
+    grid-template-columns: 1fr;
+  }
+
+  .notification-recipient-grid {
     grid-template-columns: 1fr;
   }
 }

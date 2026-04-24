@@ -1,133 +1,105 @@
-import { isIP } from "node:net";
+import {
+  buildGatewayRegistrationMessage,
+  buildNodeUplinkEnvelope,
+  buildSensorPayload,
+  clamp,
+  defaultApiPort,
+  fetchFirstNodeId,
+  nextUplinkId,
+  postGatewayRegistration,
+  postNodeUplink,
+  toNumber,
+  withDbClient,
+} from "./testBackhaulUtils";
 
 export {};
 
-const defaultApiPort = Number(process.env.API_PORT ?? "4000");
-const DOWNLINK_FAILURE_TIMEOUT_MINUTES = 15;
-
-function toNumber(value: string | undefined, fallback: number) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-
-function clamp(value: number, minimum: number, maximum: number) {
-  return Math.min(maximum, Math.max(minimum, value));
-}
-
-function encodeIpv6(value: string) {
-  if (isIP(value) !== 6) {
-    throw new Error(`Invalid IPv6 address: ${value}`);
-  }
-
-  const [headRaw, tailRaw] = value.split("::");
-  const head = headRaw ? headRaw.split(":").filter(Boolean) : [];
-  const tail = tailRaw ? tailRaw.split(":").filter(Boolean) : [];
-  const missingCount = 8 - (head.length + tail.length);
-  const groups = [
-    ...head.map((group) => Number.parseInt(group, 16)),
-    ...Array.from({ length: Math.max(missingCount, 0) }, () => 0),
-    ...tail.map((group) => Number.parseInt(group, 16)),
-  ];
-
-  if (groups.length !== 8 || groups.some((group) => !Number.isInteger(group) || group < 0 || group > 0xffff)) {
-    throw new Error(`Unable to encode IPv6 address: ${value}`);
-  }
-
-  const buffer = Buffer.alloc(16);
-  groups.forEach((group, index) => buffer.writeUInt16BE(group, index * 2));
-  return buffer;
-}
-
-function buildNeighborDistributionPayload(nodeId: number, neighborIpv6Addresses: string[]) {
-  const buffer = Buffer.alloc(5 + neighborIpv6Addresses.length * 16);
-  buffer.writeUInt8(0x04, 0);
-  buffer.writeUInt8(0x01, 1);
-  buffer.writeUInt16LE(nodeId, 2);
-  buffer.writeUInt8(neighborIpv6Addresses.length, 4);
-  neighborIpv6Addresses.forEach((ipv6Address, index) => {
-    encodeIpv6(ipv6Address).copy(buffer, 5 + index * 16);
-  });
-  return buffer.toString("hex");
-}
-
-async function loadNeighborIpv6Addresses(
-  apiBaseUrl: string,
-  targetNodeId: number,
-  neighborNodeIdsCsv: string | undefined,
-) {
-  const response = await fetch(`${apiBaseUrl}/api/nodes`);
-  const raw = await response.text();
-  if (!response.ok) {
-    throw new Error(`Unable to load nodes with ${response.status}: ${raw}`);
-  }
-
-  const nodes = JSON.parse(raw) as Array<{ nodeId: number; ipv6Address: string | null }>;
-  const requestedNodeIds = neighborNodeIdsCsv
-    ? neighborNodeIdsCsv
-        .split(",")
-        .map((value) => clamp(Math.round(toNumber(value.trim(), NaN)), 1, 65_535))
-        .filter((value) => Number.isFinite(value))
-    : [];
-
-  const candidates = nodes.filter((node) => node.nodeId !== targetNodeId && typeof node.ipv6Address === "string");
-  const selected = requestedNodeIds.length
-    ? requestedNodeIds
-        .map((nodeId) => candidates.find((node) => node.nodeId === nodeId))
-        .filter((node): node is { nodeId: number; ipv6Address: string } => Boolean(node?.ipv6Address))
-    : candidates.slice(0, 2).filter((node): node is { nodeId: number; ipv6Address: string } => Boolean(node.ipv6Address));
-
-  if (selected.length === 0) {
-    throw new Error("No neighbor IPv6 addresses are available. Register at least one other node before running this test.");
-  }
-
-  return selected.map((node) => node.ipv6Address);
-}
-
 async function main() {
-  const nodeId = clamp(Math.round(toNumber(process.argv[2], 2)), 1, 65_535);
   const apiBaseUrl = process.argv[3]?.trim() || `http://127.0.0.1:${defaultApiPort}`;
-  const minutesAgo = Math.max(DOWNLINK_FAILURE_TIMEOUT_MINUTES + 1, Math.round(toNumber(process.argv[4], 20)));
-  const neighborNodeIdsCsv = process.argv[5]?.trim();
-  const receivedAt = new Date(Date.now() - minutesAgo * 60 * 1000);
-  const neighborIpv6Addresses = await loadNeighborIpv6Addresses(apiBaseUrl, nodeId, neighborNodeIdsCsv);
-  const payload = buildNeighborDistributionPayload(nodeId, neighborIpv6Addresses);
+  const nodeId = process.argv[2] ? clamp(Math.round(toNumber(process.argv[2], 1)), 1, 65_535) : await fetchFirstNodeId(apiBaseUrl);
+  const minutesAgo = Math.max(16, Math.round(toNumber(process.argv[4], 20)));
+  const gatewayId = clamp(Math.round(toNumber(process.argv[5], 9001)), 1, 65_535);
+  const observedAt = new Date();
 
-  console.info("[neighbor-update:packet] Sending stale 0x04 neighbor update packet", {
+  const gatewayMessage = buildGatewayRegistrationMessage({
+    gatewayId,
+    reportedAt: observedAt,
+    wisunIpv6: "2001:db8:200::1",
+    latitude: 40.4237,
+    longitude: -86.9212,
+    softwareVersion: "3.1",
+  });
+
+  const routeUplink = buildNodeUplinkEnvelope({
+    gatewayId,
+    uplinkId: nextUplinkId(),
+    receivedAt: observedAt,
+    observedSrcIpv6: `2001:db8:100::${nodeId.toString(16)}`,
+    payload: buildSensorPayload({
+      packetType: 0x02,
+      nodeId,
+      occurredAt: observedAt,
+      riskLevel: 1,
+      temperatureC: 24.1,
+      humidityPct: 41.2,
+      vocIaq: 90,
+      pm25UgM3: 7.4,
+      batteryPct: 88,
+    }),
+  });
+
+  console.info("[neighbor-update:packet] Queueing neighbor distribution, then backdating it to force timeout", {
     nodeId,
+    gatewayId,
     apiBaseUrl,
     minutesAgo,
-    receivedAt: receivedAt.toISOString(),
-    neighborIpv6Addresses,
-    timeoutThresholdMinutes: DOWNLINK_FAILURE_TIMEOUT_MINUTES,
-    payload,
   });
 
-  const ingestResponse = await fetch(`${apiBaseUrl}/api/packets/ingest`, {
+  await postGatewayRegistration(apiBaseUrl, gatewayMessage);
+  await postNodeUplink(apiBaseUrl, routeUplink);
+
+  const queueResponse = await fetch(`${apiBaseUrl}/api/configuration/neighbors/${nodeId}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      payload,
-      encoding: "hex",
-      receivedAt: receivedAt.toISOString(),
+      radiusMeters: 100,
+      neighborNodeIds: [],
     }),
   });
-
-  const ingestText = await ingestResponse.text();
-  if (!ingestResponse.ok) {
-    throw new Error(`Packet ingest failed with ${ingestResponse.status}: ${ingestText}`);
+  const queueText = await queueResponse.text();
+  if (!queueResponse.ok) {
+    throw new Error(`Neighbor revision update failed with ${queueResponse.status}: ${queueText}`);
   }
 
-  console.info("[neighbor-update:packet] Neighbor update packet ingest accepted");
+  await withDbClient(async (client) => {
+    await client.query(
+      `
+        WITH latest_pending AS (
+          SELECT nde.id
+          FROM nn_distribution_events nde
+          JOIN devices d ON d.id = nde.device_id
+          WHERE d.node_id = $2
+            AND nde.status = 'pending'
+          ORDER BY nde.id DESC
+          LIMIT 1
+        )
+        UPDATE nn_distribution_events nde
+        SET sent_at = NOW() - ($1 * interval '1 minute')
+        FROM latest_pending
+        WHERE nde.id = latest_pending.id
+      `,
+      [minutesAgo, nodeId],
+    );
+  });
 
   const notificationsResponse = await fetch(`${apiBaseUrl}/api/notifications`);
-  const notificationsText = await notificationsResponse.text();
   if (!notificationsResponse.ok) {
-    throw new Error(`Notification refresh failed with ${notificationsResponse.status}: ${notificationsText}`);
+    throw new Error(`Notification refresh failed with ${notificationsResponse.status}: ${await notificationsResponse.text()}`);
   }
 
-  console.info("[neighbor-update:packet] Triggered notification evaluation via /api/notifications");
+  console.info("[neighbor-update:packet] Timeout scenario forced.");
   console.info("[neighbor-update:packet] If neighbor update failure email is enabled, you should now see a new delivery attempt.");
 }
 

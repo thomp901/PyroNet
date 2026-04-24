@@ -1,80 +1,102 @@
+import {
+  buildGatewayRegistrationMessage,
+  buildNodeUplinkEnvelope,
+  buildSensorPayload,
+  clamp,
+  defaultApiPort,
+  fetchFirstNodeId,
+  nextUplinkId,
+  postGatewayRegistration,
+  postNodeUplink,
+  toNumber,
+  withDbClient,
+} from "./testBackhaulUtils";
+
 export {};
 
-const defaultApiPort = Number(process.env.API_PORT ?? "4000");
-const DOWNLINK_FAILURE_TIMEOUT_MINUTES = 15;
-
-function toNumber(value: string | undefined, fallback: number) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-
-function clamp(value: number, minimum: number, maximum: number) {
-  return Math.min(maximum, Math.max(minimum, value));
-}
-
-function buildConfigUpdatePayload(configId: number) {
-  const buffer = Buffer.alloc(24);
-  buffer.writeUInt8(0x06, 0);
-  buffer.writeUInt8(0x01, 1);
-  buffer.writeUInt32LE(configId, 2);
-  buffer.writeInt16LE(Math.round(55 * 100), 6);
-  buffer.writeUInt16LE(Math.round(65 * 100), 8);
-  buffer.writeUInt16LE(250, 10);
-  buffer.writeInt16LE(Math.round(65 * 100), 12);
-  buffer.writeUInt16LE(Math.round(75 * 100), 14);
-  buffer.writeUInt16LE(325, 16);
-  buffer.writeUInt16LE(500, 18);
-  buffer.writeUInt16LE(650, 20);
-  buffer.writeUInt16LE(Math.round(85 * 10), 22);
-  return buffer.toString("hex");
-}
-
 async function main() {
-  const nodeId = clamp(Math.round(toNumber(process.argv[2], 2)), 1, 65_535);
   const apiBaseUrl = process.argv[3]?.trim() || `http://127.0.0.1:${defaultApiPort}`;
-  const minutesAgo = Math.max(DOWNLINK_FAILURE_TIMEOUT_MINUTES + 1, Math.round(toNumber(process.argv[4], 20)));
-  const defaultConfigId = Math.floor(Date.now() / 1000);
-  const configId = clamp(Math.round(toNumber(process.argv[5], defaultConfigId)), 1, 0xffff_ffff);
-  const receivedAt = new Date(Date.now() - minutesAgo * 60 * 1000);
-  const payload = buildConfigUpdatePayload(configId);
+  const nodeId = process.argv[2] ? clamp(Math.round(toNumber(process.argv[2], 1)), 1, 65_535) : await fetchFirstNodeId(apiBaseUrl);
+  const minutesAgo = Math.max(16, Math.round(toNumber(process.argv[4], 20)));
+  const gatewayId = clamp(Math.round(toNumber(process.argv[5], 9001)), 1, 65_535);
+  const observedAt = new Date();
 
-  console.info("[config-update:packet] Sending stale 0x06 config update packet", {
-    nodeId,
-    apiBaseUrl,
-    minutesAgo,
-    configId,
-    receivedAt: receivedAt.toISOString(),
-    timeoutThresholdMinutes: DOWNLINK_FAILURE_TIMEOUT_MINUTES,
-    payload,
+  const gatewayMessage = buildGatewayRegistrationMessage({
+    gatewayId,
+    reportedAt: observedAt,
+    wisunIpv6: "2001:db8:200::1",
+    latitude: 40.4237,
+    longitude: -86.9212,
+    softwareVersion: "3.1",
   });
 
-  const ingestResponse = await fetch(`${apiBaseUrl}/api/packets/ingest`, {
+  const routeUplink = buildNodeUplinkEnvelope({
+    gatewayId,
+    uplinkId: nextUplinkId(),
+    receivedAt: observedAt,
+    observedSrcIpv6: `2001:db8:100::${nodeId.toString(16)}`,
+    payload: buildSensorPayload({
+      packetType: 0x02,
+      nodeId,
+      occurredAt: observedAt,
+      riskLevel: 1,
+      temperatureC: 24.1,
+      humidityPct: 41.2,
+      vocIaq: 90,
+      pm25UgM3: 7.4,
+      batteryPct: 88,
+    }),
+  });
+
+  console.info("[config-update:packet] Queueing config update, then backdating it to force timeout", {
+    nodeId,
+    gatewayId,
+    apiBaseUrl,
+    minutesAgo,
+  });
+
+  await postGatewayRegistration(apiBaseUrl, gatewayMessage);
+  await postNodeUplink(apiBaseUrl, routeUplink);
+
+  const queueResponse = await fetch(`${apiBaseUrl}/api/configuration/downlinks/threshold-push`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      payload,
-      encoding: "hex",
-      targetNodeId: nodeId,
-      receivedAt: receivedAt.toISOString(),
-    }),
+    body: JSON.stringify({ targetNodeIds: [nodeId] }),
+  });
+  const queueText = await queueResponse.text();
+  if (!queueResponse.ok) {
+    throw new Error(`Config update queue failed with ${queueResponse.status}: ${queueText}`);
+  }
+
+  await withDbClient(async (client) => {
+    await client.query(
+      `
+        WITH latest_pending AS (
+          SELECT dcd.id
+          FROM device_config_deployments dcd
+          JOIN devices d ON d.id = dcd.device_id
+          WHERE d.node_id = $2
+            AND dcd.status = 'pending'
+          ORDER BY dcd.id DESC
+          LIMIT 1
+        )
+        UPDATE device_config_deployments dcd
+        SET sent_at = NOW() - ($1 * interval '1 minute')
+        FROM latest_pending
+        WHERE dcd.id = latest_pending.id
+      `,
+      [minutesAgo, nodeId],
+    );
   });
 
-  const ingestText = await ingestResponse.text();
-  if (!ingestResponse.ok) {
-    throw new Error(`Packet ingest failed with ${ingestResponse.status}: ${ingestText}`);
-  }
-
-  console.info("[config-update:packet] Config update packet ingest accepted");
-
   const notificationsResponse = await fetch(`${apiBaseUrl}/api/notifications`);
-  const notificationsText = await notificationsResponse.text();
   if (!notificationsResponse.ok) {
-    throw new Error(`Notification refresh failed with ${notificationsResponse.status}: ${notificationsText}`);
+    throw new Error(`Notification refresh failed with ${notificationsResponse.status}: ${await notificationsResponse.text()}`);
   }
 
-  console.info("[config-update:packet] Triggered notification evaluation via /api/notifications");
+  console.info("[config-update:packet] Timeout scenario forced.");
   console.info("[config-update:packet] If config update failure email is enabled, you should now see a new delivery attempt.");
 }
 
