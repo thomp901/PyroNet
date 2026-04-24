@@ -268,6 +268,18 @@ template_contribution:
   priority: 0
   value:
     group: wisun
+    name: pyronet_spoof
+    handler: app_pyronet_spoof
+    help: 'Send hard-coded PyroNet CSP spoof packets: w ps'
+    shortcuts:
+    - {name: ps}
+    argument:
+    - {type: string, help: Remote address}
+    - {type: uint16, help: Remote port}
+- name: cli_command
+  priority: 0
+  value:
+    group: wisun
     name: socket_list
     handler: app_socket_list
     help: 'List open sockets: w sl'
@@ -602,4 +614,3 @@ configuration:
 ui_hints:
   highlight:
   - {path: doc/readme.md, focus: true}
-
