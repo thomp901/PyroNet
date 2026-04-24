@@ -87,17 +87,20 @@ sudo python3 -m pyronet_gateway.live_decode --config ./config.example.toml
 Equivalent `make` target:
 
 ```bash
-sudo make live-decode CONFIG=./config.example.toml
+sudo make live-decode
 ```
 
 By default this:
 
+- Uses `./config.example.toml`
 - Sniffs `tun0`
 - Uses the CoAP port from the config file
 - Uses the configured uplink and downlink resource paths
 - Shows recognized PyroNet traffic only
+- Shows ACKs
+- Shows backhaul queue/retry/delivery state from the gateway database
 
-To also show backhaul queue state from the gateway database:
+If you run the Python module directly, add `--show-backhaul` to show backhaul queue state from the gateway database:
 
 ```bash
 sudo python3 -m pyronet_gateway.live_decode \
@@ -118,7 +121,7 @@ sudo python3 -m pyronet_gateway.live_decode \
 
 ## Common Options
 
-### Show ACKs
+### Show ACKs With Direct Python
 
 ```bash
 sudo python3 -m pyronet_gateway.live_decode \
@@ -126,12 +129,10 @@ sudo python3 -m pyronet_gateway.live_decode \
   --show-acks
 ```
 
-Or with `make`:
+The `make` target enables ACKs by default:
 
 ```bash
-sudo make live-decode \
-  CONFIG=./config.example.toml \
-  LIVE_DECODE_ARGS="--show-acks"
+sudo make live-decode
 ```
 
 ### Use a different interface

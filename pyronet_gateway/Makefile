@@ -7,9 +7,10 @@ PRE_COMMIT := $(VENV)/bin/pre-commit
 SQLITE := $(PYTHON) -m sqlite3
 CONFIG ?= ./config.example.toml
 DB_PATH ?= ./pyronet-gateway.sqlite3
-LIVE_DECODE_ARGS ?=
+LIVE_DECODE_ARGS ?= --show-acks --show-backhaul
+LIVE_BACKHAUL_SEND_ARGS ?=
 
-.PHONY: venv install-dev lint format run live-decode test test-live-backhaul check pre-commit-install pre-commit-run db-path db-tables db-shell db-downlinks
+.PHONY: venv install-dev lint format run live-decode live-backhaul-send test test-live-backhaul check pre-commit-install pre-commit-run db-path db-tables db-shell db-downlinks
 
 venv:
 	$(PYTHON) -m venv $(VENV)
@@ -28,6 +29,9 @@ run:
 
 live-decode:
 	$(PYTHON) -m pyronet_gateway.live_decode --config $(CONFIG) $(LIVE_DECODE_ARGS)
+
+live-backhaul-send:
+	$(PYTHON) -m pyronet_gateway.live_backhaul_send --config $(CONFIG) $(LIVE_BACKHAUL_SEND_ARGS)
 
 test:
 	$(PYTHON) -m unittest -v

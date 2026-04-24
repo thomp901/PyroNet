@@ -35,6 +35,7 @@ Environment overrides:
 - `PYRONET_GATEWAY_ID`
 - `PYRONET_GATEWAY_LATITUDE`
 - `PYRONET_GATEWAY_LONGITUDE`
+- `PYRONET_GATEWAY_WISUN_IPV6`
 - `PYRONET_SW_VERSION_OVERRIDE`
 - `PYRONET_COAP_BIND_HOST`
 - `PYRONET_COAP_BIND_PORT`
@@ -89,6 +90,7 @@ Useful targets:
 - `make format`
 - `make run`
 - `make live-decode`
+- `make live-backhaul-send`
 - `make test`
 - `make test-live-backhaul`
 - `make db-path`
@@ -101,26 +103,82 @@ Useful targets:
 - `pre-commit` requires `pyronet_gateway` to be inside a Git repository root. If this directory is copied outside Git, `make pre-commit-run` will fail even though the configuration is valid.
 - The DB helper targets default to `./pyronet-gateway.sqlite3`; override with `DB_PATH=/path/to/file.sqlite3` if your runtime config uses a different SQLite file.
 
+To watch live HTTP downlink traffic hitting `POST /api/v1/downlinks`, run the gateway with `INFO` logs enabled and tail stdout/stderr. Each request now emits `downlink_http recv` and `downlink_http done` lines with `gateway_id`, `downlink_id`, `target_node_id`, HTTP status, and terminal delivery status when the binary request header is valid.
+
+Example:
+
+```bash
+python3 -m pyronet_gateway --config ./config.example.toml --log-level INFO
+```
+
+## Backhaul Payload Contract
+
+All integer fields are little-endian. IPv6 fields are 16 raw network-order bytes.
+
+Gateway registration is sent as binary `application/octet-stream` to:
+
+```text
+POST /api/v1/gateways/register
+```
+
+Packet type `0x81` has this 34-byte payload:
+
+| Offset | Size | Field | Type | Notes |
+| ---: | ---: | --- | --- | --- |
+| 0 | 1 | `message_type` | `uint8` | Constant `0x81` |
+| 1 | 1 | `version` | `uint8` | Backhaul protocol version |
+| 2 | 2 | `gateway_id` | `uint16` | Gateway identifier |
+| 4 | 4 | `timestamp` | `uint32` | Unix epoch seconds |
+| 8 | 16 | `wisun_ipv6` | `uint8[16]` | Gateway Wi-SUN IPv6 address |
+| 24 | 4 | `latitude` | `float32` | Degrees |
+| 28 | 4 | `longitude` | `float32` | Degrees |
+| 32 | 2 | `sw_version` | `uint16` | Packed software version |
+
+Python struct format:
+
+```text
+<BBHI16sffH
+```
+
+The `wisun_ipv6` field is intentionally placed after `timestamp`, matching the existing node uplink envelope convention where the mesh IPv6 value follows the time field before payload-specific metadata.
+
 ## Live Packet Decode
 
 For passive live decode of PyroNet CoAP traffic on Linux, run:
 
 ```bash
-sudo make live-decode CONFIG=./config.example.toml
+sudo make live-decode
 ```
 
-By default this sniffs `tun0`, decodes CoAP payloads for `/uplink` and `/downlink`, and prints human-readable PyroNet packet fields without rebinding the gateway socket.
+By default this uses `./config.example.toml`, sniffs `tun0`, decodes CoAP payloads for `/uplink` and `/downlink`, shows ACKs, and shows backhaul queue/retry/delivery state from the local SQLite outbox.
 
-Pass extra flags through `LIVE_DECODE_ARGS`, for example:
+You can still override the config or decoder flags:
 
 ```bash
-sudo make live-decode CONFIG=./config.example.toml LIVE_DECODE_ARGS="--show-acks"
+sudo make live-decode CONFIG=./other-config.toml
 ```
 
-To also show backhaul queue/retry/delivery state from the local SQLite outbox:
+```bash
+sudo make live-decode LIVE_DECODE_ARGS="--show-unknown-coap"
+```
+
+## Spoofed CSP Uplink Send
+
+To send a spoofed gateway registration plus node uplinks directly to the configured backhaul/CSP, run:
 
 ```bash
-sudo make live-decode CONFIG=./config.example.toml LIVE_DECODE_ARGS="--show-backhaul"
+make live-backhaul-send CONFIG=./config.example.toml
+```
+
+The command reads the backhaul base URL and gateway metadata from the selected config file and prints one JSON line per send result.
+By default, the follow-up uplink uses packet type `0x02` (`SENSOR_REPORT`), and the spoofed node registration point is nudged slightly away from the gateway coordinates so the two locations do not overlap.
+
+Pass node-specific overrides through `LIVE_BACKHAUL_SEND_ARGS`, for example:
+
+```bash
+make live-backhaul-send \
+  CONFIG=./config.example.toml \
+  LIVE_BACKHAUL_SEND_ARGS="--node-id 4242 --observed-src-ipv6 fd12:3456::4242 --parent-ipv6 fd12:3456::1 --followup-packet-type 0x03"
 ```
 
 ## Test Strategy

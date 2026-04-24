@@ -142,6 +142,21 @@ class DownlinkCodecTests(unittest.TestCase):
 
 
 class CoapDownlinkClientTests(unittest.TestCase):
+    def test_link_local_target_is_sent_with_tun0_scope(self) -> None:
+        scripted_socket = ScriptedSocket([lambda sock: build_empty_ack(sock.sent_datagrams[-1][0])])
+        client = CoapDownlinkClient(
+            port=5683,
+            resource_path="/downlink",
+            ack_timeout_seconds=0.1,
+            max_retransmit=1,
+            link_local_interface="lo",
+            socket_factory=lambda *_args: scripted_socket,
+            monotonic=DeterministicClock(),
+        )
+        result = client.send_confirmable(target_ipv6="fe80::212:4b00:28ed:d802", payload=b"\x05\x01\x00\x00\x00\x00")
+        self.assertTrue(result.success)
+        self.assertEqual(("fe80::212:4b00:28ed:d802", 5683, 0, socket.if_nametoindex("lo")), scripted_socket.sent_datagrams[0][1])
+
     def test_success_path(self) -> None:
         scripted_socket = ScriptedSocket([lambda sock: build_empty_ack(sock.sent_datagrams[-1][0])])
         client = CoapDownlinkClient(
@@ -194,6 +209,7 @@ class DownlinkServiceIntegrationTests(unittest.TestCase):
             gateway_id=7,
             latitude=39.7684,
             longitude=-86.1581,
+            wisun_ipv6="fd12:3456::7",
             sw_version=0x0102,
             coap=CoapConfig(bind_host="::", port=5683, resource_path="/uplink"),
             backhaul=BackhaulConfig(base_url="http://backhaul.example"),
@@ -402,11 +418,61 @@ class DownlinkServiceIntegrationTests(unittest.TestCase):
         self.assertEqual(first_body, second_body)
         self.assertEqual(1, len(coap.calls))
 
+    def test_reused_downlink_id_with_new_body_does_not_replay_stale_terminal_result(self) -> None:
+        first_request = DownlinkRequest(
+            version=1,
+            gateway_id=7,
+            downlink_id=106,
+            target_node_id=10,
+            created_at=1_700_000_001,
+            payload=encode_time_sync(version=1, epoch=55),
+        )
+        first_coap = FakeCoapClient()
+        first_status, _headers, first_body = self._api(first_coap).handle_request(
+            method="POST",
+            path="/api/v1/downlinks",
+            content_type="application/octet-stream",
+            body=first_request.to_bytes(),
+            now=1_700_000_002,
+        )
+        first_result = DownlinkResult.from_bytes(first_body)
+        self.assertEqual(200, first_status)
+        self.assertEqual(DOWNLINK_STATUS_UNKNOWN_NODE, first_result.status)
+        self.assertEqual([], first_coap.calls)
+
+        self._register_node(10, "fd12:3456::10")
+        second_payload = encode_time_sync(version=1, epoch=1_700_000_099)
+        second_request = DownlinkRequest(
+            version=1,
+            gateway_id=7,
+            downlink_id=106,
+            target_node_id=10,
+            created_at=1_700_000_099,
+            payload=second_payload,
+        )
+        second_coap = FakeCoapClient()
+
+        second_status, _headers, second_body = self._api(second_coap).handle_request(
+            method="POST",
+            path="/api/v1/downlinks",
+            content_type="application/octet-stream",
+            body=second_request.to_bytes(),
+            now=1_700_000_100,
+        )
+
+        second_result = DownlinkResult.from_bytes(second_body)
+        self.assertEqual(200, second_status)
+        self.assertEqual(DOWNLINK_STATUS_DELIVERED, second_result.status)
+        self.assertEqual([("fd12:3456::10", second_payload)], second_coap.calls)
+        stored = self.service.downlink_audit_store.get_terminal_result(gateway_id=7, downlink_id=106)
+        self.assertEqual(second_request.to_bytes(), stored.request_body)
+        self.assertEqual(DOWNLINK_STATUS_DELIVERED, stored.status)
+
     def test_wrong_content_type_returns_415(self) -> None:
         request = DownlinkRequest(
             version=1,
             gateway_id=7,
-            downlink_id=106,
+            downlink_id=107,
             target_node_id=10,
             created_at=1_700_000_001,
             payload=encode_time_sync(version=1, epoch=55),

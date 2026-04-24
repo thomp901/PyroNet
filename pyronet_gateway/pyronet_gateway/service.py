@@ -67,6 +67,7 @@ class GatewayService:
             version=self.config.backhaul_version,
             gateway_id=self.config.gateway_id,
             timestamp=now,
+            wisun_ipv6=self.config.wisun_ipv6,
             latitude=self.config.latitude,
             longitude=self.config.longitude,
             sw_version=self.config.sw_version,

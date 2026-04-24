@@ -617,7 +617,7 @@ class SQLiteDownlinkAuditStore:
         with self._database.transaction() as conn:
             conn.execute(
                 """
-                INSERT OR IGNORE INTO downlink_terminal_results(
+                INSERT INTO downlink_terminal_results(
                     gateway_id,
                     downlink_id,
                     request_version,
@@ -629,6 +629,14 @@ class SQLiteDownlinkAuditStore:
                     completed_at
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(gateway_id, downlink_id) DO UPDATE SET
+                    request_version = excluded.request_version,
+                    target_node_id = excluded.target_node_id,
+                    request_body = excluded.request_body,
+                    status = excluded.status,
+                    result_body = excluded.result_body,
+                    created_at = excluded.created_at,
+                    completed_at = excluded.completed_at
                 """,
                 (
                     gateway_id,

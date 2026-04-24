@@ -18,7 +18,7 @@ DOWNLINK_STATUS_UNKNOWN_NODE = 0x01
 DOWNLINK_STATUS_MESH_DELIVERY_FAILED = 0x02
 DOWNLINK_STATUS_PERMANENT_REJECT = 0x03
 
-_GATEWAY_REGISTRATION = struct.Struct("<BBHIffH")
+_GATEWAY_REGISTRATION = struct.Struct("<BBHI16sffH")
 _NODE_UPLINK_HEADER = struct.Struct("<BBHQI16sH")
 _UPLINK_RECEIPT = struct.Struct("<BBHQB")
 _DOWNLINK_REQUEST_HEADER = struct.Struct("<BBHQHIH")
@@ -34,16 +34,19 @@ class GatewayRegistration:
     version: int
     gateway_id: int
     timestamp: int
+    wisun_ipv6: str
     latitude: float
     longitude: float
     sw_version: int
 
     def to_bytes(self) -> bytes:
+        wisun_ipv6 = ipaddress.IPv6Address(self.wisun_ipv6).packed
         return _GATEWAY_REGISTRATION.pack(
             TYPE_GATEWAY_REGISTRATION,
             self.version,
             self.gateway_id,
             self.timestamp,
+            wisun_ipv6,
             self.latitude,
             self.longitude,
             self.sw_version,
@@ -62,9 +65,10 @@ class GatewayRegistration:
             version=unpacked[1],
             gateway_id=unpacked[2],
             timestamp=unpacked[3],
-            latitude=unpacked[4],
-            longitude=unpacked[5],
-            sw_version=unpacked[6],
+            wisun_ipv6=str(ipaddress.IPv6Address(unpacked[4])),
+            latitude=unpacked[5],
+            longitude=unpacked[6],
+            sw_version=unpacked[7],
         )
 
 

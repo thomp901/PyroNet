@@ -66,14 +66,16 @@ class CodecTests(unittest.TestCase):
             version=1,
             gateway_id=7,
             timestamp=1_700_000_000,
+            wisun_ipv6="fd12:3456::7",
             latitude=39.7684,
             longitude=-86.1581,
             sw_version=0x0102,
         )
         encoded = original.to_bytes()
         decoded = GatewayRegistration.from_bytes(encoded)
-        self.assertEqual(18, len(encoded))
+        self.assertEqual(34, len(encoded))
         self.assertEqual(original.gateway_id, decoded.gateway_id)
+        self.assertEqual(original.wisun_ipv6, decoded.wisun_ipv6)
         self.assertEqual(original.sw_version, decoded.sw_version)
 
     def test_node_uplink_envelope_codec_round_trip(self) -> None:
@@ -128,6 +130,7 @@ class GatewayServiceTests(unittest.TestCase):
             gateway_id=7,
             latitude=39.7684,
             longitude=-86.1581,
+            wisun_ipv6="fd12:3456::7",
             sw_version=0x0102,
             coap=CoapConfig(bind_host="::", port=5683, resource_path="/uplink"),
             backhaul=BackhaulConfig(
@@ -503,6 +506,7 @@ class HTTPBackhaulClientClassificationTests(unittest.TestCase):
             version=1,
             gateway_id=7,
             timestamp=1,
+            wisun_ipv6="fd12:3456::7",
             latitude=0.0,
             longitude=0.0,
             sw_version=0x0102,
@@ -551,6 +555,7 @@ class HTTPBackhaulClientClassificationTests(unittest.TestCase):
                     version=1,
                     gateway_id=7,
                     timestamp=1,
+                    wisun_ipv6="fd12:3456::7",
                     latitude=0.0,
                     longitude=0.0,
                     sw_version=0x0102,
@@ -569,6 +574,7 @@ class HTTPBackhaulClientClassificationTests(unittest.TestCase):
                     version=1,
                     gateway_id=7,
                     timestamp=1,
+                    wisun_ipv6="fd12:3456::7",
                     latitude=0.0,
                     longitude=0.0,
                     sw_version=0x0102,
@@ -633,16 +639,17 @@ class HTTPBackhaulClientClassificationTests(unittest.TestCase):
                 code=500,
                 msg="server error",
                 hdrs=None,
-                fp=None,
+                fp=FakeHTTPResponse(status=500, body=b'{"error":"internal"}'),
             )
 
         urllib.request.urlopen = fake_urlopen
-        with self.assertRaises(TransientBackhaulError):
+        with self.assertRaisesRegex(TransientBackhaulError, 'HTTP 500: {"error":"internal"}'):
             self.client.send_gateway_registration(
                 GatewayRegistration(
                     version=1,
                     gateway_id=7,
                     timestamp=1,
+                    wisun_ipv6="fd12:3456::7",
                     latitude=0.0,
                     longitude=0.0,
                     sw_version=0x0102,
@@ -656,16 +663,17 @@ class HTTPBackhaulClientClassificationTests(unittest.TestCase):
                 code=400,
                 msg="bad request",
                 hdrs=None,
-                fp=None,
+                fp=FakeHTTPResponse(status=400, body=b"invalid payload"),
             )
 
         urllib.request.urlopen = fake_urlopen
-        with self.assertRaises(PermanentBackhaulError):
+        with self.assertRaisesRegex(PermanentBackhaulError, "HTTP 400: invalid payload"):
             self.client.send_gateway_registration(
                 GatewayRegistration(
                     version=1,
                     gateway_id=7,
                     timestamp=1,
+                    wisun_ipv6="fd12:3456::7",
                     latitude=0.0,
                     longitude=0.0,
                     sw_version=0x0102,
@@ -689,6 +697,9 @@ class FakeHTTPResponse:
 
     def read(self) -> bytes:
         return self._body
+
+    def close(self) -> None:
+        return None
 
 
 def build_registration_packet(*, node_id: int, parent_ipv6: str | None) -> bytes:

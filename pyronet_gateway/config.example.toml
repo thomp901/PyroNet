@@ -1,7 +1,8 @@
 [gateway]
 gateway_id = 7
-latitude = 39.7684
-longitude = -86.1581
+latitude = 40.42873081269003
+longitude = -86.91197196095088
+wisun_ipv6 = "fe80::8e8b:48ff:fe22:8504"
 node_packet_version = 1
 
 [coap]

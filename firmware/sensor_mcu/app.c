@@ -23,6 +23,7 @@
 #include "app/app_state.h"
 #include "app/app_time_anchor.h"
 #include "debug_console.h"
+#include "fault_handlers.h"
 #include "platform/monotonic_time.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -231,6 +232,7 @@ static void app_process_periodic_packet(int64_t now_ns)
 void app_init_early(void)
 {
   debug_console_init();
+  fault_handlers_init();
 }
 
 /***************************************************************************//**
