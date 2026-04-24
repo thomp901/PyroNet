@@ -495,8 +495,12 @@ static void test_registration_waits_for_configured_identity(void)
   assert(!app_context_get()->boundary_tx.pending_registration.valid);
 }
 
-static void test_periodic_sensor_reports_send_every_minute_below_level5(void)
+static void test_periodic_sensor_reports_wait_for_csp_time_sync(void)
 {
+  pyronet_host_time_sync_update_v1_t time_sync = {
+    .unix_time_s = 1000U,
+  };
+
   memset(&test_host_handlers, 0, sizeof(test_host_handlers));
   memset(&test_last_sensor_report, 0, sizeof(test_last_sensor_report));
   memset(&test_last_sensor_alert, 0, sizeof(test_last_sensor_alert));
@@ -524,10 +528,12 @@ static void test_periodic_sensor_reports_send_every_minute_below_level5(void)
     .fw_version_8_8 = 0x0102U,
     .battery_pct = 77U,
   };
-  test_boot_unix_time_valid = false;
-  test_boot_unix_time_s = 0U;
+  test_boot_unix_time_valid = true;
+  test_boot_unix_time_s = 500U;
 
   app_init();
+  assert(test_host_handlers.on_time_sync_update != NULL);
+  assert(!app_context_get()->csp_time_sync_received);
 
   test_now_ns = 59000000000LL;
   app_process_action();
@@ -536,9 +542,17 @@ static void test_periodic_sensor_reports_send_every_minute_below_level5(void)
 
   test_now_ns = 60000000000LL;
   app_process_action();
+  assert(test_sensor_report_count == 0U);
+  assert(test_sensor_alert_count == 0U);
+
+  test_now_ns = 61000000000LL;
+  test_host_handlers.on_time_sync_update(test_host_handlers.context, &time_sync);
+  assert(app_context_get()->csp_time_sync_received);
+  app_process_action();
+
   assert(test_sensor_report_count == 1U);
   assert(test_last_sensor_report.node_id == 321U);
-  assert(test_last_sensor_report.timestamp == 60U);
+  assert(test_last_sensor_report.timestamp == 1000U);
   assert(test_last_sensor_report.risk_level == 3U);
   assert(test_last_sensor_report.temperature_c_x100 == 2150);
   assert(test_last_sensor_report.humidity_pct_x100 == 4500U);
@@ -546,15 +560,15 @@ static void test_periodic_sensor_reports_send_every_minute_below_level5(void)
   assert(test_last_sensor_report.pm25_ug_m3_x10 == 15U);
   assert(test_sensor_alert_count == 0U);
 
-  test_now_ns = 119000000000LL;
+  test_now_ns = 120000000000LL;
   app_process_action();
   assert(test_sensor_report_count == 1U);
   assert(test_sensor_alert_count == 0U);
 
-  test_now_ns = 120000000000LL;
+  test_now_ns = 121000000000LL;
   app_process_action();
   assert(test_sensor_report_count == 2U);
-  assert(test_last_sensor_report.timestamp == 120U);
+  assert(test_last_sensor_report.timestamp == 1060U);
   assert(test_sensor_alert_count == 0U);
 }
 
@@ -682,7 +696,7 @@ int main(void)
 {
   test_registration_waits_for_configured_identity();
   test_parent_update_uses_original_event_time();
-  test_periodic_sensor_reports_send_every_minute_below_level5();
+  test_periodic_sensor_reports_wait_for_csp_time_sync();
   test_periodic_level5_alert_waits_for_time_sync();
   test_inbound_neighbor_alert_and_config_update_reach_risk_service();
   return 0;

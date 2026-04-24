@@ -222,6 +222,7 @@ static void app_handle_time_sync_update(
   app_time_anchor_set(&app->time_anchor,
                       monotonic_time_now_ns(),
                       event->unix_time_s);
+  app->csp_time_sync_received = true;
   edt = app_unix_time_to_edt(event->unix_time_s);
   printf("TIME_SYNC_UPDATE accepted=1 unix_time_s=%lu edt=%04u-%02u-%02uT%02u:%02u:%02uEDT\r\n",
          (unsigned long)event->unix_time_s,

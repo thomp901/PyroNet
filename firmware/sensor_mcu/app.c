@@ -89,7 +89,7 @@ static bool app_resolve_unix_time_s(void *context,
                                     uint32_t *out_unix_time_s)
 {
   const app_context_t *app = (const app_context_t *)context;
-  if (app == NULL) {
+  if ((app == NULL) || !app->csp_time_sync_received) {
     return false;
   }
 
@@ -115,21 +115,16 @@ static void app_retry_ready_work(app_context_t *app)
   pyronet_risk_service_retry_pending(&app->risk_service);
 }
 
-static uint32_t app_resolve_packet_timestamp_s(int64_t monotonic_timestamp_ns)
+static bool app_resolve_csp_packet_timestamp_s(int64_t monotonic_timestamp_ns,
+                                               uint32_t *out_timestamp_s)
 {
-  uint32_t timestamp_s = 0U;
-
-  if (app_time_anchor_resolve(&app_context.time_anchor,
-                              monotonic_timestamp_ns,
-                              &timestamp_s)) {
-    return timestamp_s;
+  if ((out_timestamp_s == NULL) || !app_context.csp_time_sync_received) {
+    return false;
   }
 
-  if (monotonic_timestamp_ns <= app_startup_ns) {
-    return 0U;
-  }
-
-  return (uint32_t)((uint64_t)(monotonic_timestamp_ns - app_startup_ns) / 1000000000ULL);
+  return app_time_anchor_resolve(&app_context.time_anchor,
+                                 monotonic_timestamp_ns,
+                                 out_timestamp_s);
 }
 
 static bool app_build_periodic_sensor_payload(int64_t now_ns,
@@ -137,8 +132,13 @@ static bool app_build_periodic_sensor_payload(int64_t now_ns,
 {
   const app_registration_identity_t *identity = app_provisioning_identity();
   pyronet_risk_snapshot_t snapshot;
+  uint32_t timestamp_s;
 
   if ((payload == NULL) || !app_provisioning_identity_valid(identity)) {
+    return false;
+  }
+
+  if (!app_resolve_csp_packet_timestamp_s(now_ns, &timestamp_s)) {
     return false;
   }
 
@@ -147,7 +147,7 @@ static bool app_build_periodic_sensor_payload(int64_t now_ns,
   }
 
   payload->node_id = identity->node_id;
-  payload->timestamp = app_resolve_packet_timestamp_s(now_ns);
+  payload->timestamp = timestamp_s;
   payload->risk_level = (uint8_t)snapshot.current_level;
   payload->temperature_c_x100 = app_scale_float_signed(snapshot.temperature_c, 100.0f);
   payload->humidity_pct_x100 = app_scale_float_unsigned(snapshot.humidity_percent, 100.0f);
@@ -179,16 +179,10 @@ static bool app_try_send_periodic_sensor_report(int64_t now_ns)
 static bool app_try_send_periodic_sensor_alert(int64_t now_ns)
 {
   pyronet_host_send_sensor_alert_v1_t payload;
-  uint32_t timestamp_s;
-
-  if (!app_time_anchor_resolve(&app_context.time_anchor, now_ns, &timestamp_s)) {
-    return false;
-  }
 
   if (!app_build_periodic_sensor_payload(now_ns, &payload)) {
     return false;
   }
-  payload.timestamp = timestamp_s;
 
   if (!host_link_send_sensor_alert(&payload)) {
     return false;

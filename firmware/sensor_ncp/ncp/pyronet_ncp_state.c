@@ -43,7 +43,9 @@ typedef enum pyronet_ncp_route_source
 {
     PYRONET_NCP_ROUTE_SOURCE_NONE = 0,
     PYRONET_NCP_ROUTE_SOURCE_SDK_ROUTER = 1,
-    PYRONET_NCP_ROUTE_SOURCE_DERIVED_PARENT_GLOBAL = 2,
+    PYRONET_NCP_ROUTE_SOURCE_ND_BORDER_ROUTER = 2,
+    PYRONET_NCP_ROUTE_SOURCE_CONFIGURED_BORDER_ROUTER = 3,
+    PYRONET_NCP_ROUTE_SOURCE_DERIVED_PARENT_GLOBAL = 4,
 } pyronet_ncp_route_source_t;
 
 typedef struct pyronet_ncp_route_trace_context
@@ -62,6 +64,10 @@ typedef struct pyronet_ncp_route_trace_context
 } pyronet_ncp_route_trace_context_t;
 
 static pyronet_ncp_route_trace_context_t pyronetNcpRouteTraceContext;
+static const uint8_t pyronetConfiguredBorderRouterIpv6[PYRONET_IPV6_ADDR_LEN] = {
+    0xfdU, 0x12U, 0x34U, 0x56U, 0x00U, 0x00U, 0x00U, 0x00U,
+    0x8eU, 0x8bU, 0x48U, 0xffU, 0xfeU, 0x22U, 0x85U, 0x04U,
+};
 
 static const char *pyronetNcpRouteSourceName(pyronet_ncp_route_source_t source)
 {
@@ -69,6 +75,10 @@ static const char *pyronetNcpRouteSourceName(pyronet_ncp_route_source_t source)
     {
         case PYRONET_NCP_ROUTE_SOURCE_SDK_ROUTER:
             return "sdk_router";
+        case PYRONET_NCP_ROUTE_SOURCE_ND_BORDER_ROUTER:
+            return "nd_border_router";
+        case PYRONET_NCP_ROUTE_SOURCE_CONFIGURED_BORDER_ROUTER:
+            return "configured_border_router";
         case PYRONET_NCP_ROUTE_SOURCE_DERIVED_PARENT_GLOBAL:
             return "derived_parent_global";
         case PYRONET_NCP_ROUTE_SOURCE_NONE:
@@ -124,6 +134,16 @@ static bool pyronetNcpDeriveGlobalFromPrefix(const uint8_t prefix_source[static 
     memcpy(address_out, prefix_source, 8U);
     memcpy(&address_out[8], &iid_source[8], 8U);
     return true;
+}
+
+static bool pyronetNcpIpv6IidMatches(const uint8_t lhs[static PYRONET_IPV6_ADDR_LEN],
+                                     const uint8_t rhs[static PYRONET_IPV6_ADDR_LEN])
+{
+    return (lhs != NULL) &&
+           (rhs != NULL) &&
+           (memcmp(lhs, pyronetZeroIpv6, PYRONET_IPV6_ADDR_LEN) != 0) &&
+           (memcmp(rhs, pyronetZeroIpv6, PYRONET_IPV6_ADDR_LEN) != 0) &&
+           (memcmp(&lhs[8], &rhs[8], 8U) == 0);
 }
 
 static void pyronetNcpTraceRouteSelection(pyronet_ncp_router_address_result_t result,
@@ -193,9 +213,14 @@ static void pyronetNcpTraceRouteSelection(pyronet_ncp_router_address_result_t re
     if (has_global && has_parent)
     {
         uint8_t derived_global[PYRONET_IPV6_ADDR_LEN];
+        char configured_border_router_str[PYRONET_ROUTER_ADDR_STR_LEN];
         char derived_global_str[PYRONET_ROUTER_ADDR_STR_LEN];
 
+        memset(configured_border_router_str, 0, sizeof(configured_border_router_str));
         memset(derived_global_str, 0, sizeof(derived_global_str));
+        (void)swoDebugPrintf("PYRONET_ROUTE_CAND source=configured_border_router addr=%s parent_match=%u",
+                             pyronetNcpIpv6ToString(pyronetConfiguredBorderRouterIpv6, configured_border_router_str),
+                             pyronetNcpIpv6IidMatches(parent, pyronetConfiguredBorderRouterIpv6) ? 1U : 0U);
         if (pyronetNcpDeriveGlobalFromPrefix(global, parent, derived_global))
         {
             (void)swoDebugPrintf("PYRONET_ROUTE_CAND source=node_gp_parent_iid addr=%s",
@@ -682,12 +707,44 @@ pyronet_ncp_router_address_result_t pyronet_ncp_state_read_router_address(
         return PYRONET_NCP_ROUTER_ADDRESS_READY;
     }
 
+    if ((nd_status == 0) &&
+        (memcmp(nd_border_router, pyronetZeroIpv6, PYRONET_IPV6_ADDR_LEN) != 0))
+    {
+        memcpy(destination_out, nd_border_router, PYRONET_IPV6_ADDR_LEN);
+        pyronetNcpTraceRouteSelection(PYRONET_NCP_ROUTER_ADDRESS_READY,
+                                      PYRONET_NCP_ROUTE_SOURCE_ND_BORDER_ROUTER,
+                                      router_status,
+                                      nd_status,
+                                      has_global,
+                                      has_parent,
+                                      destination_out,
+                                      global,
+                                      parent,
+                                      nd_border_router);
+        return PYRONET_NCP_ROUTER_ADDRESS_READY;
+    }
+
+    if (has_global)
+    {
+        memcpy(destination_out, pyronetConfiguredBorderRouterIpv6, PYRONET_IPV6_ADDR_LEN);
+        pyronetNcpTraceRouteSelection(PYRONET_NCP_ROUTER_ADDRESS_READY,
+                                      PYRONET_NCP_ROUTE_SOURCE_CONFIGURED_BORDER_ROUTER,
+                                      router_status,
+                                      nd_status,
+                                      has_global,
+                                      has_parent,
+                                      destination_out,
+                                      global,
+                                      parent,
+                                      nd_border_router);
+        return PYRONET_NCP_ROUTER_ADDRESS_READY;
+    }
+
     if (has_global && has_parent)
     {
         /*
-         * Nanostack does not expose the Wi-SUN border router through the ND
-         * helper on this target, but the parent IID is reachable under the
-         * node's global /64 prefix.
+         * Last-resort diagnostic fallback only. In a multihop mesh, the RPL
+         * parent can be a relay and is not necessarily the border router.
          */
         if (!pyronetNcpDeriveGlobalFromPrefix(global, parent, destination_out))
         {

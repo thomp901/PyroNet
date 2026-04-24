@@ -5,6 +5,7 @@
 
 #define PYRONET_RISK_MINUTE_NS          60000000000LL
 #define PYRONET_RISK_HOUR_NS            (60LL * PYRONET_RISK_MINUTE_NS)
+#define PYRONET_RISK_NEIGHBOR_HOLD_NS   (2LL * PYRONET_RISK_MINUTE_NS)
 
 static int64_t pyronet_risk_report_interval_for_level(pyronet_risk_level_t level)
 {
@@ -94,8 +95,11 @@ static pyronet_risk_level_t pyronet_risk_supported_level_now(
     return engine->override_level;
   }
 
+  if (now_ns < engine->neighbor_hold_until_ns) {
+    return PYRONET_RISK_LEVEL_4;
+  }
+
   level = pyronet_risk_live_sensor_level(engine);
-  (void)now_ns;
 
   return level;
 }
@@ -380,7 +384,21 @@ void pyronet_risk_engine_receive_neighbor_alert(pyronet_risk_engine_t *engine,
     return;
   }
 
-  engine->neighbor_hold_until_ns = now_ns;
+  engine->neighbor_hold_until_ns = now_ns + PYRONET_RISK_NEIGHBOR_HOLD_NS;
+  if (engine->override_active) {
+    pyronet_risk_reconcile(engine,
+                           now_ns,
+                           PYRONET_RISK_LEVEL_4,
+                           PYRONET_RISK_REASON_NEIGHBOR_ALERT,
+                           false);
+    return;
+  }
+
+  pyronet_risk_transition(engine,
+                          PYRONET_RISK_LEVEL_4,
+                          now_ns,
+                          PYRONET_RISK_REASON_NEIGHBOR_ALERT,
+                          false);
 }
 
 void pyronet_risk_engine_set_override(pyronet_risk_engine_t *engine,

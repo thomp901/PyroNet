@@ -1,6 +1,8 @@
 #ifndef APP_APP_STATE_H
 #define APP_APP_STATE_H
 
+#include <stdbool.h>
+
 #include "app/app_boundary_tx.h"
 #include "app/app_sensor_runtime.h"
 #include "app/app_time_anchor.h"
@@ -8,6 +10,7 @@
 
 typedef struct {
   app_time_anchor_t time_anchor;
+  bool csp_time_sync_received;
   app_boundary_tx_t boundary_tx;
   pyronet_risk_service_t risk_service;
   app_sensor_runtime_t sensors;

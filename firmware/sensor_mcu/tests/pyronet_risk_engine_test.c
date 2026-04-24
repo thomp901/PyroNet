@@ -223,14 +223,40 @@ static void test_local_readings_demote_immediately(void)
                     "normal local readings should return to L1 immediately");
 }
 
-static void test_neighbor_alert_does_not_change_local_risk(void)
+static void test_neighbor_alert_locks_risk_to_l4_for_two_minutes(void)
 {
   test_callbacks_t callbacks;
   pyronet_risk_engine_t engine = test_engine_init(&callbacks);
+  int64_t alert_ns = 5 * TEST_MINUTE_NS;
 
-  pyronet_risk_engine_receive_neighbor_alert(&engine, 1);
-  test_expect_level(&engine, PYRONET_RISK_LEVEL_1,
-                    "neighbor alert should not affect local sensor-derived risk");
+  pyronet_risk_engine_receive_neighbor_alert(&engine, alert_ns);
+  test_expect_level(&engine, PYRONET_RISK_LEVEL_4,
+                    "neighbor alert should lock risk to level 4");
+  test_expect_true(callbacks.level_change_report_count == 1,
+                   "neighbor-alert lock should send an immediate level-change report");
+  test_expect_true(callbacks.last_report.reason == PYRONET_RISK_REASON_NEIGHBOR_ALERT,
+                   "neighbor-alert lock should report the neighbor-alert reason");
+
+  pyronet_risk_engine_submit_air_quality(&engine,
+                                         alert_ns + TEST_MINUTE_NS,
+                                         24.0f,
+                                         60.0f,
+                                         40.0f);
+  test_expect_level(&engine, PYRONET_RISK_LEVEL_4,
+                    "normal local readings should not clear the L4 neighbor-alert lock");
+
+  pyronet_risk_engine_submit_air_quality(&engine,
+                                         alert_ns + TEST_MINUTE_NS + 1,
+                                         40.0f,
+                                         30.0f,
+                                         520.0f);
+  pyronet_risk_engine_submit_pm25(&engine, alert_ns + TEST_MINUTE_NS + 2, 40.0f);
+  test_expect_level(&engine, PYRONET_RISK_LEVEL_4,
+                    "critical local readings should wait until the L4 lock expires");
+
+  pyronet_risk_engine_tick(&engine, alert_ns + (2 * TEST_MINUTE_NS));
+  test_expect_level(&engine, PYRONET_RISK_LEVEL_5,
+                    "local sensor risk should apply after the neighbor-alert lock expires");
 }
 
 static void test_periodic_reporting_uses_fixed_interval(void)
@@ -255,15 +281,17 @@ static void test_periodic_reporting_uses_fixed_interval(void)
                    "fixed periodic report interval should remain 8 hours");
 }
 
-static void test_no_local_support_after_neighbor_alert_stays_l1(void)
+static void test_no_local_support_after_neighbor_alert_returns_to_l1(void)
 {
   test_callbacks_t callbacks;
   pyronet_risk_engine_t engine = test_engine_init(&callbacks);
 
   pyronet_risk_engine_receive_neighbor_alert(&engine, 1);
+  test_expect_level(&engine, PYRONET_RISK_LEVEL_4,
+                    "neighbor alert should lock risk to level 4");
   pyronet_risk_engine_tick(&engine, 30 * TEST_MINUTE_NS);
   test_expect_level(&engine, PYRONET_RISK_LEVEL_1,
-                    "normal readings should eventually decay back to L1");
+                    "risk should return to L1 after the neighbor-alert lock expires");
 }
 
 int main(void)
@@ -273,9 +301,9 @@ int main(void)
   test_l5_sensor_entry_sends_alerts();
   test_manual_override_does_not_alert();
   test_local_readings_demote_immediately();
-  test_neighbor_alert_does_not_change_local_risk();
+  test_neighbor_alert_locks_risk_to_l4_for_two_minutes();
   test_periodic_reporting_uses_fixed_interval();
-  test_no_local_support_after_neighbor_alert_stays_l1();
+  test_no_local_support_after_neighbor_alert_returns_to_l1();
   puts("pyronet_risk_engine tests passed");
   return 0;
 }
