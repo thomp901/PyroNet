@@ -35,7 +35,6 @@
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/platform_util.h"
 #include "mbedtls/error.h"
-#include "swo_debug.h"
 
 #include <string.h>
 
@@ -131,22 +130,15 @@ static int block_cipher_df( unsigned char *output,
     static unsigned char tmp[MBEDTLS_CTR_DRBG_SEEDLEN];
     static unsigned char key[MBEDTLS_CTR_DRBG_KEYSIZE];
     static unsigned char chain[MBEDTLS_CTR_DRBG_BLOCKSIZE];
-    static mbedtls_aes_context aes_ctx;
     unsigned char *p, *iv;
+    static mbedtls_aes_context aes_ctx;
     int ret = 0;
 
     int i, j;
     size_t buf_len, use_len;
 
-    (void)swoDebugPrintf("PYRONET_CTR_DF_ENTER data_len=%u",
-                         (unsigned int)data_len);
-
     if( data_len > MBEDTLS_CTR_DRBG_MAX_SEED_INPUT )
-    {
-        (void)swoDebugPrintf("PYRONET_CTR_DF_FAIL reason=input_too_big data_len=%u",
-                             (unsigned int)data_len);
         return( MBEDTLS_ERR_CTR_DRBG_INPUT_TOO_BIG );
-    }
 
     memset( buf, 0, MBEDTLS_CTR_DRBG_MAX_SEED_INPUT +
             MBEDTLS_CTR_DRBG_BLOCKSIZE + 16 );
@@ -174,14 +166,11 @@ static int block_cipher_df( unsigned char *output,
     for( i = 0; i < MBEDTLS_CTR_DRBG_KEYSIZE; i++ )
         key[i] = i;
 
-    (void)swoDebugWriteLine("PYRONET_CTR_DF_SETKEY1_START");
     if( ( ret = mbedtls_aes_setkey_enc( &aes_ctx, key,
                                         MBEDTLS_CTR_DRBG_KEYBITS ) ) != 0 )
     {
-        (void)swoDebugPrintf("PYRONET_CTR_DF_SETKEY1_RET ret=%d", ret);
         goto exit;
     }
-    (void)swoDebugWriteLine("PYRONET_CTR_DF_SETKEY1_RET ret=0");
 
     /*
      * Reduce data to MBEDTLS_CTR_DRBG_SEEDLEN bytes of data
@@ -203,14 +192,11 @@ static int block_cipher_df( unsigned char *output,
             if( ( ret = mbedtls_aes_crypt_ecb( &aes_ctx, MBEDTLS_AES_ENCRYPT,
                                                chain, chain ) ) != 0 )
             {
-                (void)swoDebugPrintf("PYRONET_CTR_DF_REDUCE_CRYPT_RET j=%d ret=%d",
-                                     j, ret);
                 goto exit;
             }
         }
 
         memcpy( tmp + j, chain, MBEDTLS_CTR_DRBG_BLOCKSIZE );
-        (void)swoDebugPrintf("PYRONET_CTR_DF_REDUCE_BLOCK_DONE j=%d", j);
 
         /*
          * Update IV
@@ -221,14 +207,11 @@ static int block_cipher_df( unsigned char *output,
     /*
      * Do final encryption with reduced data
      */
-    (void)swoDebugWriteLine("PYRONET_CTR_DF_SETKEY2_START");
     if( ( ret = mbedtls_aes_setkey_enc( &aes_ctx, tmp,
                                         MBEDTLS_CTR_DRBG_KEYBITS ) ) != 0 )
     {
-        (void)swoDebugPrintf("PYRONET_CTR_DF_SETKEY2_RET ret=%d", ret);
         goto exit;
     }
-    (void)swoDebugWriteLine("PYRONET_CTR_DF_SETKEY2_RET ret=0");
     iv = tmp + MBEDTLS_CTR_DRBG_KEYSIZE;
     p = output;
 
@@ -237,16 +220,12 @@ static int block_cipher_df( unsigned char *output,
         if( ( ret = mbedtls_aes_crypt_ecb( &aes_ctx, MBEDTLS_AES_ENCRYPT,
                                            iv, iv ) ) != 0 )
         {
-            (void)swoDebugPrintf("PYRONET_CTR_DF_OUT_CRYPT_RET j=%d ret=%d",
-                                 j, ret);
             goto exit;
         }
         memcpy( p, iv, MBEDTLS_CTR_DRBG_BLOCKSIZE );
         p += MBEDTLS_CTR_DRBG_BLOCKSIZE;
-        (void)swoDebugPrintf("PYRONET_CTR_DF_OUT_BLOCK_DONE j=%d", j);
     }
 exit:
-    (void)swoDebugPrintf("PYRONET_CTR_DF_EXIT ret=%d", ret);
     mbedtls_aes_free( &aes_ctx );
     /*
     * tidy up the stack
@@ -282,8 +261,6 @@ static int ctr_drbg_update_internal( mbedtls_ctr_drbg_context *ctx,
     int i, j;
     int ret = 0;
 
-    (void)swoDebugPrintf("PYRONET_CTR_UPDATE_ENTER ctx=%p", (void *)ctx);
-
     memset( tmp, 0, MBEDTLS_CTR_DRBG_SEEDLEN );
 
     for( j = 0; j < MBEDTLS_CTR_DRBG_SEEDLEN; j += MBEDTLS_CTR_DRBG_BLOCKSIZE )
@@ -301,13 +278,10 @@ static int ctr_drbg_update_internal( mbedtls_ctr_drbg_context *ctx,
         if( ( ret = mbedtls_aes_crypt_ecb( &ctx->aes_ctx, MBEDTLS_AES_ENCRYPT,
                                            ctx->counter, p ) ) != 0 )
         {
-            (void)swoDebugPrintf("PYRONET_CTR_UPDATE_CRYPT_RET j=%d ret=%d",
-                                 j, ret);
             goto exit;
         }
 
         p += MBEDTLS_CTR_DRBG_BLOCKSIZE;
-        (void)swoDebugPrintf("PYRONET_CTR_UPDATE_CRYPT_DONE j=%d", j);
     }
 
     for( i = 0; i < MBEDTLS_CTR_DRBG_SEEDLEN; i++ )
@@ -316,19 +290,15 @@ static int ctr_drbg_update_internal( mbedtls_ctr_drbg_context *ctx,
     /*
      * Update key and counter
      */
-    (void)swoDebugWriteLine("PYRONET_CTR_UPDATE_SETKEY_START");
     if( ( ret = mbedtls_aes_setkey_enc( &ctx->aes_ctx, tmp,
                                         MBEDTLS_CTR_DRBG_KEYBITS ) ) != 0 )
     {
-        (void)swoDebugPrintf("PYRONET_CTR_UPDATE_SETKEY_RET ret=%d", ret);
         goto exit;
     }
-    (void)swoDebugWriteLine("PYRONET_CTR_UPDATE_SETKEY_RET ret=0");
     memcpy( ctx->counter, tmp + MBEDTLS_CTR_DRBG_KEYSIZE,
             MBEDTLS_CTR_DRBG_BLOCKSIZE );
 
 exit:
-    (void)swoDebugPrintf("PYRONET_CTR_UPDATE_EXIT ret=%d", ret);
     mbedtls_platform_zeroize( tmp, sizeof( tmp ) );
     return( ret );
 }
@@ -400,52 +370,29 @@ static int mbedtls_ctr_drbg_reseed_internal( mbedtls_ctr_drbg_context *ctx,
     size_t seedlen = 0;
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
 
-    (void)swoDebugPrintf("PYRONET_CTR_RESEED_ENTER ctx=%p entropy_len=%u nonce_len=%u add_len=%u",
-                         (void *)ctx,
-                         (unsigned int)ctx->entropy_len,
-                         (unsigned int)nonce_len,
-                         (unsigned int)len);
-
     if( ctx->entropy_len > MBEDTLS_CTR_DRBG_MAX_SEED_INPUT )
-    {
-        (void)swoDebugWriteLine("PYRONET_CTR_RESEED_FAIL reason=entropy_len");
         return( MBEDTLS_ERR_CTR_DRBG_INPUT_TOO_BIG );
-    }
     if( nonce_len > MBEDTLS_CTR_DRBG_MAX_SEED_INPUT - ctx->entropy_len )
-    {
-        (void)swoDebugWriteLine("PYRONET_CTR_RESEED_FAIL reason=nonce_len");
         return( MBEDTLS_ERR_CTR_DRBG_INPUT_TOO_BIG );
-    }
     if( len > MBEDTLS_CTR_DRBG_MAX_SEED_INPUT - ctx->entropy_len - nonce_len )
-    {
-        (void)swoDebugWriteLine("PYRONET_CTR_RESEED_FAIL reason=add_len");
         return( MBEDTLS_ERR_CTR_DRBG_INPUT_TOO_BIG );
-    }
 
     memset( seed, 0, MBEDTLS_CTR_DRBG_MAX_SEED_INPUT );
 
     /* Gather entropy_len bytes of entropy to seed state. */
-    (void)swoDebugPrintf("PYRONET_CTR_RESEED_ENTROPY_START len=%u",
-                         (unsigned int)ctx->entropy_len);
     if( 0 != ctx->f_entropy( ctx->p_entropy, seed, ctx->entropy_len ) )
     {
-        (void)swoDebugWriteLine("PYRONET_CTR_RESEED_ENTROPY_RET ret=fail");
         return( MBEDTLS_ERR_CTR_DRBG_ENTROPY_SOURCE_FAILED );
     }
-    (void)swoDebugWriteLine("PYRONET_CTR_RESEED_ENTROPY_RET ret=0");
     seedlen += ctx->entropy_len;
 
     /* Gather entropy for a nonce if requested. */
     if( nonce_len != 0 )
     {
-        (void)swoDebugPrintf("PYRONET_CTR_RESEED_NONCE_START len=%u",
-                             (unsigned int)nonce_len);
         if( 0 != ctx->f_entropy( ctx->p_entropy, seed, nonce_len ) )
         {
-            (void)swoDebugWriteLine("PYRONET_CTR_RESEED_NONCE_RET ret=fail");
             return( MBEDTLS_ERR_CTR_DRBG_ENTROPY_SOURCE_FAILED );
         }
-        (void)swoDebugWriteLine("PYRONET_CTR_RESEED_NONCE_RET ret=0");
         seedlen += nonce_len;
     }
 
@@ -454,26 +401,18 @@ static int mbedtls_ctr_drbg_reseed_internal( mbedtls_ctr_drbg_context *ctx,
     {
         memcpy( seed + seedlen, additional, len );
         seedlen += len;
-        (void)swoDebugPrintf("PYRONET_CTR_RESEED_ADD_DONE seedlen=%u",
-                             (unsigned int)seedlen);
     }
 
     /* Reduce to 384 bits. */
-    (void)swoDebugPrintf("PYRONET_CTR_RESEED_DF_START seedlen=%u",
-                         (unsigned int)seedlen);
     if( ( ret = block_cipher_df( seed, seed, seedlen ) ) != 0 )
         goto exit;
-    (void)swoDebugWriteLine("PYRONET_CTR_RESEED_DF_RET ret=0");
 
     /* Update state. */
-    (void)swoDebugWriteLine("PYRONET_CTR_RESEED_UPDATE_START");
     if( ( ret = ctr_drbg_update_internal( ctx, seed ) ) != 0 )
         goto exit;
-    (void)swoDebugWriteLine("PYRONET_CTR_RESEED_UPDATE_RET ret=0");
     ctx->reseed_counter = 1;
 
 exit:
-    (void)swoDebugPrintf("PYRONET_CTR_RESEED_EXIT ret=%d", ret);
     mbedtls_platform_zeroize( seed, sizeof( seed ) );
     return( ret );
 }
@@ -518,9 +457,6 @@ int mbedtls_ctr_drbg_seed( mbedtls_ctr_drbg_context *ctx,
     unsigned char key[MBEDTLS_CTR_DRBG_KEYSIZE];
     size_t nonce_len;
 
-    (void)swoDebugPrintf("PYRONET_CTR_SEED_ENTER ctx=%p custom_len=%u",
-                         (void *)ctx, (unsigned int)len);
-
     memset( key, 0, MBEDTLS_CTR_DRBG_KEYSIZE );
 
     mbedtls_aes_init( &ctx->aes_ctx );
@@ -541,27 +477,18 @@ int mbedtls_ctr_drbg_seed( mbedtls_ctr_drbg_context *ctx,
     ctx->reseed_interval = MBEDTLS_CTR_DRBG_RESEED_INTERVAL;
 
     /* Initialize with an empty key. */
-    (void)swoDebugPrintf("PYRONET_CTR_SEED_SETKEY_START entropy_len=%u nonce_len=%u",
-                         (unsigned int)ctx->entropy_len,
-                         (unsigned int)nonce_len);
     if( ( ret = mbedtls_aes_setkey_enc( &ctx->aes_ctx, key,
                                         MBEDTLS_CTR_DRBG_KEYBITS ) ) != 0 )
     {
-        (void)swoDebugPrintf("PYRONET_CTR_SEED_SETKEY_RET ret=%d", ret);
         return( ret );
     }
-    (void)swoDebugWriteLine("PYRONET_CTR_SEED_SETKEY_RET ret=0");
 
     /* Do the initial seeding. */
-    (void)swoDebugWriteLine("PYRONET_CTR_SEED_RESEED_START");
     if( ( ret = mbedtls_ctr_drbg_reseed_internal( ctx, custom, len,
                                                   nonce_len ) ) != 0 )
     {
-        (void)swoDebugPrintf("PYRONET_CTR_SEED_RESEED_RET ret=%d", ret);
         return( ret );
     }
-    (void)swoDebugWriteLine("PYRONET_CTR_SEED_RESEED_RET ret=0");
-    (void)swoDebugWriteLine("PYRONET_CTR_SEED_DONE");
     return( 0 );
 }
 

@@ -58,7 +58,6 @@
 #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyPlaintext.h>
 
 #include "mbedtls/platform_util.h"
-#include "swo_debug.h"
 
 
 /* Parameter validation macros based on platform_util.h */
@@ -89,33 +88,21 @@ void mbedtls_aes_init(mbedtls_aes_context *ctx)
     AESECB_Params AESECBParams;
     AESCBC_Params AESCBCParams;
 
-    (void)swoDebugPrintf("PYRONET_AES_ALT_INIT_ENTER ctx=%p ref=%u ecb=%p cbc=%p",
-                         (void *)ctx, ref_num, (void *)AESECB_handle,
-                         (void *)AESCBC_handle);
 
     if (ref_num++ == 0)
     {
-        (void)swoDebugWriteLine("PYRONET_AES_ALT_INIT_OPEN_START");
-        (void)swoDebugWriteLine("PYRONET_AES_ALT_INIT_DRIVER_INIT_START");
         AESECB_init();
         AESCBC_init();
-        (void)swoDebugWriteLine("PYRONET_AES_ALT_INIT_DRIVER_INIT_DONE");
 
         AESECB_Params_init(&AESECBParams);
         AESECBParams.returnBehavior = AESECB_RETURN_BEHAVIOR_POLLING;
         AESECB_handle = AESECB_open(0 , &AESECBParams);
-        (void)swoDebugPrintf("PYRONET_AES_ALT_INIT_ECB_OPEN handle=%p",
-                             (void *)AESECB_handle);
         //assert(AESECB_handle != 0);
 
         AESCBC_Params_init(&AESCBCParams);
         AESCBCParams.returnBehavior = AESCBC_RETURN_BEHAVIOR_POLLING;
         AESCBC_handle = AESCBC_open(0 , &AESCBCParams);
-        (void)swoDebugPrintf("PYRONET_AES_ALT_INIT_CBC_OPEN handle=%p",
-                             (void *)AESCBC_handle);
     }
-    (void)swoDebugPrintf("PYRONET_AES_ALT_INIT_DONE ctx=%p ref=%u",
-                         (void *)ctx, ref_num);
 }
 
 /**
@@ -125,9 +112,6 @@ void mbedtls_aes_init(mbedtls_aes_context *ctx)
  */
 void mbedtls_aes_free(mbedtls_aes_context *ctx)
 {
-    (void)swoDebugPrintf("PYRONET_AES_ALT_FREE_ENTER ctx=%p ref=%u ecb=%p cbc=%p",
-                         (void *)ctx, ref_num, (void *)AESECB_handle,
-                         (void *)AESCBC_handle);
     if (--ref_num == 0)
     {
         AESECB_close(AESECB_handle);
@@ -138,8 +122,6 @@ void mbedtls_aes_free(mbedtls_aes_context *ctx)
     }
 
     memset((void *)ctx, 0x00, sizeof(ctx));
-    (void)swoDebugPrintf("PYRONET_AES_ALT_FREE_DONE ctx=%p ref=%u",
-                         (void *)ctx, ref_num);
 }
 
 /**
@@ -154,29 +136,12 @@ void mbedtls_aes_free(mbedtls_aes_context *ctx)
 int mbedtls_aes_setkey_enc(mbedtls_aes_context *ctx, const unsigned char *key, unsigned int keybits)
 {
     int_fast16_t statusCrypto = 0;
-    static unsigned long aes_alt_setkey_seq;
-    unsigned long seq = ++aes_alt_setkey_seq;
-
-    (void)swoDebugPrintf("PYRONET_AES_ALT_SETKEY_ENTER seq=%lu ctx=%p key=%p bits=%u key_bytes=%u",
-                         seq, (void *)ctx, (const void *)key, keybits,
-                         (unsigned int)(keybits >> 3));
 
     /* Initialize AES key */
-    (void)swoDebugPrintf("PYRONET_AES_ALT_SETKEY_MEMCPY_START seq=%lu dst=%p src=%p len=%u",
-                         seq, (void *)ctx->keyMaterial, (const void *)key,
-                         (unsigned int)(keybits >> 3));
     memcpy(ctx->keyMaterial, key, (keybits >> 3));
-    (void)swoDebugPrintf("PYRONET_AES_ALT_SETKEY_MEMCPY_DONE seq=%lu first=%02x",
-                         seq, (unsigned int)ctx->keyMaterial[0]);
-    (void)swoDebugPrintf("PYRONET_AES_ALT_SETKEY_INITKEY_START seq=%lu cryptoKey=%p",
-                         seq, (void *)&ctx->cryptoKey);
     statusCrypto = CryptoKeyPlaintext_initKey(&ctx->cryptoKey, (uint8_t*) ctx->keyMaterial, (keybits >> 3));
-    (void)swoDebugPrintf("PYRONET_AES_ALT_SETKEY_INITKEY_RET seq=%lu ret=%ld",
-                         seq, (long)statusCrypto);
     //assert(statusCrypto == 0);
 
-    (void)swoDebugPrintf("PYRONET_AES_ALT_SETKEY_DONE seq=%lu ret=%ld",
-                         seq, (long)statusCrypto);
     return (int)statusCrypto;
 }
 
@@ -214,22 +179,14 @@ int mbedtls_aes_crypt_ecb(mbedtls_aes_context *ctx, int mode, const unsigned cha
 {
     int statusCrypto;
     AESECB_Operation operationOneStepXcrypt;
-    static unsigned long aes_alt_ecb_seq;
-    unsigned long seq = ++aes_alt_ecb_seq;
-
-    (void)swoDebugPrintf("PYRONET_AES_ALT_ECB_ENTER seq=%lu ctx=%p mode=%d ecb=%p in=%p out=%p",
-                         seq, (void *)ctx, mode, (void *)AESECB_handle,
-                         (const void *)input, (void *)output);
 
     if (AESECB_handle == NULL)
     {
-        (void)swoDebugPrintf("PYRONET_AES_ALT_ECB_FAIL seq=%lu reason=null_handle", seq);
         return MBEDTLS_ERR_AES_HW_ACCEL_FAILED;
     }
 
     /* run it through the authentication + encryption, pass the ccmLVal = 2 */
     AESECB_Operation_init(&operationOneStepXcrypt);
-    (void)swoDebugPrintf("PYRONET_AES_ALT_ECB_OP_INIT seq=%lu", seq);
 
     operationOneStepXcrypt.key = &ctx->cryptoKey;
     operationOneStepXcrypt.inputLength = 16;
@@ -238,16 +195,13 @@ int mbedtls_aes_crypt_ecb(mbedtls_aes_context *ctx, int mode, const unsigned cha
 
     if(mode == MBEDTLS_AES_ENCRYPT)
     {
-        (void)swoDebugPrintf("PYRONET_AES_ALT_ECB_ENCRYPT_START seq=%lu", seq);
         statusCrypto = AESECB_oneStepEncrypt(AESECB_handle, &operationOneStepXcrypt);
     }
     else
     {
-        (void)swoDebugPrintf("PYRONET_AES_ALT_ECB_DECRYPT_START seq=%lu", seq);
         statusCrypto = AESECB_oneStepDecrypt(AESECB_handle, &operationOneStepXcrypt);
     }
 
-    (void)swoDebugPrintf("PYRONET_AES_ALT_ECB_RET seq=%lu ret=%d", seq, statusCrypto);
 
     //assert(statusCrypto == 0);
 
@@ -276,7 +230,6 @@ int mbedtls_aes_crypt_cbc( mbedtls_aes_context *ctx,
 
     if (AESCBC_handle == NULL)
     {
-        (void)swoDebugWriteLine("PYRONET_AES_ALT_CBC_FAIL reason=null_handle");
         return MBEDTLS_ERR_AES_HW_ACCEL_FAILED;
     }
 

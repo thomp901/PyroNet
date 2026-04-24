@@ -40,7 +40,6 @@
 #include "Security/protocols/sec_prot_cfg.h"
 #include "Security/protocols/sec_prot_certs.h"
 #include "Security/protocols/tls_sec_prot/tls_sec_prot_lib.h"
-#include "swo_debug.h"
 
 #if defined(MBEDTLS_SSL_TLS_C) && defined(MBEDTLS_X509_CRT_PARSE_C) && defined(MBEDTLS_SSL_EXPORT_KEYS) /* EXPORT_KEYS not supported by mbedtls baremetal yet */
 #ifdef WS_MBEDTLS_SECURITY_ENABLED
@@ -98,7 +97,7 @@ static int tls_sec_prot_lib_ssl_export_keys(void *p_expkey, const unsigned char 
                                             const unsigned char server_random[32],
                                             mbedtls_tls_prf_types tls_prf_type);
 static int tls_sec_lib_seed_poll(void *ctx, unsigned char *output, size_t len);
-static uint32_t tls_sec_lib_debug_random_word(void);
+static uint32_t tls_sec_lib_random_word(void);
 
 static int tls_sec_prot_lib_x509_crt_verify(void *ctx, mbedtls_x509_crt *crt, int certificate_depth, uint32_t *flags);
 static int8_t tls_sec_prot_lib_subject_alternative_name_validate(mbedtls_x509_crt *crt);
@@ -137,13 +136,10 @@ int8_t tls_sec_prot_lib_init(tls_security_t *sec)
     const char *pers = "ws_tls";
     int ret;
 
-    (void)swoDebugPrintf("PYRONET_TLS_LIB_INIT_ENTER sec=%p", (void *)sec);
-
 #ifdef TLS_SEC_PROT_LIB_USE_MBEDTLS_PLATFORM_MEMORY
     mbedtls_platform_set_calloc_free(tls_sec_prot_lib_mem_calloc, tls_sec_prot_lib_mem_free);
 #endif
 
-    (void)swoDebugPrintf("PYRONET_TLS_LIB_INIT_STEP step=ssl_init");
     mbedtls_ssl_init(&sec->ssl);
     mbedtls_ssl_config_init(&sec->conf);
     mbedtls_ctr_drbg_init(&sec->ctr_drbg);
@@ -156,25 +152,20 @@ int8_t tls_sec_prot_lib_init(tls_security_t *sec)
 
     sec->crl = NULL;
 
-    (void)swoDebugPrintf("PYRONET_TLS_LIB_INIT_STEP step=direct_seed_config");
     mbedtls_ctr_drbg_set_entropy_len(&sec->ctr_drbg, 48);
     ret = mbedtls_ctr_drbg_set_nonce_len(&sec->ctr_drbg, 0);
-    (void)swoDebugPrintf("PYRONET_TLS_LIB_INIT_RET step=nonce_len ret=%d", ret);
     if (ret < 0) {
         tr_error("drbg nonce config fail");
         return -1;
     }
 
-    (void)swoDebugWriteLine("PYRONET_TLS_SEED_CALL");
     ret = mbedtls_ctr_drbg_seed(&sec->ctr_drbg, tls_sec_lib_seed_poll, NULL,
                                 (const unsigned char *) pers, strlen(pers));
-    (void)swoDebugPrintf("PYRONET_TLS_LIB_INIT_RET step=ctr_drbg_seed ret=%d", ret);
     if (ret != 0) {
         tr_error("drbg seed fail");
         return -1;
     }
 
-    (void)swoDebugPrintf("PYRONET_TLS_LIB_INIT_DONE");
     return 0;
 }
 
@@ -217,17 +208,8 @@ void tls_sec_prot_lib_free(tls_security_t *sec)
 
 static int tls_sec_prot_lib_configure_certificates(tls_security_t *sec, const sec_prot_certs_t *certs)
 {
-    (void)swoDebugPrintf("PYRONET_TLS_CERTS_START certs=%p own0=%p own_len0=%u key=%p key_len=%u own_chain_len=%u",
-                         (void *)certs,
-                         certs ? (void *)certs->own_cert_chain.cert[0] : NULL,
-                         certs ? (unsigned int)certs->own_cert_chain.cert_len[0] : 0U,
-                         certs ? (void *)certs->own_cert_chain.key : NULL,
-                         certs ? (unsigned int)certs->own_cert_chain.key_len : 0U,
-                         certs ? (unsigned int)certs->own_cert_chain_len : 0U);
-
     if (!certs->own_cert_chain.cert[0]) {
         tr_error("no own cert");
-        (void)swoDebugPrintf("PYRONET_TLS_CERTS_FAIL reason=no_own_cert");
         return -1;
     }
 
@@ -243,10 +225,7 @@ static int tls_sec_prot_lib_configure_certificates(tls_security_t *sec, const se
             }
             break;
         }
-        (void)swoDebugPrintf("PYRONET_TLS_CERTS_PARSE_OWN index=%u len=%u", (unsigned int)index, (unsigned int)cert_len);
-        int cert_ret = mbedtls_x509_crt_parse(&sec->owncert, cert, cert_len);
-        (void)swoDebugPrintf("PYRONET_TLS_CERTS_PARSE_OWN_RET index=%u ret=%d", (unsigned int)index, cert_ret);
-        if (cert_ret < 0) {
+        if (mbedtls_x509_crt_parse(&sec->owncert, cert, cert_len) < 0) {
             tr_error("Own cert parse eror");
             return -1;
         }
@@ -258,22 +237,16 @@ static int tls_sec_prot_lib_configure_certificates(tls_security_t *sec, const se
     uint8_t *key = sec_prot_certs_priv_key_get(&certs->own_cert_chain, &key_len);
     if (!key) {
         tr_error("No private key");
-        (void)swoDebugPrintf("PYRONET_TLS_CERTS_FAIL reason=no_private_key");
         return -1;
     }
 
-    (void)swoDebugPrintf("PYRONET_TLS_CERTS_PARSE_KEY len=%u", (unsigned int)key_len);
-    int key_ret = mbedtls_pk_parse_key(&sec->pkey, key, key_len, NULL, 0);
-    (void)swoDebugPrintf("PYRONET_TLS_CERTS_PARSE_KEY_RET ret=%d", key_ret);
-    if (key_ret < 0) {
+    if (mbedtls_pk_parse_key(&sec->pkey, key, key_len, NULL, 0) < 0) {
         tr_error("Private key parse error");
         return -1;
     }
 
     // Configure own certificate chain and private key
-    int own_conf_ret = mbedtls_ssl_conf_own_cert(&sec->conf, &sec->owncert, &sec->pkey);
-    (void)swoDebugPrintf("PYRONET_TLS_CERTS_OWN_CONF_RET ret=%d", own_conf_ret);
-    if (own_conf_ret != 0) {
+    if (mbedtls_ssl_conf_own_cert(&sec->conf, &sec->owncert, &sec->pkey) != 0) {
         tr_error("Own cert and private key conf error");
         return -1;
     }
@@ -302,12 +275,9 @@ static int tls_sec_prot_lib_configure_certificates(tls_security_t *sec, const se
             }
 #else
 
-                if(!ca_cert_initialized)
+            if(!ca_cert_initialized)
             {
-                (void)swoDebugPrintf("PYRONET_TLS_CERTS_PARSE_TRUSTED index=%u len=%u", (unsigned int)index, (unsigned int)cert_len);
-                int ca_ret = mbedtls_x509_crt_parse(&sec->cacert, cert, cert_len);
-                (void)swoDebugPrintf("PYRONET_TLS_CERTS_PARSE_TRUSTED_RET index=%u ret=%d", (unsigned int)index, ca_ret);
-                if (ca_ret < 0) {
+                if (mbedtls_x509_crt_parse(&sec->cacert, cert, cert_len) < 0) {
                     tr_error("Trusted cert parse error");
                     return -1;
                 }
@@ -372,26 +342,16 @@ static int tls_sec_prot_lib_configure_certificates(tls_security_t *sec, const se
     // Get extended certificate validation setting
     sec->ext_cert_valid = sec_prot_certs_ext_certificate_validation_get(certs);
 
-    (void)swoDebugPrintf("PYRONET_TLS_CERTS_DONE ext_valid=%u",
-                         (unsigned int)sec->ext_cert_valid);
     return 0;
 }
 
 int8_t tls_sec_prot_lib_connect(tls_security_t *sec, bool is_server, const sec_prot_certs_t *certs)
 {
-    int ret;
-
-    (void)swoDebugPrintf("PYRONET_TLS_CONNECT_ENTER sec=%p role=%s certs=%p",
-                         (void *)sec,
-                         is_server ? "server" : "client",
-                         (void *)certs);
-
 #if !defined(HAVE_PAE_SUPP) || !defined(HAVE_PAE_AUTH)
     (void) is_server;
 #endif
 
     if (!sec) {
-        (void)swoDebugPrintf("PYRONET_TLS_CONNECT_FAIL reason=no_sec");
         return -1;
     }
 
@@ -407,12 +367,9 @@ int8_t tls_sec_prot_lib_connect(tls_security_t *sec, bool is_server, const sec_p
 #endif
 
 
-    (void)swoDebugPrintf("PYRONET_TLS_CONNECT_STEP step=config_defaults");
-    ret = mbedtls_ssl_config_defaults(&sec->conf,
-                                      is_server_is_set ? MBEDTLS_SSL_IS_SERVER : MBEDTLS_SSL_IS_CLIENT,
-                                      MBEDTLS_SSL_TRANSPORT_STREAM, 0);
-    (void)swoDebugPrintf("PYRONET_TLS_CONNECT_RET step=config_defaults ret=%d", ret);
-    if (ret != 0) {
+    if ((mbedtls_ssl_config_defaults(&sec->conf,
+                                     is_server_is_set ? MBEDTLS_SSL_IS_SERVER : MBEDTLS_SSL_IS_CLIENT,
+                                     MBEDTLS_SSL_TRANSPORT_STREAM, 0)) != 0) {
         tr_error("config defaults fail");
         return -1;
     }
@@ -427,10 +384,7 @@ int8_t tls_sec_prot_lib_connect(tls_security_t *sec, bool is_server, const sec_p
     mbedtls_ecp_set_max_ops(ECC_CALCULATION_MAX_OPS);
 #endif
 
-    (void)swoDebugPrintf("PYRONET_TLS_CONNECT_STEP step=ssl_setup");
-    ret = mbedtls_ssl_setup(&sec->ssl, &sec->conf);
-    (void)swoDebugPrintf("PYRONET_TLS_CONNECT_RET step=ssl_setup ret=%d", ret);
-    if (ret != 0) {
+    if ((mbedtls_ssl_setup(&sec->ssl, &sec->conf)) != 0) {
         tr_error("ssl setup fail");
         return -1;
     }
@@ -453,13 +407,10 @@ int8_t tls_sec_prot_lib_connect(tls_security_t *sec, bool is_server, const sec_p
 #endif /* !defined(MBEDTLS_SSL_CONF_SET_TIMER) && !defined(MBEDTLS_SSL_CONF_GET_TIMER) */
 
     // Configure certificates, keys and certificate revocation list
-    (void)swoDebugPrintf("PYRONET_TLS_CONNECT_STEP step=certs");
     if (tls_sec_prot_lib_configure_certificates(sec, certs) != 0) {
         tr_error("cert conf fail");
-        (void)swoDebugPrintf("PYRONET_TLS_CONNECT_FAIL reason=certs");
         return -1;
     }
-    (void)swoDebugPrintf("PYRONET_TLS_CONNECT_RET step=certs ret=0");
 
 #if !defined(MBEDTLS_SSL_CONF_SINGLE_CIPHERSUITE)
     // Configure ciphersuites
@@ -497,7 +448,6 @@ int8_t tls_sec_prot_lib_connect(tls_security_t *sec, bool is_server, const sec_p
      * MBEDTLS_ECP_RESTARTABLE feature needs to be enabled and public API is needed to allow it in border router
      * enabling should be done here.
      */
-    (void)swoDebugPrintf("PYRONET_TLS_CONNECT_DONE");
     return 0;
 }
 
@@ -512,18 +462,9 @@ static void tls_sec_prot_lib_debug(void *ctx, int level, const char *file, int l
 int8_t tls_sec_prot_lib_process(tls_security_t *sec)
 {
     int32_t ret = -1;
-    uint8_t steps = 0;
 
     while (ret != MBEDTLS_ERR_SSL_WANT_READ) {
-        (void)swoDebugPrintf("PYRONET_TLS_HANDSHAKE_STEP_START step=%u state=%u",
-                             (unsigned int)steps,
-                             (unsigned int)sec->ssl.state);
         ret = mbedtls_ssl_handshake_step(&sec->ssl);
-        (void)swoDebugPrintf("PYRONET_TLS_HANDSHAKE_STEP_RET step=%u ret=%ld state=%u",
-                             (unsigned int)steps,
-                             (long)ret,
-                             (unsigned int)sec->ssl.state);
-        steps++;
 
 #if defined(MBEDTLS_ECP_RESTARTABLE) && defined(MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS)
         if (ret == MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS /* || ret == MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS */) {
@@ -713,73 +654,44 @@ static int tls_sec_prot_lib_x509_crt_server_verify(tls_security_t *sec, mbedtls_
 static int tls_sec_lib_entropy_poll(void *ctx, unsigned char *output, size_t len, size_t *olen)
 {
     (void)ctx;
-    static unsigned long poll_count = 0;
-    unsigned long poll_id = ++poll_count;
-    size_t produce_len = (len > 32U) ? 32U : len;
 
-    (void)swoDebugPrintf("PYRONET_TLS_ENTROPY_POLL_START id=%lu req_len=%u out_len=%u",
-                         poll_id, (unsigned int)len, (unsigned int)produce_len);
-
-    if ((output == NULL) || (olen == NULL)) {
-        (void)swoDebugPrintf("PYRONET_TLS_ENTROPY_POLL_FAIL id=%lu reason=args",
-                             poll_id);
-        tr_error("entropy args fail");
+    char *c = (char *)ns_dyn_mem_temporary_alloc(len);
+    if (!c) {
+        tr_error("entropy alloca fail");
         return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
     }
-
-    for (uint16_t i = 0; i < produce_len;) {
-        if ((i != 0U) && ((i % 32U) == 0U)) {
-            (void)swoDebugPrintf("PYRONET_TLS_ENTROPY_POLL_PROGRESS id=%lu offset=%u",
-                                 poll_id, (unsigned int)i);
-        }
-
-        uint32_t random_word = tls_sec_lib_debug_random_word();
-        for (uint8_t byte = 0U; (byte < 4U) && (i < produce_len); byte++, i++) {
-            output[i] = (unsigned char)(random_word & 0xffU);
-            random_word >>= 8;
-        }
+    memset(c, 0, len);
+    for (uint16_t i = 0; i < len; i++) {
+        *(c + i) = (char)randLIB_get_8bit();
     }
-    *olen = produce_len;
+    memmove(output, c, len);
+    *olen = len;
 
-    (void)swoDebugPrintf("PYRONET_TLS_ENTROPY_POLL_DONE id=%lu out_len=%u",
-                         poll_id, (unsigned int)produce_len);
+    ns_dyn_mem_free(c);
     return (0);
 }
 
 static int tls_sec_lib_seed_poll(void *ctx, unsigned char *output, size_t len)
 {
     (void)ctx;
-    static unsigned long seed_count = 0;
-    unsigned long seed_id = ++seed_count;
 
     if (output == NULL) {
-        (void)swoDebugPrintf("PYRONET_TLS_SEED_POLL_FAIL id=%lu reason=args", seed_id);
         return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
     }
 
-    (void)swoDebugPrintf("PYRONET_TLS_SEED_POLL_START id=%lu len=%u",
-                         seed_id, (unsigned int)len);
-
     for (size_t i = 0; i < len;) {
-        (void)swoDebugPrintf("PYRONET_TLS_SEED_WORD_START id=%lu offset=%u",
-                             seed_id, (unsigned int)i);
-        uint32_t random_word = tls_sec_lib_debug_random_word();
-        (void)swoDebugPrintf("PYRONET_TLS_SEED_WORD_GOT id=%lu offset=%u word=%08lx",
-                             seed_id, (unsigned int)i, (unsigned long)random_word);
-        for (uint8_t byte = 0U; (byte < 4U) && (i < len); byte++, i++) {
+        uint32_t random_word = tls_sec_lib_random_word();
+
+        for (uint8_t byte = 0U; (byte < sizeof(random_word)) && (i < len); byte++, i++) {
             output[i] = (unsigned char)(random_word & 0xffU);
             random_word >>= 8;
         }
-        (void)swoDebugPrintf("PYRONET_TLS_SEED_WORD_DONE id=%lu offset=%u",
-                             seed_id, (unsigned int)i);
     }
 
-    (void)swoDebugPrintf("PYRONET_TLS_SEED_POLL_DONE id=%lu len=%u",
-                         seed_id, (unsigned int)len);
     return 0;
 }
 
-static uint32_t tls_sec_lib_debug_random_word(void)
+static uint32_t tls_sec_lib_random_word(void)
 {
     static uint32_t state = 0U;
 
@@ -789,7 +701,6 @@ static uint32_t tls_sec_lib_debug_random_word(void)
         if (state == 0U) {
             state = UINT32_C(0x9e3779b9);
         }
-        (void)swoDebugWriteLine("PYRONET_TLS_ENTROPY_SEEDED");
     }
 
     state ^= state << 13;
