@@ -40,8 +40,8 @@ class LiveBackhaulEndpointTests(unittest.TestCase):
         cls.client = HTTPBackhaulClient(base_url=base_url, timeout_seconds=timeout_seconds)
         cls.gateway_id = int(os.environ.get("PYRONET_LIVE_BACKHAUL_GATEWAY_ID", "7"))
         cls.version = int(os.environ.get("PYRONET_LIVE_BACKHAUL_VERSION", "1"))
-        cls.latitude = float(os.environ.get("PYRONET_LIVE_BACKHAUL_LATITUDE", "39.7684"))
-        cls.longitude = float(os.environ.get("PYRONET_LIVE_BACKHAUL_LONGITUDE", "-86.1581"))
+        cls.latitude = float(os.environ.get("PYRONET_LIVE_BACKHAUL_LATITUDE", "40.42873081269003"))
+        cls.longitude = float(os.environ.get("PYRONET_LIVE_BACKHAUL_LONGITUDE", "-86.91197196095088"))
         cls.sw_version = int(os.environ.get("PYRONET_LIVE_BACKHAUL_SW_VERSION", "258"))
         cls.observed_src_ipv6 = os.environ.get("PYRONET_LIVE_BACKHAUL_OBSERVED_SRC_IPV6", "fd12:3456::abcd")
         cls.node_id = int(os.environ.get("PYRONET_LIVE_BACKHAUL_NODE_ID", "1001"))
@@ -54,6 +54,7 @@ class LiveBackhaulEndpointTests(unittest.TestCase):
             version=self.version,
             gateway_id=self.gateway_id,
             timestamp=int(time.time()),
+            wisun_ipv6=self.observed_src_ipv6,
             latitude=self.latitude,
             longitude=self.longitude,
             sw_version=self.sw_version,
@@ -68,6 +69,7 @@ class LiveBackhaulEndpointTests(unittest.TestCase):
                 version=self.version,
                 gateway_id=self.gateway_id,
                 timestamp=now,
+                wisun_ipv6=self.observed_src_ipv6,
                 latitude=self.latitude,
                 longitude=self.longitude,
                 sw_version=self.sw_version,

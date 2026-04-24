@@ -78,6 +78,7 @@ class GatewayConfig:
     gateway_id: int
     latitude: float
     longitude: float
+    wisun_ipv6: str
     sw_version: int
     coap: CoapConfig
     backhaul: BackhaulConfig
@@ -91,6 +92,7 @@ ENV_OVERRIDES = {
     "PYRONET_GATEWAY_ID": ("gateway", "gateway_id"),
     "PYRONET_GATEWAY_LATITUDE": ("gateway", "latitude"),
     "PYRONET_GATEWAY_LONGITUDE": ("gateway", "longitude"),
+    "PYRONET_GATEWAY_WISUN_IPV6": ("gateway", "wisun_ipv6"),
     "PYRONET_SW_VERSION_OVERRIDE": ("gateway", "sw_version_override"),
     "PYRONET_COAP_BIND_HOST": ("coap", "bind_host"),
     "PYRONET_COAP_BIND_PORT": ("coap", "port"),
@@ -136,6 +138,7 @@ def load_config(path: str | Path, *, environ: Mapping[str, str] | None = None) -
         gateway_id=int(values["gateway"]["gateway_id"]),
         latitude=float(values["gateway"]["latitude"]),
         longitude=float(values["gateway"]["longitude"]),
+        wisun_ipv6=str(values["gateway"].get("wisun_ipv6", "::")),
         sw_version=sw_version,
         coap=CoapConfig(
             bind_host=str(values["coap"].get("bind_host", "::")),

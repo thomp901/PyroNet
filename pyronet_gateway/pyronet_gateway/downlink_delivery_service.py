@@ -43,7 +43,7 @@ class DownlinkDeliveryService:
             gateway_id=identity.gateway_id,
             downlink_id=identity.downlink_id,
         )
-        if cached is not None:
+        if cached is not None and cached.request_body == request_body:
             return 200, cached.result_body
 
         owner, event = self._acquire_owner(identity)
@@ -53,7 +53,7 @@ class DownlinkDeliveryService:
                 gateway_id=identity.gateway_id,
                 downlink_id=identity.downlink_id,
             )
-            if cached is not None:
+            if cached is not None and cached.request_body == request_body:
                 return 200, cached.result_body
             return self.handle_request(request_body=request_body, now=now)
 
@@ -62,7 +62,7 @@ class DownlinkDeliveryService:
                 gateway_id=identity.gateway_id,
                 downlink_id=identity.downlink_id,
             )
-            if cached is not None:
+            if cached is not None and cached.request_body == request_body:
                 return 200, cached.result_body
             return self._process_request(identity=identity, request_body=request_body, now=now)
         finally:

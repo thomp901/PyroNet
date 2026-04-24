@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ipaddress
 import os
 import socket
 import time
@@ -28,6 +29,7 @@ class CoapDownlinkClient:
         resource_path: str,
         ack_timeout_seconds: float,
         max_retransmit: int,
+        link_local_interface: str = "tun0",
         socket_factory=socket.socket,
         monotonic=time.monotonic,
     ) -> None:
@@ -35,6 +37,7 @@ class CoapDownlinkClient:
         self._resource_path = tuple(segment for segment in resource_path.strip("/").split("/") if segment)
         self._ack_timeout_seconds = ack_timeout_seconds
         self._max_retransmit = max_retransmit
+        self._link_local_interface = link_local_interface
         self._socket_factory = socket_factory
         self._monotonic = monotonic
         self._message_id = 0
@@ -53,11 +56,12 @@ class CoapDownlinkClient:
             sock = self._socket_factory(socket.AF_INET6, socket.SOCK_DGRAM)
         except OSError as exc:
             return CoapDeliveryResult(False, "internal_gateway_failure", str(exc), attempts=0)
+        destination = self._destination(target_ipv6)
         try:
             for attempt in range(self._max_retransmit + 1):
                 attempts = attempt + 1
                 try:
-                    sock.sendto(datagram, (target_ipv6, self._port))
+                    sock.sendto(datagram, destination)
                 except OSError as exc:
                     return CoapDeliveryResult(False, "target_unreachable", str(exc), attempts=attempts)
                 result = self._await_response(sock, timeout_seconds, token=token, message_id=message_id)
@@ -143,3 +147,10 @@ class CoapDownlinkClient:
     def _next_message_id(self) -> int:
         self._message_id = (self._message_id + 1) & 0xFFFF
         return self._message_id
+
+    def _destination(self, target_ipv6: str):
+        address = ipaddress.IPv6Address(target_ipv6)
+        if not address.is_link_local:
+            return (target_ipv6, self._port)
+        scope_id = socket.if_nametoindex(self._link_local_interface)
+        return (target_ipv6, self._port, 0, scope_id)

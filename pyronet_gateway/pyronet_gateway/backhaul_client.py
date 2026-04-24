@@ -44,9 +44,10 @@ class HTTPBackhaulClient:
                 status = getattr(response, "status", response.getcode())
                 response_body = response.read()
         except urllib.error.HTTPError as exc:
+            detail = _format_http_error(exc)
             if 400 <= exc.code < 500:
-                raise PermanentBackhaulError(f"HTTP {exc.code}") from exc
-            raise TransientBackhaulError(f"HTTP {exc.code}") from exc
+                raise PermanentBackhaulError(detail) from exc
+            raise TransientBackhaulError(detail) from exc
         except urllib.error.URLError as exc:
             raise TransientBackhaulError(f"connection failure: {exc.reason}") from exc
         except TimeoutError as exc:
@@ -59,3 +60,22 @@ class HTTPBackhaulClient:
         if expect_receipt and not response_body:
             raise TransientBackhaulError("missing uplink receipt body")
         return response_body
+
+
+def _format_http_error(exc: urllib.error.HTTPError) -> str:
+    detail = f"HTTP {exc.code}"
+    response_body = b""
+    if exc.fp is not None:
+        try:
+            response_body = exc.read()
+        except Exception:
+            response_body = b""
+    if not response_body:
+        return detail
+    body_text = response_body.decode("utf-8", errors="replace").strip()
+    if not body_text:
+        return detail
+    body_text = " ".join(body_text.split())
+    if len(body_text) > 200:
+        body_text = f"{body_text[:197]}..."
+    return f"{detail}: {body_text}"
