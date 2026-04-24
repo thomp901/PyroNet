@@ -48,6 +48,9 @@ extern "C" {
 #define WISUN_CONFIG_ALLOWED_CHANNELS           "0-255"
 extern const sl_wisun_channel_mask_t wisun_config_allowed_channels_mask;
 
+//! Wi-SUN network name
+#define WISUN_CONFIG_NETWORK_NAME               "PyroNet"
+
 //! Wi-SUN default PHY - FAN1.1 profile
 #define WISUN_CONFIG_DEFAULT_PHY_FAN11
 

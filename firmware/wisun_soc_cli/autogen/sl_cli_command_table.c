@@ -145,6 +145,9 @@ void app_socket_read(sl_cli_command_arg_t *arguments);
 void app_socket_write(sl_cli_command_arg_t *arguments);
 void app_socket_writeto(sl_cli_command_arg_t *arguments);
 void app_pyronet_spoof(sl_cli_command_arg_t *arguments);
+void app_pyronet_profile(sl_cli_command_arg_t *arguments);
+void app_pyronet_risk(sl_cli_command_arg_t *arguments);
+void app_pyronet_alert(sl_cli_command_arg_t *arguments);
 void app_socket_list(sl_cli_command_arg_t *arguments);
 void app_socket_set_option(sl_cli_command_arg_t *arguments);
 void app_mac_allow(sl_cli_command_arg_t *arguments);
@@ -312,6 +315,24 @@ static const sl_cli_command_info_t cli_cmd_wisun_pyronet_spoof = \
                  "Send hard-coded PyroNet CSP spoof packets: w ps",
                   "Remote address" SL_CLI_UNIT_SEPARATOR "Remote port" SL_CLI_UNIT_SEPARATOR,
                  {SL_CLI_ARG_STRING, SL_CLI_ARG_UINT16, SL_CLI_ARG_END, });
+
+static const sl_cli_command_info_t cli_cmd_wisun_pyronet_profile = \
+  SL_CLI_COMMAND(app_pyronet_profile,
+                 "Show active PyroNet spoof profile",
+                  "",
+                 {SL_CLI_ARG_END, });
+
+static const sl_cli_command_info_t cli_cmd_wisun_pyronet_risk = \
+  SL_CLI_COMMAND(app_pyronet_risk,
+                 "Set PyroNet spoof risk preset: w pr <1..5>",
+                  "Risk level" SL_CLI_UNIT_SEPARATOR,
+                 {SL_CLI_ARG_UINT8, SL_CLI_ARG_END, });
+
+static const sl_cli_command_info_t cli_cmd_wisun_pyronet_alert = \
+  SL_CLI_COMMAND(app_pyronet_alert,
+                 "Send immediate PyroNet risk-5 alert: w pa",
+                  "",
+                 {SL_CLI_ARG_END, });
 
 static const sl_cli_command_info_t cli_cmd_wisun_socket_list = \
   SL_CLI_COMMAND(app_socket_list,
@@ -518,6 +539,12 @@ static const sl_cli_command_entry_t wisun_group_table[] = {
   { "swt", &cli_cmd_wisun_socket_writeto, true },
   { "pyronet_spoof", &cli_cmd_wisun_pyronet_spoof, false },
   { "ps", &cli_cmd_wisun_pyronet_spoof, true },
+  { "pyronet_profile", &cli_cmd_wisun_pyronet_profile, false },
+  { "pp", &cli_cmd_wisun_pyronet_profile, true },
+  { "pyronet_risk", &cli_cmd_wisun_pyronet_risk, false },
+  { "pr", &cli_cmd_wisun_pyronet_risk, true },
+  { "pyronet_alert", &cli_cmd_wisun_pyronet_alert, false },
+  { "pa", &cli_cmd_wisun_pyronet_alert, true },
   { "socket_list", &cli_cmd_wisun_socket_list, false },
   { "sl", &cli_cmd_wisun_socket_list, true },
   { "socket_set_option", &cli_cmd_wisun_socket_set_option, false },

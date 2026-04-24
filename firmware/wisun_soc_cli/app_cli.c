@@ -44,6 +44,7 @@
 #include "arpa/inet.h"
 #include "common/endian.h"
 #include "app_event_log.h"
+#include "pyronet_device.h"
 
 #ifdef SL_CATALOG_POWER_MANAGER_PRESENT
 #include "sl_power_manager.h"
@@ -76,7 +77,7 @@
 #define APP_PYRONET_COAP_UPLINK_PATH "uplink"
 #define APP_PYRONET_COAP_DOWNLINK_PATH "downlink"
 #define APP_PYRONET_SCHEMA_VERSION 1
-#define APP_PYRONET_NODE_ID 1001
+#define APP_PYRONET_NODE_ID 2001
 #define APP_PYRONET_TIMESTAMP 1777032000UL
 #define APP_PYRONET_BHEE_LATITUDE 40.4286548f
 #define APP_PYRONET_BHEE_LONGITUDE -86.9119776f
@@ -391,7 +392,10 @@ static void app_cli_task(void *argument)
     app_join((sl_wisun_phy_config_type_t)app_settings_wisun.phy_config_type);
   }
 
-  osThreadExit();
+  while (1) {
+    pyronet_device_process();
+    osDelay(1000U);
+  }
 }
 
 void app_cli_init(void)
@@ -433,6 +437,7 @@ void app_cli_init(void)
   assert(app_task_id != 0);
 
   app_event_log_init();
+  pyronet_device_init();
 }
 
 void app_about(void)
@@ -826,8 +831,12 @@ void sl_wisun_on_event(sl_wisun_evt_t *evt)
      break;
     case SL_WISUN_MSG_CONNECTED_IND_ID:
       app_handle_connected_ind(evt);
+      pyronet_device_on_connected();
       break;
     case SL_WISUN_MSG_SOCKET_DATA_IND_ID:
+      if (pyronet_device_handle_socket_data(evt)) {
+        break;
+      }
       app_handle_socket_data_ind(evt);
       break;
     case SL_WISUN_MSG_SOCKET_DATA_AVAILABLE_IND_ID:
@@ -844,11 +853,16 @@ void sl_wisun_on_event(sl_wisun_evt_t *evt)
       break;
     case SL_WISUN_MSG_DISCONNECTED_IND_ID:
       app_handle_disconnected_ind(evt);
+      pyronet_device_on_disconnected();
       break;
     case SL_WISUN_MSG_CONNECTION_LOST_IND_ID:
       app_handle_connection_lost_ind(evt);
+      pyronet_device_on_disconnected();
       break;
     case SL_WISUN_MSG_SOCKET_DATA_SENT_IND_ID:
+      if (pyronet_device_handle_socket_data_sent(evt)) {
+        break;
+      }
       app_handle_socket_data_sent_ind(evt);
       break;
     case SL_WISUN_MSG_JOIN_STATE_IND_ID:
@@ -1209,6 +1223,7 @@ static void app_join(sl_wisun_phy_config_type_t phy_config_type)
 
   ret = sl_wisun_join((const uint8_t *)app_settings_wisun.network_name, &phy_config);
   if (ret == SL_STATUS_OK) {
+    pyronet_device_on_join_requested();
     app_connection_state = APP_CONNECTION_STATE_CONNECTING;
     app_connection_tick_count = sl_sleeptimer_get_tick_count();
     printf("[Connecting to \"%s\"]\r\n", app_settings_wisun.network_name);
@@ -1317,6 +1332,11 @@ void app_join_ids(sl_cli_command_arg_t *arguments)
   (void)arguments;
 
   app_join(SL_WISUN_PHY_CONFIG_IDS);
+}
+
+void app_pyronet_join_default(void)
+{
+  app_join((sl_wisun_phy_config_type_t)app_settings_wisun.phy_config_type);
 }
 
 void app_disconnect(sl_cli_command_arg_t *arguments)

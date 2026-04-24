@@ -240,6 +240,8 @@ add_library(slc OBJECT
     "../app_cli.c"
     "../app_event_log.c"
     "../app_settings.c"
+    "../pyronet_device.c"
+    "../pyronet_protocol.c"
     "../autogen/rail_config.c"
     "../autogen/sl_board_default_init.c"
     "../autogen/sl_cli_command_table.c"

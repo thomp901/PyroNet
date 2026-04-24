@@ -1,5 +1,5 @@
 {
-  "networkName": "Wi-SUN Network",
+  "networkName": "PyroNet",
   "networkSize": "SL_WISUN_NETWORK_SIZE_SMALL",
   "deviceType": "SL_WISUN_ROUTER",
   "deviceProfile": null,

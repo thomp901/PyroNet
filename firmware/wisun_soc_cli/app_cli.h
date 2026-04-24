@@ -19,5 +19,6 @@
 #define APP_CLI_H
 
 void app_cli_init(void);
+void app_pyronet_join_default(void);
 
 #endif  // APP_CLI_H

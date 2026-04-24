@@ -23,6 +23,8 @@ source:
 - {path: app_cli.c}
 - {path: app_settings.c}
 - {path: app_event_log.c}
+- {path: pyronet_protocol.c}
+- {path: pyronet_device.c}
 tag: [prebuilt_demo]
 include:
 - path: .
@@ -30,6 +32,8 @@ include:
   - {path: app_cli.h}
   - {path: app_settings.h}
   - {path: app_event_log.h}
+  - {path: pyronet_protocol.h}
+  - {path: pyronet_device.h}
 sdk: {vendor: null, id: simplicity_sdk, version: 2025.6.2}
 toolchain_settings:
 - {value: debug, option: optimize}
@@ -276,6 +280,35 @@ template_contribution:
     argument:
     - {type: string, help: Remote address}
     - {type: uint16, help: Remote port}
+- name: cli_command
+  priority: 0
+  value:
+    group: wisun
+    name: pyronet_profile
+    handler: app_pyronet_profile
+    help: 'Show active PyroNet spoof profile'
+    shortcuts:
+    - {name: pp}
+- name: cli_command
+  priority: 0
+  value:
+    group: wisun
+    name: pyronet_risk
+    handler: app_pyronet_risk
+    help: 'Set PyroNet spoof risk preset: w pr <1..5>'
+    shortcuts:
+    - {name: pr}
+    argument:
+    - {type: uint8, help: Risk level}
+- name: cli_command
+  priority: 0
+  value:
+    group: wisun
+    name: pyronet_alert
+    handler: app_pyronet_alert
+    help: 'Send immediate PyroNet risk-5 alert: w pa'
+    shortcuts:
+    - {name: pa}
 - name: cli_command
   priority: 0
   value:
@@ -577,7 +610,7 @@ configuration:
   value: '128'
 - condition: [iostream_eusart]
   name: SL_IOSTREAM_EUSART_VCOM_FLOW_CONTROL_TYPE
-  value: SL_IOSTREAM_EUSART_UART_FLOW_CTRL_CTS_RTS
+  value: SL_IOSTREAM_EUSART_UART_FLOW_CTRL_NONE
 - condition: [iostream_leuart]
   name: SL_IOSTREAM_LEUART_VCOM_CONVERT_BY_DEFAULT_LF_TO_CRLF
   value: '1'
