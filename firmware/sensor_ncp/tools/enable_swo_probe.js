@@ -1,46 +1,138 @@
-const { join } = require("path");
+importPackage(Packages.com.ti.ccstudio.scripting.environment);
+importPackage(Packages.java.io);
+importPackage(Packages.java.lang);
 
-const holdMs = Number(process.argv[3] || "15000");
-const doReset = process.argv.includes("--reset");
+function argOrDefault(index, defaultValue)
+{
+    if (typeof arguments !== "undefined" && arguments.length > index)
+    {
+        var value = arguments[index];
+        if (value !== null && String(value).length > 0)
+        {
+            return value;
+        }
+    }
 
-const scriptingOptions = process.env.CCS_ROOT ? { ccsRoot: process.env.CCS_ROOT } : undefined;
-const ds = initScripting(scriptingOptions);
-ds.setScriptingTimeout(30000);
-
-const ccxml = process.env.CCXML_PATH || join(__dirname, "cc1352p7_2pin_cJTAG_XDS110.ccxml");
-console.log(`Configuring debugger with ${ccxml}`);
-ds.configure(ccxml);
-
-const cores = ds.listCores();
-console.log(`Cores: ${JSON.stringify(cores)}`);
-
-let session = null;
-if (cores.cores && cores.cores.length > 0) {
-    session = ds.openSession(/cortex/i);
-    session.target.connect();
-    console.log("Connected to target");
-}
-else {
-    console.log("No debug core exposed by this probe profile; holding probe in configured mode");
+    return defaultValue;
 }
 
-if (session && doReset) {
-    const resets = session.target.getResets();
-    const resetType = resets["System Reset"] ? "System Reset" : "";
-    console.log(`Issuing ${resetType || "default"} reset`);
-    session.target.reset(resetType);
+function stringContains(value, needle)
+{
+    return String(value).toLowerCase().indexOf(String(needle).toLowerCase()) !== -1;
 }
 
-if (session && session.target.isHalted()) {
-    console.log("Target is halted, resuming");
-    session.target.run(false);
+var defaultHoldMs = 86400000;
+var holdMs = Number(argOrDefault(0, String(defaultHoldMs)));
+if (!(holdMs > 0))
+{
+    holdMs = defaultHoldMs;
+}
+var doReset = String(argOrDefault(1, "")).toLowerCase() === "--reset";
+var ccxmlArg = argOrDefault(2, "");
+var userDir = String(System.getProperty("user.dir"));
+var ccxmlPath = ccxmlArg ? String(ccxmlArg) : String(new File(userDir, "tools/cc1352p7_2pin_cJTAG_XDS110.ccxml").getCanonicalPath());
+
+var script = ScriptingEnvironment.instance();
+script.setScriptTimeout(Math.max(30000, holdMs + 5000));
+script.traceBegin("swo_probe_trace.xml", "DefaultStylesheet.xsl");
+script.traceSetConsoleLevel(TraceLevel.INFO);
+
+print("Configuring debugger with " + ccxmlPath);
+
+var debugServer = script.getServer("DebugServer.1");
+debugServer.setConfig(ccxmlPath);
+
+var session = null;
+
+try
+{
+    try
+    {
+        session = debugServer.openSession(".*Cortex_M4.*");
+    }
+    catch (openErr)
+    {
+        session = debugServer.openSession(".*");
+    }
+
+    if (session)
+    {
+        session.target.connect();
+        print("Connected to target");
+
+        if (doReset)
+        {
+            try
+            {
+                var resets = session.target.getResets();
+                var resetType = "";
+
+                if (resets)
+                {
+                    for (var key in resets)
+                    {
+                        if (stringContains(key, "system reset"))
+                        {
+                            resetType = key;
+                            break;
+                        }
+                    }
+                }
+
+                print("Issuing " + (resetType ? resetType : "default") + " reset");
+                session.target.reset(resetType);
+            }
+            catch (resetErr)
+            {
+                print("Reset failed: " + resetErr);
+            }
+        }
+
+        try
+        {
+            if (session.target.isHalted())
+            {
+                print("Target is halted, resuming");
+                session.target.runAsynch();
+            }
+        }
+        catch (runErr)
+        {
+            print("Resume check failed: " + runErr);
+        }
+    }
+    else
+    {
+        print("No debug session opened");
+    }
+
+    print("Holding session open for " + holdMs + " ms");
+    Thread.sleep(holdMs);
+}
+finally
+{
+    try
+    {
+        if (session)
+        {
+            session.target.disconnect();
+        }
+    }
+    catch (disconnectErr)
+    {
+        print("Disconnect failed: " + disconnectErr);
+    }
+
+    try
+    {
+        debugServer.stop();
+    }
+    catch (stopErr)
+    {
+        print("Debug server stop failed: " + stopErr);
+    }
+
+    script.traceEnd();
 }
 
-console.log(`Holding session open for ${holdMs} ms`);
-sleep(holdMs);
-
-if (session && session.target.isConnected()) {
-    session.target.disconnect();
-}
-ds.shutdown();
-console.log("Debugger session closed");
+print("Debugger session closed");

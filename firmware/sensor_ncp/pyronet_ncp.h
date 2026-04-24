@@ -25,6 +25,7 @@ bool pyronet_ncp_init(void);
 void pyronet_ncp_poll(void);
 uint8_t pyronet_ncp_network_state(void);
 bool pyronet_ncp_next_event(pyronet_ncp_event_t *out_event);
+void pyronet_ncp_host_session_ready(void);
 
 void pyronet_ncp_send_registration(const pyronet_host_send_registration_v1_t *command);
 void pyronet_ncp_send_sensor_report(const pyronet_host_send_sensor_report_v1_t *command);

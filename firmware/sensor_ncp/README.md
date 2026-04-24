@@ -101,11 +101,48 @@ cd /Users/diegosmacbook/Documents/PyroNet/firmware/sensor_ncp
 python3 tools/capture_itm_text.py /dev/cu.usbmodemLS41069U4 3000000 --seconds 15
 ```
 
+Repo-root shortcuts:
+
+```sh
+make build
+make flash
+make run
+make watch
+make bootlog
+```
+
+Persistent logging:
+
+```sh
+cd /Users/diegosmacbook/Documents/PyroNet/firmware/sensor_ncp
+python3 tools/swo_log_daemon.py
+```
+
+This writes timestamped daily files under `logs/swo/` and will reconnect if the XDS110 aux port disappears and reappears.
+
+Persistent terminal trace:
+
+```sh
+cd /Users/diegosmacbook/Documents/PyroNet/firmware/sensor_ncp
+make watch
+```
+
+This starts the TI DSS probe hold-open session and streams decoded SWO text directly in the terminal while also writing `logs/swo/swo_YYYY-MM-DD.log`. On Apple Silicon, the wrapper will automatically use TI's bundled x86_64 Java runtime when available.
+
+To install it as a macOS user `launchd` agent:
+
+```sh
+cd /Users/diegosmacbook/Documents/PyroNet/firmware/sensor_ncp
+python3 tools/install_swo_logger_launchd.py install
+```
+
 Notes:
 
 - the exact `/dev/cu.usbmodem...` node may vary
+- `make watch` auto-detects the XDS110 aux port by default; set `SWO_PORT=/dev/cu.usbmodem...` to pin it
 - this hardware uses the XDS110 aux COM path mapped to target `TDO` on `DIO_16`
 - `tools/capture_itm_text.py` includes a fallback decoder for this image's raw SWO byte pattern
+- the simplest reliable one-shot capture is `make bootlog`, which starts capture first and then reflashes to force a fresh boot
 
 ## Reference Trees
 

@@ -6,6 +6,8 @@
 #include "../swo_debug.h"
 
 #include "ip6string.h"
+#include "mesh_system.h"
+#include "net_interface.h"
 #include "wisun_tasklet.h"
 #include "ws_management_api.h"
 
@@ -19,6 +21,7 @@ typedef struct pyronet_ncp_state_context
     uint8_t network_state;
     bool ever_joined;
     bool session_joined;
+    bool pending_join_ready;
     bool registration_required;
     bool local_node_id_known;
     uint16_t local_node_id;
@@ -66,6 +69,7 @@ static void pyronetNcpStateResetLocked(void)
     pyronetNcpStateContext.network_state = HOST_NETWORK_STATE_DOWN;
     pyronetNcpStateContext.ever_joined = false;
     pyronetNcpStateContext.session_joined = false;
+    pyronetNcpStateContext.pending_join_ready = false;
     pyronetNcpStateContext.registration_required = false;
     pyronetNcpStateContext.local_node_id_known = false;
     pyronetNcpStateContext.local_node_id = 0U;
@@ -120,6 +124,65 @@ static void pyronetNcpStateApplyNeighborTableLocked(uint8_t neighbor_count,
     {
         memcpy(pyronetNcpStateContext.neighbors[index], neighbors[index], PYRONET_IPV6_ADDR_LEN);
     }
+}
+
+void pyronet_ncp_state_log_connectivity_snapshot(uint8_t host_state)
+{
+    int8_t interface_id;
+    uint8_t link_local[PYRONET_IPV6_ADDR_LEN];
+    uint8_t global[PYRONET_IPV6_ADDR_LEN];
+    network_layer_address_s nd_address;
+    char link_local_str[PYRONET_ROUTER_ADDR_STR_LEN];
+    char global_str[PYRONET_ROUTER_ADDR_STR_LEN];
+    char border_router_str[PYRONET_ROUTER_ADDR_STR_LEN];
+    bool has_link_local = false;
+    bool has_global = false;
+    bool has_border_router = false;
+
+    memset(link_local, 0, sizeof(link_local));
+    memset(global, 0, sizeof(global));
+    memset(&nd_address, 0, sizeof(nd_address));
+    memset(link_local_str, 0, sizeof(link_local_str));
+    memset(global_str, 0, sizeof(global_str));
+    memset(border_router_str, 0, sizeof(border_router_str));
+
+    pyronetNcpStateLock();
+    interface_id = pyronetNcpStateContext.interface_id;
+    pyronetNcpStateUnlock();
+
+    if (interface_id < 0)
+    {
+        (void)swoDebugPrintf("PYRONET_WISUN_ADDR host_state=%u ll=- global=- border_router=-",
+                             (unsigned int)host_state);
+        return;
+    }
+
+    nanostack_lock();
+    has_link_local = (arm_net_address_get(interface_id, ADDR_IPV6_LL, link_local) == 0);
+    has_global = (arm_net_address_get(interface_id, ADDR_IPV6_GP, global) == 0);
+    has_border_router = (arm_nwk_nd_address_read(interface_id, &nd_address) == 0);
+    nanostack_unlock();
+
+    if (has_link_local)
+    {
+        ip6tos(link_local, link_local_str);
+    }
+
+    if (has_global)
+    {
+        ip6tos(global, global_str);
+    }
+
+    if (has_border_router)
+    {
+        ip6tos(nd_address.border_router, border_router_str);
+    }
+
+    (void)swoDebugPrintf("PYRONET_WISUN_ADDR host_state=%u ll=%s global=%s border_router=%s",
+                         (unsigned int)host_state,
+                         has_link_local ? link_local_str : "-",
+                         has_global ? global_str : "-",
+                         has_border_router ? border_router_str : "-");
 }
 
 bool pyronet_ncp_state_init(void)
@@ -242,46 +305,77 @@ bool pyronet_ncp_state_read_current_parent(uint8_t parent_out[static PYRONET_IPV
     network_state = pyronetNcpStateContext.network_state;
     pyronetNcpStateUnlock();
 
-    if ((interface_id < 0) || (network_state != HOST_NETWORK_STATE_JOINED))
+    if ((interface_id < 0) || (network_state == HOST_NETWORK_STATE_DOWN))
     {
         return false;
     }
 
     memset(&info, 0, sizeof(info));
+    nanostack_lock();
     if (ws_stack_info_get(interface_id, &info) < 0)
     {
+        nanostack_unlock();
         return false;
     }
+    nanostack_unlock();
 
     memcpy(parent_out, info.parent, PYRONET_IPV6_ADDR_LEN);
     return (memcmp(parent_out, pyronetZeroIpv6, PYRONET_IPV6_ADDR_LEN) != 0);
 }
 
-bool pyronet_ncp_state_read_router_address(uint8_t destination_out[static PYRONET_IPV6_ADDR_LEN])
+pyronet_ncp_router_address_result_t pyronet_ncp_state_read_router_address(
+  uint8_t destination_out[static PYRONET_IPV6_ADDR_LEN])
 {
     char address[PYRONET_ROUTER_ADDR_STR_LEN];
     int8_t interface_id;
     uint8_t network_state;
+    uint8_t global[PYRONET_IPV6_ADDR_LEN];
+    uint8_t parent[PYRONET_IPV6_ADDR_LEN];
+    bool has_global = false;
+    bool has_parent = false;
+    char parent_str[PYRONET_ROUTER_ADDR_STR_LEN];
 
     memset(destination_out, 0, PYRONET_IPV6_ADDR_LEN);
     memset(address, 0, sizeof(address));
+    memset(global, 0, sizeof(global));
+    memset(parent, 0, sizeof(parent));
+    memset(parent_str, 0, sizeof(parent_str));
 
     pyronetNcpStateLock();
     interface_id = pyronetNcpStateContext.interface_id;
     network_state = pyronetNcpStateContext.network_state;
     pyronetNcpStateUnlock();
 
-    if ((interface_id < 0) || (network_state != HOST_NETWORK_STATE_JOINED))
+    if ((interface_id < 0) || (network_state == HOST_NETWORK_STATE_DOWN))
     {
-        return false;
+        return PYRONET_NCP_ROUTER_ADDRESS_NOT_JOINED;
     }
 
+    nanostack_lock();
     if (wisun_tasklet_get_router_ip_address(address, (int8_t)sizeof(address)) != 0)
     {
-        return false;
+        has_global = (arm_net_address_get(interface_id, ADDR_IPV6_GP, global) == 0);
+        nanostack_unlock();
+        has_parent = pyronet_ncp_state_read_current_parent(parent);
+
+        if (has_global && has_parent)
+        {
+            memcpy(destination_out, parent, PYRONET_IPV6_ADDR_LEN);
+            ip6tos(parent, parent_str);
+            (void)swoDebugPrintf("PYRONET_ROUTER_FALLBACK parent=%s", parent_str);
+            return PYRONET_NCP_ROUTER_ADDRESS_READY;
+        }
+
+        return PYRONET_NCP_ROUTER_ADDRESS_UNAVAILABLE;
+    }
+    nanostack_unlock();
+
+    if (!stoip6(address, strlen(address), destination_out))
+    {
+        return PYRONET_NCP_ROUTER_ADDRESS_INVALID;
     }
 
-    return stoip6(address, strlen(address), destination_out);
+    return PYRONET_NCP_ROUTER_ADDRESS_READY;
 }
 
 uint8_t pyronet_ncp_state_copy_neighbors(uint8_t neighbors_out[PYRONET_MAX_NEIGHBORS][PYRONET_IPV6_ADDR_LEN])
@@ -357,8 +451,6 @@ pyronet_ncp_neighbor_table_result_t pyronet_ncp_state_accept_neighbor_table(
 
 void pyronet_ncp_state_handle_network_status(mesh_connection_status_t status)
 {
-    bool queue_registration = false;
-    uint8_t reason = PYRONET_REG_REASON_JOIN;
     uint8_t network_state;
 
     pyronetNcpStateLock();
@@ -368,22 +460,23 @@ void pyronet_ncp_state_handle_network_status(mesh_connection_status_t status)
         case MESH_CONNECTED:
         case MESH_CONNECTED_LOCAL:
         case MESH_CONNECTED_GLOBAL:
-            pyronetNcpStateContext.network_state = HOST_NETWORK_STATE_JOINED;
             if (!pyronetNcpStateContext.session_joined)
             {
-                pyronetNcpStateContext.session_joined = true;
-                pyronetNcpStateContext.registration_required = true;
+                pyronetNcpStateContext.network_state = HOST_NETWORK_STATE_JOINING;
+                pyronetNcpStateContext.pending_join_ready = true;
                 pyronetNcpStateContext.parent_initialized = false;
                 memset(pyronetNcpStateContext.last_parent_ipv6, 0, sizeof(pyronetNcpStateContext.last_parent_ipv6));
-                reason = pyronetNcpStateContext.ever_joined ? PYRONET_REG_REASON_REJOIN : PYRONET_REG_REASON_JOIN;
-                pyronetNcpStateContext.ever_joined = true;
-                queue_registration = true;
+            }
+            else
+            {
+                pyronetNcpStateContext.network_state = HOST_NETWORK_STATE_JOINED;
             }
             break;
 
         case MESH_BOOTSTRAP_STARTED:
             pyronetNcpStateContext.network_state = HOST_NETWORK_STATE_JOINING;
             pyronetNcpStateContext.session_joined = false;
+            pyronetNcpStateContext.pending_join_ready = false;
             pyronetNcpStateContext.parent_initialized = false;
             memset(pyronetNcpStateContext.last_parent_ipv6, 0, sizeof(pyronetNcpStateContext.last_parent_ipv6));
             break;
@@ -394,6 +487,7 @@ void pyronet_ncp_state_handle_network_status(mesh_connection_status_t status)
         default:
             pyronetNcpStateContext.network_state = HOST_NETWORK_STATE_DOWN;
             pyronetNcpStateContext.session_joined = false;
+            pyronetNcpStateContext.pending_join_ready = false;
             pyronetNcpStateContext.parent_initialized = false;
             memset(pyronetNcpStateContext.last_parent_ipv6, 0, sizeof(pyronetNcpStateContext.last_parent_ipv6));
             break;
@@ -405,12 +499,70 @@ void pyronet_ncp_state_handle_network_status(mesh_connection_status_t status)
     (void)swoDebugPrintf("PYRONET_WISUN_STATUS status=%s host_state=%u queue_registration=%u",
                          pyronetNcpMeshStatusName(status),
                          (unsigned int)network_state,
-                         queue_registration ? 1U : 0U);
+                         0U);
+}
+
+void pyronet_ncp_state_poll_connectivity(void)
+{
+    uint8_t destination[PYRONET_IPV6_ADDR_LEN];
+    bool queue_registration = false;
+    uint8_t reason = PYRONET_REG_REASON_JOIN;
+
+    pyronetNcpStateLock();
+    if (!pyronetNcpStateContext.pending_join_ready || pyronetNcpStateContext.session_joined)
+    {
+        pyronetNcpStateUnlock();
+        return;
+    }
+    pyronetNcpStateUnlock();
+
+    if (pyronet_ncp_state_read_router_address(destination) != PYRONET_NCP_ROUTER_ADDRESS_READY)
+    {
+        return;
+    }
+
+    pyronetNcpStateLock();
+    if (pyronetNcpStateContext.pending_join_ready && !pyronetNcpStateContext.session_joined)
+    {
+        pyronetNcpStateContext.network_state = HOST_NETWORK_STATE_JOINED;
+        pyronetNcpStateContext.session_joined = true;
+        pyronetNcpStateContext.pending_join_ready = false;
+        pyronetNcpStateContext.registration_required = true;
+        pyronetNcpStateContext.parent_initialized = false;
+        memset(pyronetNcpStateContext.last_parent_ipv6, 0, sizeof(pyronetNcpStateContext.last_parent_ipv6));
+        reason = pyronetNcpStateContext.ever_joined ? PYRONET_REG_REASON_REJOIN : PYRONET_REG_REASON_JOIN;
+        pyronetNcpStateContext.ever_joined = true;
+        queue_registration = true;
+    }
+    pyronetNcpStateUnlock();
 
     if (queue_registration)
     {
+        (void)swoDebugPrintf("PYRONET_WISUN_READY reason=%u", (unsigned int)reason);
         pyronet_ncp_events_queue_registration_needed(reason);
     }
+}
+
+bool pyronet_ncp_state_request_registration_sync(uint8_t *reason_out)
+{
+    bool should_queue = false;
+    uint8_t reason = PYRONET_REG_REASON_JOIN;
+
+    pyronetNcpStateLock();
+    if (pyronetNcpStateContext.network_state == HOST_NETWORK_STATE_JOINED)
+    {
+        pyronetNcpStateContext.registration_required = true;
+        reason = pyronetNcpStateContext.ever_joined ? PYRONET_REG_REASON_REJOIN : PYRONET_REG_REASON_JOIN;
+        should_queue = true;
+    }
+    pyronetNcpStateUnlock();
+
+    if (reason_out != NULL)
+    {
+        *reason_out = reason;
+    }
+
+    return should_queue;
 }
 
 void pyronet_ncp_state_poll_parent(void)

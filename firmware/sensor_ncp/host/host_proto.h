@@ -113,6 +113,19 @@ enum pyronet_host_tx_status
     PYRONET_TX_STATUS_FAILED   = 4,
 };
 
+enum pyronet_host_tx_detail
+{
+    PYRONET_TX_DETAIL_NONE               = 0,
+    PYRONET_TX_DETAIL_NOT_JOINED         = 1,
+    PYRONET_TX_DETAIL_ROUTER_UNAVAILABLE = 2,
+    PYRONET_TX_DETAIL_COAP_UNAVAILABLE   = 3,
+    PYRONET_TX_DETAIL_SEND_REJECTED      = 4,
+    PYRONET_TX_DETAIL_TRACK_EXHAUSTED    = 5,
+    PYRONET_TX_DETAIL_TRACK_COMMIT       = 6,
+    PYRONET_TX_DETAIL_BAD_COMMAND        = 7,
+    PYRONET_TX_DETAIL_ROUTER_INVALID     = 8,
+};
+
 typedef struct HOST_PROTO_PACKED host_hello_v1
 {
     uint8_t endpoint;

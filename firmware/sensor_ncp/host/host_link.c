@@ -28,6 +28,7 @@ struct host_link_context
     uint8_t next_tx_seq;
     uint32_t tick_period_us;
     uint64_t boot_ticks;
+    bool session_sync_pending;
 };
 
 static struct host_link_context hostLinkContext;
@@ -166,6 +167,11 @@ static void hostLinkDrainNcpEvents(void)
 {
     pyronet_ncp_event_t event;
 
+    if (hostLinkContext.session_sync_pending)
+    {
+        return;
+    }
+
     while ((hostLinkContext.state == HOST_LINK_STATE_READY) && pyronet_ncp_next_event(&event))
     {
         switch (event.msg_type)
@@ -252,7 +258,12 @@ static void hostLinkHandleHello(const struct host_frame *frame)
     was_ready = (hostLinkContext.state == HOST_LINK_STATE_READY);
 
     hostLinkContext.state = HOST_LINK_STATE_READY;
+    hostLinkContext.session_sync_pending = true;
     hostLinkSendHelloAck(frame->seq);
+
+    (void)swoDebugPrintf("HOST_LINK_HELLO was_ready=%u sync_pending=%u",
+                         was_ready ? 1U : 0U,
+                         hostLinkContext.session_sync_pending ? 1U : 0U);
 
     if (!was_ready)
     {
@@ -358,6 +369,13 @@ static void hostLinkHandleGetStatus(const struct host_frame *frame)
     }
 
     hostLinkSendStatus(frame->seq);
+
+    if (hostLinkContext.session_sync_pending)
+    {
+        (void)swoDebugWriteLine("HOST_LINK_SYNC_AFTER_STATUS");
+        hostLinkContext.session_sync_pending = false;
+        pyronet_ncp_host_session_ready();
+    }
 }
 
 static void hostLinkHandleFrame(const struct host_frame *frame)

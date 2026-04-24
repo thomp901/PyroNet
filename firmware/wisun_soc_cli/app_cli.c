@@ -67,6 +67,19 @@
 #define APP_ICMPV6_CODE_ECHO_REQUEST 0
 #define APP_ICMPV6_CODE_ECHO_RESPONSE 0
 #define APP_ICMPV6_PORT 0
+#define APP_PYRONET_COAP_TYPE_CON 0
+#define APP_PYRONET_COAP_TYPE_NON 1
+#define APP_PYRONET_COAP_METHOD_POST 2
+#define APP_PYRONET_COAP_URI_PATH_OPTION 11
+#define APP_PYRONET_COAP_PAYLOAD_MARKER 0xFF
+#define APP_PYRONET_COAP_TOKEN_LEN 1
+#define APP_PYRONET_COAP_UPLINK_PATH "uplink"
+#define APP_PYRONET_COAP_DOWNLINK_PATH "downlink"
+#define APP_PYRONET_SCHEMA_VERSION 1
+#define APP_PYRONET_NODE_ID 1001
+#define APP_PYRONET_TIMESTAMP 1777032000UL
+#define APP_PYRONET_BHEE_LATITUDE 40.4286548f
+#define APP_PYRONET_BHEE_LONGITUDE -86.9119776f
 
 SL_PACK_START(1)
 typedef struct {
@@ -153,6 +166,17 @@ SL_PACK_END()
 
 typedef sl_status_t (*app_socket_option_handler)(app_socket_option_data_t *option_data,
                                                  const char *option_data_str);
+
+typedef enum {
+  APP_PYRONET_PACKET_REGISTRATION = 0x01,
+  APP_PYRONET_PACKET_SENSOR_REPORT = 0x02,
+  APP_PYRONET_PACKET_SENSOR_ALERT = 0x03,
+  APP_PYRONET_PACKET_NN_TABLE_UPDATE = 0x04,
+  APP_PYRONET_PACKET_TIME_SYNC = 0x05,
+  APP_PYRONET_PACKET_CONFIG_UPDATE = 0x06,
+  APP_PYRONET_PACKET_NEIGHBOR_ALERT = 0x07,
+  APP_PYRONET_PACKET_PARENT_UPDATE = 0x08
+} app_pyronet_packet_type_t;
 
 static sl_status_t app_socket_event_mode_handler(app_socket_option_data_t *option_data,
                                                  const char *option_data_str);
@@ -2013,6 +2037,281 @@ void app_socket_writeto(sl_cli_command_arg_t *arguments)
   printf("[Wrote %ld bytes]\r\n", socket_retval);
 
 cleanup:
+
+  app_wisun_cli_mutex_unlock();
+}
+
+static void app_pyronet_put_u16_le(uint8_t *buffer, uint16_t value)
+{
+  buffer[0] = (uint8_t)(value & 0xFF);
+  buffer[1] = (uint8_t)((value >> 8) & 0xFF);
+}
+
+static void app_pyronet_put_i16_le(uint8_t *buffer, int16_t value)
+{
+  app_pyronet_put_u16_le(buffer, (uint16_t)value);
+}
+
+static void app_pyronet_put_u32_le(uint8_t *buffer, uint32_t value)
+{
+  buffer[0] = (uint8_t)(value & 0xFF);
+  buffer[1] = (uint8_t)((value >> 8) & 0xFF);
+  buffer[2] = (uint8_t)((value >> 16) & 0xFF);
+  buffer[3] = (uint8_t)((value >> 24) & 0xFF);
+}
+
+static void app_pyronet_put_float_le(uint8_t *buffer, float value)
+{
+  uint32_t raw;
+  memcpy(&raw, &value, sizeof(raw));
+  app_pyronet_put_u32_le(buffer, raw);
+}
+
+static size_t app_pyronet_build_registration(uint8_t *payload)
+{
+  static const uint8_t parent_ipv6[16] = {
+    0xfd, 0x12, 0x34, 0x56, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02
+  };
+
+  payload[0] = APP_PYRONET_PACKET_REGISTRATION;
+  payload[1] = APP_PYRONET_SCHEMA_VERSION;
+  app_pyronet_put_u16_le(&payload[2], APP_PYRONET_NODE_ID);
+  app_pyronet_put_float_le(&payload[4], APP_PYRONET_BHEE_LATITUDE);
+  app_pyronet_put_float_le(&payload[8], APP_PYRONET_BHEE_LONGITUDE);
+  app_pyronet_put_u16_le(&payload[12], 0x0102);
+  payload[14] = 88;
+  memcpy(&payload[15], parent_ipv6, sizeof(parent_ipv6));
+  return 31;
+}
+
+static size_t app_pyronet_build_sensor(uint8_t *payload, app_pyronet_packet_type_t type)
+{
+  payload[0] = (uint8_t)type;
+  payload[1] = APP_PYRONET_SCHEMA_VERSION;
+  app_pyronet_put_u16_le(&payload[2], APP_PYRONET_NODE_ID);
+  app_pyronet_put_u32_le(&payload[4], APP_PYRONET_TIMESTAMP);
+
+  if (type == APP_PYRONET_PACKET_SENSOR_ALERT) {
+    payload[8] = 5;
+    app_pyronet_put_i16_le(&payload[9], 8240);  // 82.40 C
+    app_pyronet_put_u16_le(&payload[11], 1180); // 11.80 %RH
+    app_pyronet_put_u16_le(&payload[13], 412);
+    app_pyronet_put_u16_le(&payload[15], 963);  // 96.3 ug/m3
+    payload[17] = 74;
+  } else {
+    payload[8] = 3;
+    app_pyronet_put_i16_le(&payload[9], 2450);  // 24.50 C
+    app_pyronet_put_u16_le(&payload[11], 5000); // 50.00 %RH
+    app_pyronet_put_u16_le(&payload[13], 123);
+    app_pyronet_put_u16_le(&payload[15], 55);   // 5.5 ug/m3
+    payload[17] = 90;
+  }
+
+  return 18;
+}
+
+static size_t app_pyronet_build_nn_table_update(uint8_t *payload)
+{
+  static const uint8_t neighbor_ipv6[2][16] = {
+    {
+      0xfd, 0x12, 0x34, 0x56, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10
+    },
+    {
+      0xfd, 0x12, 0x34, 0x56, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x11
+    }
+  };
+
+  payload[0] = APP_PYRONET_PACKET_NN_TABLE_UPDATE;
+  payload[1] = APP_PYRONET_SCHEMA_VERSION;
+  app_pyronet_put_u16_le(&payload[2], APP_PYRONET_NODE_ID);
+  payload[4] = 2;
+  memcpy(&payload[5], neighbor_ipv6, sizeof(neighbor_ipv6));
+  return 37;
+}
+
+static size_t app_pyronet_build_time_sync(uint8_t *payload)
+{
+  payload[0] = APP_PYRONET_PACKET_TIME_SYNC;
+  payload[1] = APP_PYRONET_SCHEMA_VERSION;
+  app_pyronet_put_u32_le(&payload[2], APP_PYRONET_TIMESTAMP);
+  return 6;
+}
+
+static size_t app_pyronet_build_config_update(uint8_t *payload)
+{
+  payload[0] = APP_PYRONET_PACKET_CONFIG_UPDATE;
+  payload[1] = APP_PYRONET_SCHEMA_VERSION;
+  app_pyronet_put_u32_le(&payload[2], 42);
+  app_pyronet_put_i16_le(&payload[6], 5500);   // L2 temp: 55.00 C
+  app_pyronet_put_u16_le(&payload[8], 3000);   // L2 humidity: 30.00 %RH
+  app_pyronet_put_u16_le(&payload[10], 180);   // L2 bVOC ppm
+  app_pyronet_put_i16_le(&payload[12], 6500);  // L3 temp: 65.00 C
+  app_pyronet_put_u16_le(&payload[14], 2000);  // L3 humidity: 20.00 %RH
+  app_pyronet_put_u16_le(&payload[16], 260);   // L3 bVOC ppm
+  app_pyronet_put_u16_le(&payload[18], 360);   // L4 bVOC ppm
+  app_pyronet_put_u16_le(&payload[20], 500);   // L5 bVOC ppm
+  app_pyronet_put_u16_le(&payload[22], 850);   // L5 PM2.5: 85.0 ug/m3
+  return 24;
+}
+
+static size_t app_pyronet_build_neighbor_alert(uint8_t *payload)
+{
+  payload[0] = APP_PYRONET_PACKET_NEIGHBOR_ALERT;
+  payload[1] = APP_PYRONET_SCHEMA_VERSION;
+  app_pyronet_put_u16_le(&payload[2], APP_PYRONET_NODE_ID);
+  payload[4] = 5;
+  app_pyronet_put_u32_le(&payload[5], APP_PYRONET_TIMESTAMP);
+  return 9;
+}
+
+static size_t app_pyronet_build_parent_update(uint8_t *payload)
+{
+  static const uint8_t parent_ipv6[16] = {
+    0xfd, 0x12, 0x34, 0x56, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03
+  };
+
+  payload[0] = APP_PYRONET_PACKET_PARENT_UPDATE;
+  payload[1] = APP_PYRONET_SCHEMA_VERSION;
+  app_pyronet_put_u16_le(&payload[2], APP_PYRONET_NODE_ID);
+  app_pyronet_put_u32_le(&payload[4], APP_PYRONET_TIMESTAMP);
+  memcpy(&payload[8], parent_ipv6, sizeof(parent_ipv6));
+  return 24;
+}
+
+static size_t app_pyronet_build_payload(uint8_t *payload, app_pyronet_packet_type_t type)
+{
+  switch (type) {
+    case APP_PYRONET_PACKET_REGISTRATION:
+      return app_pyronet_build_registration(payload);
+    case APP_PYRONET_PACKET_SENSOR_REPORT:
+    case APP_PYRONET_PACKET_SENSOR_ALERT:
+      return app_pyronet_build_sensor(payload, type);
+    case APP_PYRONET_PACKET_NN_TABLE_UPDATE:
+      return app_pyronet_build_nn_table_update(payload);
+    case APP_PYRONET_PACKET_TIME_SYNC:
+      return app_pyronet_build_time_sync(payload);
+    case APP_PYRONET_PACKET_CONFIG_UPDATE:
+      return app_pyronet_build_config_update(payload);
+    case APP_PYRONET_PACKET_NEIGHBOR_ALERT:
+      return app_pyronet_build_neighbor_alert(payload);
+    case APP_PYRONET_PACKET_PARENT_UPDATE:
+      return app_pyronet_build_parent_update(payload);
+    default:
+      return 0;
+  }
+}
+
+static size_t app_pyronet_build_coap(uint8_t *datagram,
+                                     app_pyronet_packet_type_t packet_type,
+                                     uint16_t message_id,
+                                     uint8_t token)
+{
+  uint8_t *payload;
+  size_t payload_len;
+  const char *path = (packet_type == APP_PYRONET_PACKET_NN_TABLE_UPDATE
+                      || packet_type == APP_PYRONET_PACKET_TIME_SYNC
+                      || packet_type == APP_PYRONET_PACKET_CONFIG_UPDATE)
+                     ? APP_PYRONET_COAP_DOWNLINK_PATH
+                     : APP_PYRONET_COAP_UPLINK_PATH;
+  size_t path_len = strlen(path);
+  uint8_t coap_type = (packet_type == APP_PYRONET_PACKET_SENSOR_REPORT)
+                      ? APP_PYRONET_COAP_TYPE_NON
+                      : APP_PYRONET_COAP_TYPE_CON;
+
+  datagram[0] = (uint8_t)((1u << 6) | (coap_type << 4) | APP_PYRONET_COAP_TOKEN_LEN);
+  datagram[1] = APP_PYRONET_COAP_METHOD_POST;
+  datagram[2] = (uint8_t)(message_id >> 8);
+  datagram[3] = (uint8_t)(message_id & 0xFF);
+  datagram[4] = token;
+  datagram[5] = (uint8_t)((APP_PYRONET_COAP_URI_PATH_OPTION << 4) | path_len);
+  memcpy(&datagram[6], path, path_len);
+  datagram[6 + path_len] = APP_PYRONET_COAP_PAYLOAD_MARKER;
+
+  payload = &datagram[7 + path_len];
+  payload_len = app_pyronet_build_payload(payload, packet_type);
+
+  return 7 + path_len + payload_len;
+}
+
+static sl_status_t app_pyronet_send_coap(int socket_id,
+                                         const sockaddr_in6_t *remote_addr,
+                                         app_pyronet_packet_type_t packet_type,
+                                         uint16_t message_id,
+                                         uint8_t token)
+{
+  uint8_t datagram[64];
+  size_t datagram_len;
+  int32_t socket_retval;
+
+  datagram_len = app_pyronet_build_coap(datagram, packet_type, message_id, token);
+  socket_retval = sendto(socket_id,
+                         datagram,
+                         datagram_len,
+                         0,
+                         (const struct sockaddr *)remote_addr,
+                         sizeof(sockaddr_in6_t));
+  if (socket_retval == SOCKET_RETVAL_ERROR) {
+    printf("[PyroNet spoof failed: 0x%02x sendto returned %ld]\r\n",
+           packet_type,
+           socket_retval);
+    return SL_STATUS_FAIL;
+  }
+
+  printf("[PyroNet spoof sent 0x%02x: %ld bytes]\r\n", packet_type, socket_retval);
+  return SL_STATUS_OK;
+}
+
+void app_pyronet_spoof(sl_cli_command_arg_t *arguments)
+{
+  sl_status_t ret;
+  char *arg_remote_address;
+  int socket_id = SOCKET_INVALID_ID;
+  sockaddr_in6_t remote_addr = {
+    .sin6_family   = AF_INET6,
+    .sin6_port     = 0,
+    .sin6_flowinfo = 0,
+    .sin6_addr     = APP_IN6ADDR_ANY,
+    .sin6_scope_id = 0
+  };
+
+  app_wisun_cli_mutex_lock();
+
+  arg_remote_address = sl_cli_get_argument_string(arguments, 0);
+  ret = app_get_ip_address(&remote_addr.sin6_addr, arg_remote_address);
+  if (ret != SL_STATUS_OK) {
+    printf("[Failed: invalid remote address parameter]\r\n");
+    goto cleanup;
+  }
+
+  remote_addr.sin6_port = htons(sl_cli_get_argument_uint16(arguments, 1));
+  if (!remote_addr.sin6_port) {
+    printf("[Failed: invalid remote port parameter]\r\n");
+    goto cleanup;
+  }
+
+  socket_id = socket(AF_INET6, (SOCK_DGRAM | SOCK_NONBLOCK), IPPROTO_UDP);
+  if (socket_id == SOCKET_INVALID_ID) {
+    printf("[Failed: unable to open spoof socket]\r\n");
+    goto cleanup;
+  }
+
+  (void)app_pyronet_send_coap(socket_id, &remote_addr, APP_PYRONET_PACKET_REGISTRATION, 0x7001, 0x01);
+  (void)app_pyronet_send_coap(socket_id, &remote_addr, APP_PYRONET_PACKET_SENSOR_REPORT, 0x7002, 0x02);
+  (void)app_pyronet_send_coap(socket_id, &remote_addr, APP_PYRONET_PACKET_SENSOR_ALERT, 0x7003, 0x03);
+  (void)app_pyronet_send_coap(socket_id, &remote_addr, APP_PYRONET_PACKET_NN_TABLE_UPDATE, 0x7004, 0x04);
+  (void)app_pyronet_send_coap(socket_id, &remote_addr, APP_PYRONET_PACKET_TIME_SYNC, 0x7005, 0x05);
+  (void)app_pyronet_send_coap(socket_id, &remote_addr, APP_PYRONET_PACKET_CONFIG_UPDATE, 0x7006, 0x06);
+  (void)app_pyronet_send_coap(socket_id, &remote_addr, APP_PYRONET_PACKET_NEIGHBOR_ALERT, 0x7007, 0x07);
+  (void)app_pyronet_send_coap(socket_id, &remote_addr, APP_PYRONET_PACKET_PARENT_UPDATE, 0x7008, 0x08);
+
+cleanup:
+  if (socket_id != SOCKET_INVALID_ID) {
+    close(socket_id);
+  }
 
   app_wisun_cli_mutex_unlock();
 }

@@ -1,9 +1,21 @@
 #include "app/app_host_events.h"
 
 #include <stdio.h>
+#include <stdint.h>
 
 #include "app/app_provisioning.h"
 #include "platform/monotonic_time.h"
+
+#define APP_EDT_UTC_OFFSET_S  (4L * 60L * 60L)
+
+typedef struct {
+  uint16_t year;
+  uint8_t month;
+  uint8_t day;
+  uint8_t hour;
+  uint8_t minute;
+  uint8_t second;
+} app_edt_time_t;
 
 static float app_decode_fixed_x100_i16(int16_t value)
 {
@@ -18,6 +30,58 @@ static float app_decode_fixed_x100_u16(uint16_t value)
 static float app_decode_fixed_x10_u16(uint16_t value)
 {
   return ((float)value) / 10.0f;
+}
+
+static void app_days_since_epoch_to_ymd(int64_t days,
+                                        uint16_t *year,
+                                        uint8_t *month,
+                                        uint8_t *day)
+{
+  int64_t era;
+  uint32_t day_of_era;
+  uint32_t year_of_era;
+  uint32_t day_of_year;
+  uint32_t month_part;
+  int32_t computed_year;
+  uint32_t computed_month;
+
+  days += 719468LL;
+  era = (days >= 0LL ? days : days - 146096LL) / 146097LL;
+  day_of_era = (uint32_t)(days - (era * 146097LL));
+  year_of_era = (day_of_era - (day_of_era / 1460U) + (day_of_era / 36524U)
+                 - (day_of_era / 146096U)) / 365U;
+  computed_year = (int32_t)year_of_era + (int32_t)(era * 400LL);
+  day_of_year = day_of_era
+                - ((365U * year_of_era) + (year_of_era / 4U)
+                   - (year_of_era / 100U));
+  month_part = ((5U * day_of_year) + 2U) / 153U;
+  *day = (uint8_t)(day_of_year - (((153U * month_part) + 2U) / 5U) + 1U);
+  computed_month = (month_part < 10U) ? (month_part + 3U) : (month_part - 9U);
+  computed_year += (computed_month <= 2U) ? 1 : 0;
+
+  *year = (uint16_t)computed_year;
+  *month = (uint8_t)computed_month;
+}
+
+static app_edt_time_t app_unix_time_to_edt(uint32_t unix_time_s)
+{
+  app_edt_time_t edt = { 0 };
+  int64_t local_time_s = (int64_t)unix_time_s - APP_EDT_UTC_OFFSET_S;
+  int64_t days;
+  int64_t seconds_of_day;
+
+  days = local_time_s / 86400LL;
+  seconds_of_day = local_time_s % 86400LL;
+  if (seconds_of_day < 0LL) {
+    seconds_of_day += 86400LL;
+    days--;
+  }
+
+  app_days_since_epoch_to_ymd(days, &edt.year, &edt.month, &edt.day);
+  edt.hour = (uint8_t)(seconds_of_day / 3600LL);
+  edt.minute = (uint8_t)((seconds_of_day % 3600LL) / 60LL);
+  edt.second = (uint8_t)(seconds_of_day % 60LL);
+  return edt;
 }
 
 static pyronet_risk_config_t app_translate_config_update(
@@ -105,6 +169,7 @@ static void app_handle_time_sync_update(
   const pyronet_host_time_sync_update_v1_t *event)
 {
   app_context_t *app = (app_context_t *)context;
+  app_edt_time_t edt;
 
   if ((app == NULL) || (event == NULL)) {
     return;
@@ -113,7 +178,15 @@ static void app_handle_time_sync_update(
   app_time_anchor_set(&app->time_anchor,
                       monotonic_time_now_ns(),
                       event->unix_time_s);
-  printf("TIME_SYNC_UPDATE unix_time_s=%lu\r\n", (unsigned long)event->unix_time_s);
+  edt = app_unix_time_to_edt(event->unix_time_s);
+  printf("TIME_SYNC_UPDATE accepted=1 unix_time_s=%lu edt=%04u-%02u-%02uT%02u:%02u:%02uEDT\r\n",
+         (unsigned long)event->unix_time_s,
+         (unsigned int)edt.year,
+         (unsigned int)edt.month,
+         (unsigned int)edt.day,
+         (unsigned int)edt.hour,
+         (unsigned int)edt.minute,
+         (unsigned int)edt.second);
   app_boundary_tx_flush(&app->boundary_tx,
                         app_provisioning_identity(),
                         &app->time_anchor);
