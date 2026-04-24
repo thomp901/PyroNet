@@ -31,9 +31,7 @@
 
 #include "transport/host_link.h"
 
-// Debug packet schedule after boot.
-#define APP_TIMED_REPORT_DELAY_NS   (10LL * 1000000000LL)
-#define APP_TIMED_ALERT_DELAY_NS    (20LL * 1000000000LL)
+#define APP_PERIODIC_PACKET_INTERVAL_NS   (60LL * 1000000000LL)
 
 typedef enum {
   APP_PHASE_WAIT_LINK = 0,
@@ -46,8 +44,7 @@ static app_phase_t app_phase = APP_PHASE_WAIT_LINK;
 
 static app_context_t app_context;
 static int64_t app_startup_ns;
-static bool app_timed_report_sent;
-static bool app_timed_alert_sent;
+static int64_t app_next_periodic_packet_due_ns;
 
 static int16_t app_scale_float_signed(float value, float scale)
 {
@@ -134,8 +131,8 @@ static uint32_t app_resolve_packet_timestamp_s(int64_t monotonic_timestamp_ns)
   return (uint32_t)((uint64_t)(monotonic_timestamp_ns - app_startup_ns) / 1000000000ULL);
 }
 
-static bool app_build_timed_sensor_payload(int64_t now_ns,
-                                           pyronet_host_send_sensor_report_v1_t *payload)
+static bool app_build_periodic_sensor_payload(int64_t now_ns,
+                                              pyronet_host_send_sensor_report_v1_t *payload)
 {
   const app_registration_identity_t *identity = app_provisioning_identity();
   pyronet_risk_snapshot_t snapshot;
@@ -159,11 +156,11 @@ static bool app_build_timed_sensor_payload(int64_t now_ns,
   return true;
 }
 
-static bool app_try_send_timed_sensor_report(int64_t now_ns)
+static bool app_try_send_periodic_sensor_report(int64_t now_ns)
 {
   pyronet_host_send_sensor_report_v1_t payload;
 
-  if (!app_build_timed_sensor_payload(now_ns, &payload)) {
+  if (!app_build_periodic_sensor_payload(now_ns, &payload)) {
     return false;
   }
 
@@ -171,44 +168,63 @@ static bool app_try_send_timed_sensor_report(int64_t now_ns)
     return false;
   }
 
-  printf("TIMED_PACKET_SENT type=0x%02X timestamp=%lu uptime_s=%lu\r\n",
+  printf("PERIODIC_PACKET_SENT type=0x%02X timestamp=%lu uptime_s=%lu\r\n",
          PYRONET_PKT_SENSOR_REPORT,
          (unsigned long)payload.timestamp,
          (unsigned long)((uint64_t)(now_ns - app_startup_ns) / 1000000000ULL));
   return true;
 }
 
-static bool app_try_send_timed_sensor_alert(int64_t now_ns)
+static bool app_try_send_periodic_sensor_alert(int64_t now_ns)
 {
   pyronet_host_send_sensor_alert_v1_t payload;
+  uint32_t timestamp_s;
 
-  if (!app_build_timed_sensor_payload(now_ns, &payload)) {
+  if (!app_time_anchor_resolve(&app_context.time_anchor, now_ns, &timestamp_s)) {
     return false;
   }
+
+  if (!app_build_periodic_sensor_payload(now_ns, &payload)) {
+    return false;
+  }
+  payload.timestamp = timestamp_s;
 
   if (!host_link_send_sensor_alert(&payload)) {
     return false;
   }
 
-  printf("TIMED_PACKET_SENT type=0x%02X timestamp=%lu uptime_s=%lu\r\n",
+  printf("PERIODIC_PACKET_SENT type=0x%02X timestamp=%lu uptime_s=%lu\r\n",
          PYRONET_PKT_SENSOR_ALERT,
          (unsigned long)payload.timestamp,
          (unsigned long)((uint64_t)(now_ns - app_startup_ns) / 1000000000ULL));
   return true;
 }
 
-static void app_process_timed_packets(int64_t now_ns)
+static void app_process_periodic_packet(int64_t now_ns)
 {
+  pyronet_risk_snapshot_t snapshot;
+  bool sent;
+
   if (!host_link_is_ready()) {
     return;
   }
 
-  if (!app_timed_report_sent && ((now_ns - app_startup_ns) >= APP_TIMED_REPORT_DELAY_NS)) {
-    app_timed_report_sent = app_try_send_timed_sensor_report(now_ns);
+  if (now_ns < app_next_periodic_packet_due_ns) {
+    return;
   }
 
-  if (!app_timed_alert_sent && ((now_ns - app_startup_ns) >= APP_TIMED_ALERT_DELAY_NS)) {
-    app_timed_alert_sent = app_try_send_timed_sensor_alert(now_ns);
+  if (!pyronet_risk_service_current_snapshot(&app_context.risk_service, &snapshot)) {
+    return;
+  }
+
+  if (snapshot.current_level == PYRONET_RISK_LEVEL_5) {
+    sent = app_try_send_periodic_sensor_alert(now_ns);
+  } else {
+    sent = app_try_send_periodic_sensor_report(now_ns);
+  }
+
+  if (sent) {
+    app_next_periodic_packet_due_ns = now_ns + APP_PERIODIC_PACKET_INTERVAL_NS;
   }
 }
 
@@ -234,8 +250,7 @@ void app_init(void)
   memset(&app_context, 0, sizeof(app_context));
   app_phase = APP_PHASE_WAIT_LINK;
   app_startup_ns = monotonic_time_now_ns();
-  app_timed_report_sent = false;
-  app_timed_alert_sent = false;
+  app_next_periodic_packet_due_ns = app_startup_ns + APP_PERIODIC_PACKET_INTERVAL_NS;
   app_time_anchor_init(&app_context.time_anchor);
   app_boundary_tx_init(&app_context.boundary_tx);
 
@@ -281,7 +296,7 @@ void app_process_action(void)
   app_sensor_runtime_process(&app_context.sensors);
   now_ns = monotonic_time_now_ns();
   pyronet_risk_service_tick(&app_context.risk_service, now_ns);
-  app_process_timed_packets(now_ns);
+  app_process_periodic_packet(now_ns);
 
   if (!host_link_is_ready()) {
     if (app_phase != APP_PHASE_WAIT_LINK) {

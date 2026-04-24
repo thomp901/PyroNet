@@ -75,8 +75,9 @@ static void app_sensor_runtime_emit_combined_reading(app_sensor_runtime_t *runti
     runtime->latest_air_quality.breath_voc_equivalent_ppm,
     1000.0f);
   pm25_x1000 = app_sensor_runtime_scale_float(runtime->latest_pm25_ug_m3, 1000.0f);
+  risk_level = pyronet_risk_service_current_level(runtime->risk_service);
 
-  printf("SENSOR_READING temp_c=%ld.%02ld rh_pct=%ld.%02ld voc_ppm=%ld.%03ld pm2.5_ug_m3=%ld.%03ld read_seq=%lu\r\n",
+  printf("SENSOR_READING temp_c=%ld.%02ld rh_pct=%ld.%02ld voc_ppm=%ld.%03ld pm2.5_ug_m3=%ld.%03ld risk_level=%u read_seq=%lu\r\n",
          temp_x100 / 100L,
          app_sensor_runtime_scaled_abs_fraction(temp_x100, 2U),
          rh_x100 / 100L,
@@ -85,6 +86,7 @@ static void app_sensor_runtime_emit_combined_reading(app_sensor_runtime_t *runti
          app_sensor_runtime_scaled_abs_fraction(voc_x1000, 3U),
          pm25_x1000 / 1000L,
          app_sensor_runtime_scaled_abs_fraction(pm25_x1000, 3U),
+         (unsigned int)risk_level,
          (unsigned long)runtime->read_seq);
 
   if (runtime->has_latest_gas_diagnostic) {
@@ -105,11 +107,6 @@ static void app_sensor_runtime_emit_combined_reading(app_sensor_runtime_t *runti
            bsec_service_status_name(runtime->air_quality.last_bsec_status),
            (unsigned long)runtime->read_seq);
   }
-
-  risk_level = pyronet_risk_service_current_level(runtime->risk_service);
-  printf("RISK_LEVEL level=%u read_seq=%lu\r\n",
-         (unsigned int)risk_level,
-         (unsigned long)runtime->read_seq);
 }
 
 static void app_sensor_runtime_log_status(const app_sensor_runtime_t *runtime)
