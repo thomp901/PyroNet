@@ -47,6 +47,7 @@ import type {
   HistoryTrendSummary,
   HistoryWindow,
   MeshLink,
+  NearestNeighborGenerationRequest,
   NeighborMembership,
   NeighborRevision,
   NeighborRevisionDraft,
@@ -73,6 +74,7 @@ import { parseNodeId } from "../src/lib/nodeId";
 import {
   createMockConfigRevision,
   createMockNotificationRecipient,
+  generateMockNearestNeighbors,
   createMockNeighborDistribution,
   createMockThresholdPush,
   createMockTimeSync,
@@ -109,6 +111,9 @@ const downlinkFailureTimeoutMs = 15 * 60 * 1000;
 const batteryDegradationOpenThresholdPct = 20;
 const batteryDegradationClearThresholdPct = 25;
 const notificationEvaluationIntervalMs = parsePositiveInteger(process.env.NOTIFICATION_EVALUATION_INTERVAL_MS, 30_000);
+const defaultNearestNeighborRadiusMeters = parsePositiveInteger(process.env.NN_DEFAULT_RADIUS_METERS, 250);
+const defaultNearestNeighborMaxNeighbors = parsePositiveInteger(process.env.NN_DEFAULT_MAX_NEIGHBORS, 4);
+const nearestNeighborOnRegistrationEnabled = process.env.NN_ON_REGISTRATION !== "false";
 let isGatewayDownlinkDispatchInFlight = false;
 let isNotificationEvaluationInFlight = false;
 const notificationEventTypes: NotificationEventType[] = [
@@ -605,6 +610,13 @@ async function projectRegistrationUplinkInDb(
       },
     });
   }
+
+  await generateAffectedNearestNeighborRevisionsForRegistrationInDb(client, {
+    changedNodeId: packet.nodeId,
+    preferredTarget: timeSyncTarget,
+    gatewayUplinkId,
+    registrationId,
+  });
 
   return [
     {
@@ -1787,6 +1799,416 @@ async function buildNeighborDistributionPayloadInDb(
   return encodeNeighborTableUpdatePacket({
     targetNodeId: options.targetNodeId,
     neighborIpv6Addresses: result.rows.map((row) => row.neighbor_ipv6 as string),
+  });
+}
+
+type GeneratedNearestNeighborRevision = {
+  deviceId: number;
+  nodeId: number;
+  revisionId: number;
+  revisionNo: number;
+  neighborCount: number;
+};
+
+function normalizeNearestNeighborGenerationRequest(request: NearestNeighborGenerationRequest) {
+  const radiusMeters = request.radiusMeters ?? defaultNearestNeighborRadiusMeters;
+  const maxNeighbors = request.maxNeighbors ?? defaultNearestNeighborMaxNeighbors;
+  if (!Number.isInteger(radiusMeters) || radiusMeters <= 0) {
+    throw new Error("radiusMeters must be a positive integer.");
+  }
+  if (!Number.isInteger(maxNeighbors) || maxNeighbors <= 0 || maxNeighbors > 255) {
+    throw new Error("maxNeighbors must be a positive integer no greater than 255.");
+  }
+
+  const targetNodeIds = request.targetNodeIds?.map((nodeId) => parseNodeId(nodeId));
+  if (targetNodeIds?.some((nodeId) => nodeId === null)) {
+    throw new Error("targetNodeIds must contain valid 2-byte integers.");
+  }
+
+  return {
+    radiusMeters,
+    maxNeighbors,
+    queueDistribution: request.queueDistribution ?? true,
+    targetNodeIds: targetNodeIds as NodeId[] | undefined,
+  };
+}
+
+async function listAllDeviceNodeIdsInDb(client: PoolClient) {
+  const result = await client.query<{ node_id: number }>("SELECT node_id FROM devices ORDER BY node_id");
+  return result.rows.map((row) => row.node_id);
+}
+
+async function listAffectedNearestNeighborNodeIdsInDb(
+  client: PoolClient,
+  changedNodeId: NodeId,
+  radiusMeters: number,
+) {
+  const result = await client.query<{
+    id: number;
+    node_id: number;
+    current_latitude: string;
+    current_longitude: string;
+  }>(
+    `
+      SELECT id, node_id, current_latitude::text, current_longitude::text
+      FROM devices
+      ORDER BY node_id
+    `,
+  );
+
+  const changedNode = result.rows.find((row) => row.node_id === changedNodeId);
+  if (!changedNode) {
+    return [];
+  }
+
+  return result.rows
+    .filter((row) => {
+      if (row.node_id === changedNodeId) {
+        return true;
+      }
+      return (
+        haversineDistanceMeters(
+          { lat: Number(changedNode.current_latitude), lng: Number(changedNode.current_longitude) },
+          { lat: Number(row.current_latitude), lng: Number(row.current_longitude) },
+        ) <= radiusMeters
+      );
+    })
+    .map((row) => row.node_id);
+}
+
+async function createAutomaticNearestNeighborRevisionForNodeInDb(
+  client: PoolClient,
+  nodeId: NodeId,
+  options: {
+    radiusMeters: number;
+    maxNeighbors: number;
+    trigger: "manual_generation" | "registration";
+    changedNodeId?: NodeId;
+    gatewayUplinkId?: number;
+    registrationId?: number | null;
+  },
+): Promise<GeneratedNearestNeighborRevision | null> {
+  const ownerResult = await client.query<{
+    id: number;
+    node_id: number;
+    current_latitude: string;
+    current_longitude: string;
+  }>(
+    `
+      SELECT id, node_id, current_latitude::text, current_longitude::text
+      FROM devices
+      WHERE node_id = $1
+    `,
+    [nodeId],
+  );
+  const owner = ownerResult.rows[0];
+  if (!owner) {
+    return null;
+  }
+
+  const candidateResult = await client.query<{
+    id: number;
+    node_id: number;
+    current_latitude: string;
+    current_longitude: string;
+  }>(
+    `
+      SELECT id, node_id, current_latitude::text, current_longitude::text
+      FROM devices
+      WHERE node_id <> $1
+        AND current_ipv6 IS NOT NULL
+      ORDER BY node_id
+    `,
+    [nodeId],
+  );
+
+  const neighbors = candidateResult.rows
+    .map((candidate) => ({
+      ...candidate,
+      distanceMeters: haversineDistanceMeters(
+        { lat: Number(owner.current_latitude), lng: Number(owner.current_longitude) },
+        { lat: Number(candidate.current_latitude), lng: Number(candidate.current_longitude) },
+      ),
+    }))
+    .filter((candidate) => candidate.distanceMeters <= options.radiusMeters)
+    .sort((left, right) => left.distanceMeters - right.distanceMeters || left.node_id - right.node_id)
+    .slice(0, options.maxNeighbors);
+
+  await client.query("UPDATE nn_revisions SET active_to = NOW() WHERE device_id = $1 AND active_to IS NULL", [owner.id]);
+  const nextRevisionResult = await client.query<{ revision_no: number }>(
+    "SELECT COALESCE(MAX(revision_no), 0) + 1 AS revision_no FROM nn_revisions WHERE device_id = $1",
+    [owner.id],
+  );
+  const revisionNo = nextRevisionResult.rows[0]?.revision_no ?? 1;
+  const revisionInsert = await client.query<{ id: number }>(
+    `
+      INSERT INTO nn_revisions (
+        device_id,
+        revision_no,
+        radius_meters,
+        revision_source,
+        selection_basis_at,
+        active_from,
+        details
+      )
+      VALUES ($1, $2, $3, 'automatic', NOW(), NOW(), $4::jsonb)
+      RETURNING id
+    `,
+    [
+      owner.id,
+      revisionNo,
+      options.radiusMeters,
+      JSON.stringify({
+        algorithm: "affected_radius_haversine_top_k",
+        trigger: options.trigger,
+        changedNodeId: options.changedNodeId ?? null,
+        radiusMeters: options.radiusMeters,
+        maxNeighbors: options.maxNeighbors,
+        gatewayUplinkId: options.gatewayUplinkId ?? null,
+        registrationId: options.registrationId ?? null,
+      }),
+    ],
+  );
+  const revisionId = revisionInsert.rows[0]?.id;
+  if (!revisionId) {
+    throw new Error(`Unable to create automatic NN revision for node ${nodeId}.`);
+  }
+
+  for (const [index, neighbor] of neighbors.entries()) {
+    await client.query(
+      `
+        INSERT INTO nn_revision_memberships (
+          nn_revision_id,
+          owner_device_id,
+          neighbor_device_id,
+          neighbor_rank,
+          distance_meters,
+          neighbor_latitude,
+          neighbor_longitude
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `,
+      [
+        revisionId,
+        owner.id,
+        neighbor.id,
+        index + 1,
+        neighbor.distanceMeters,
+        neighbor.current_latitude,
+        neighbor.current_longitude,
+      ],
+    );
+  }
+
+  await client.query("UPDATE devices SET current_nn_revision_id = $2 WHERE id = $1", [owner.id, revisionId]);
+
+  return {
+    deviceId: owner.id,
+    nodeId: owner.node_id,
+    revisionId,
+    revisionNo,
+    neighborCount: neighbors.length,
+  };
+}
+
+async function resolveRoutableDeviceTargetsInDb(client: PoolClient, targetNodeIds: NodeId[]) {
+  if (targetNodeIds.length === 0) {
+    return [];
+  }
+
+  const result = await client.query<{
+    device_id: number;
+    node_id: number;
+    gateway_row_id: number | null;
+    gateway_id: number | null;
+    last_observed_gateway_at: string | null;
+    current_nn_revision_id: number | null;
+    downlink_url: string | null;
+    latest_gateway_remote_address: string | null;
+  }>(
+    `
+      SELECT
+        d.id AS device_id,
+        d.node_id,
+        d.last_observed_gateway_row_id AS gateway_row_id,
+        g.gateway_id,
+        d.last_observed_gateway_at::text,
+        d.current_nn_revision_id,
+        registration.downlink_url,
+        registration.latest_gateway_remote_address
+      FROM devices d
+      LEFT JOIN gateways g ON g.id = d.last_observed_gateway_row_id
+      LEFT JOIN LATERAL (
+        SELECT
+          raw_payload_metadata->>'downlinkUrl' AS downlink_url,
+          raw_payload_metadata->>'remoteAddress' AS latest_gateway_remote_address
+        FROM gateway_registrations
+        WHERE gateway_row_id = d.last_observed_gateway_row_id
+        ORDER BY reported_at DESC, id DESC
+        LIMIT 1
+      ) registration ON TRUE
+      WHERE d.node_id = ANY($1::smallint[])
+      ORDER BY d.node_id
+    `,
+    [targetNodeIds],
+  );
+
+  return result.rows.flatMap<RoutedDeviceTarget>((row) => {
+    const downlinkUrl = normalizeGatewayDownlinkUrl(row.downlink_url) ??
+      deriveGatewayDownlinkUrlFromRemoteAddress(row.latest_gateway_remote_address);
+    if (
+      row.gateway_row_id === null ||
+      row.gateway_id === null ||
+      row.last_observed_gateway_at === null ||
+      !downlinkUrl
+    ) {
+      return [];
+    }
+
+    return [
+      {
+        deviceId: row.device_id,
+        nodeId: row.node_id,
+        gatewayRowId: row.gateway_row_id,
+        gatewayId: row.gateway_id,
+        lastObservedGatewayAt: row.last_observed_gateway_at,
+        currentNeighborRevisionId: row.current_nn_revision_id,
+        downlinkUrl,
+      },
+    ];
+  });
+}
+
+async function queueNeighborDistributionForRevisionInDb(
+  client: PoolClient,
+  target: RoutedDeviceTarget,
+  revision: GeneratedNearestNeighborRevision,
+  payloadMetadata: Record<string, string | number | boolean | null>,
+) {
+  const nnPayload = await buildNeighborDistributionPayloadInDb(client, {
+    targetNodeId: target.nodeId,
+    nnRevisionId: revision.revisionId,
+  });
+  const distributionInsert = await client.query<{ id: number }>(
+    `
+      INSERT INTO nn_distribution_events (device_id, nn_revision_id, status, sent_at, payload_metadata)
+      VALUES ($1, $2, 'pending', NOW(), $3::jsonb)
+      RETURNING id
+    `,
+    [
+      revision.deviceId,
+      revision.revisionId,
+      JSON.stringify({
+        ...buildDownlinkRoutingMetadata(target),
+        ...payloadMetadata,
+      }),
+    ],
+  );
+  const distributionEventId = distributionInsert.rows[0]?.id;
+  if (!distributionEventId) {
+    throw new Error(`Unable to create NN distribution audit row for node ${target.nodeId}`);
+  }
+
+  await insertGatewayDownlinkInDb(client, {
+    target,
+    commandCode: neighborTableUpdatePacketType,
+    innerPayload: nnPayload,
+    nnDistributionEventId: distributionEventId,
+  });
+}
+
+async function generateNearestNeighborRevisionsInDb(
+  client: PoolClient,
+  options: {
+    targetNodeIds: NodeId[];
+    radiusMeters: number;
+    maxNeighbors: number;
+    queueDistribution: boolean;
+    trigger: "manual_generation" | "registration";
+    changedNodeId?: NodeId;
+    preferredTargets?: RoutedDeviceTarget[];
+    gatewayUplinkId?: number;
+    registrationId?: number | null;
+  },
+) {
+  const uniqueTargetNodeIds = [...new Set(options.targetNodeIds)].sort((left, right) => left - right);
+  const generatedRevisions: GeneratedNearestNeighborRevision[] = [];
+  for (const nodeId of uniqueTargetNodeIds) {
+    const revision = await createAutomaticNearestNeighborRevisionForNodeInDb(client, nodeId, {
+      radiusMeters: options.radiusMeters,
+      maxNeighbors: options.maxNeighbors,
+      trigger: options.trigger,
+      changedNodeId: options.changedNodeId,
+      gatewayUplinkId: options.gatewayUplinkId,
+      registrationId: options.registrationId,
+    });
+    if (revision) {
+      generatedRevisions.push(revision);
+    }
+  }
+
+  if (!options.queueDistribution || generatedRevisions.length === 0) {
+    return generatedRevisions;
+  }
+
+  const routedTargets = await resolveRoutableDeviceTargetsInDb(
+    client,
+    generatedRevisions.map((revision) => revision.nodeId),
+  );
+  const targetByNodeId = new Map(routedTargets.map((target) => [target.nodeId, target]));
+  for (const preferredTarget of options.preferredTargets ?? []) {
+    targetByNodeId.set(preferredTarget.nodeId, preferredTarget);
+  }
+
+  for (const revision of generatedRevisions) {
+    const target = targetByNodeId.get(revision.nodeId);
+    if (!target) {
+      continue;
+    }
+
+    await queueNeighborDistributionForRevisionInDb(client, target, revision, {
+      trigger: options.trigger,
+      algorithm: "affected_radius_haversine_top_k",
+      changedNodeId: options.changedNodeId ?? null,
+      radiusMeters: options.radiusMeters,
+      maxNeighbors: options.maxNeighbors,
+      neighborCount: revision.neighborCount,
+      gatewayUplinkId: options.gatewayUplinkId ?? null,
+      registrationId: options.registrationId ?? null,
+    });
+  }
+
+  return generatedRevisions;
+}
+
+async function generateAffectedNearestNeighborRevisionsForRegistrationInDb(
+  client: PoolClient,
+  options: {
+    changedNodeId: NodeId;
+    preferredTarget: RoutedDeviceTarget | null;
+    gatewayUplinkId: number;
+    registrationId: number | null;
+  },
+) {
+  if (!nearestNeighborOnRegistrationEnabled) {
+    return [];
+  }
+
+  const affectedNodeIds = await listAffectedNearestNeighborNodeIdsInDb(
+    client,
+    options.changedNodeId,
+    defaultNearestNeighborRadiusMeters,
+  );
+  return generateNearestNeighborRevisionsInDb(client, {
+    targetNodeIds: affectedNodeIds,
+    radiusMeters: defaultNearestNeighborRadiusMeters,
+    maxNeighbors: defaultNearestNeighborMaxNeighbors,
+    queueDistribution: true,
+    trigger: "registration",
+    changedNodeId: options.changedNodeId,
+    preferredTargets: options.preferredTarget ? [options.preferredTarget] : [],
+    gatewayUplinkId: options.gatewayUplinkId,
+    registrationId: options.registrationId,
   });
 }
 
@@ -4628,7 +5050,16 @@ async function updateNeighborRevisionInDb(nodeId: NodeId, draft: NeighborRevisio
     const neighborRows = draft.neighborNodeIds.length
       ? (
           await client.query<{ id: number; node_id: number; current_latitude: string; current_longitude: string }>(
-            "SELECT id, node_id, current_latitude::text, current_longitude::text FROM devices WHERE node_id = ANY($1::smallint[])",
+            `
+              SELECT
+                devices.id,
+                devices.node_id,
+                devices.current_latitude::text,
+                devices.current_longitude::text
+              FROM unnest($1::smallint[]) WITH ORDINALITY AS requested(node_id, input_order)
+              JOIN devices ON devices.node_id = requested.node_id
+              ORDER BY requested.input_order
+            `,
             [draft.neighborNodeIds],
           )
         ).rows
@@ -4695,6 +5126,48 @@ async function updateNeighborRevisionInDb(nodeId: NodeId, draft: NeighborRevisio
       commandCode: neighborTableUpdatePacketType,
       innerPayload: nnPayload,
       nnDistributionEventId: distributionEventId,
+    });
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+
+  return getConfigurationFromDb();
+}
+
+async function createNearestNeighborGenerationInDb(
+  request: NearestNeighborGenerationRequest,
+): Promise<ConfigurationResponse> {
+  if (!pool) {
+    throw new Error("Database is not configured.");
+  }
+
+  const normalized = normalizeNearestNeighborGenerationRequest(request);
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const allNodeIds = await listAllDeviceNodeIdsInDb(client);
+    const targetNodeIds = normalized.targetNodeIds?.length ? normalized.targetNodeIds : allNodeIds;
+    if (normalized.targetNodeIds?.length) {
+      const missingNodeIds = [...new Set(normalized.targetNodeIds)]
+        .sort((left, right) => left - right)
+        .filter((nodeId) => !allNodeIds.includes(nodeId));
+      if (missingNodeIds.length > 0) {
+        throw new Error(`Unknown node ${missingNodeIds.join(", ")}`);
+      }
+    }
+
+    await generateNearestNeighborRevisionsInDb(client, {
+      targetNodeIds,
+      radiusMeters: normalized.radiusMeters,
+      maxNeighbors: normalized.maxNeighbors,
+      queueDistribution: normalized.queueDistribution,
+      trigger: "manual_generation",
     });
 
     await client.query("COMMIT");
@@ -5177,6 +5650,20 @@ app.post("/api/configuration/revisions", async (request, response, next) => {
   try {
     const body = request.body as ConfigRevisionDraft;
     response.json(await withSource(() => createConfigRevisionInDb(body), () => createMockConfigRevision(body)));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/configuration/neighbors/generate", async (request, response, next) => {
+  try {
+    const body = (request.body ?? {}) as NearestNeighborGenerationRequest;
+    response.json(
+      await withSource(
+        () => createNearestNeighborGenerationInDb(body),
+        () => generateMockNearestNeighbors(body),
+      ),
+    );
   } catch (error) {
     next(error);
   }

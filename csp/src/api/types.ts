@@ -351,6 +351,13 @@ export interface NeighborRevisionDraft {
   neighborNodeIds: NodeId[];
 }
 
+export interface NearestNeighborGenerationRequest {
+  targetNodeIds?: NodeId[];
+  radiusMeters?: number;
+  maxNeighbors?: number;
+  queueDistribution?: boolean;
+}
+
 export interface DownlinkRequest {
   targetNodeIds?: NodeId[];
   configRevisionId?: number;

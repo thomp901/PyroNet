@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   createConfigRevision,
+  generateNearestNeighbors,
   getConfiguration,
   triggerNeighborDistribution,
   triggerThresholdPush,
@@ -64,6 +65,8 @@ export function ConfigurationPage() {
   const { data, error, loading, reload } = useAsyncData(getConfiguration, []);
   const [thresholds, setThresholds] = useState<ConfigThresholds>(() => cloneConfigThresholds());
   const [notes, setNotes] = useState("");
+  const [nnRadiusMeters, setNnRadiusMeters] = useState(250);
+  const [nnMaxNeighbors, setNnMaxNeighbors] = useState(4);
   const temperatureUnit = useTemperatureUnit();
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -168,6 +171,57 @@ export function ConfigurationPage() {
           </button>
         </div>
       </div>
+
+      <form
+        className="card form-card"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void runMutation(
+            () =>
+              generateNearestNeighbors({
+                radiusMeters: nnRadiusMeters,
+                maxNeighbors: nnMaxNeighbors,
+                queueDistribution: true,
+              }),
+            "Nearest-neighbor tables regenerated and queued for distribution.",
+          );
+        }}
+      >
+        <div className="section-heading">
+          <div>
+            <h2>Nearest-neighbor generation</h2>
+            <p>Regenerate automatic NN tables from current node locations and queue 0x04 updates.</p>
+          </div>
+        </div>
+        <div className="form-grid">
+          <label className="field">
+            <span>Radius (meters)</span>
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={nnRadiusMeters}
+              onChange={(event) => setNnRadiusMeters(Number(event.target.value))}
+            />
+          </label>
+          <label className="field">
+            <span>Max neighbors</span>
+            <input
+              type="number"
+              min={1}
+              max={255}
+              step={1}
+              value={nnMaxNeighbors}
+              onChange={(event) => setNnMaxNeighbors(Number(event.target.value))}
+            />
+          </label>
+        </div>
+        <div className="button-row">
+          <button type="submit" className="primary-button" disabled={submitting}>
+            Generate NN tables
+          </button>
+        </div>
+      </form>
 
       <div className="stack-grid">
         <form

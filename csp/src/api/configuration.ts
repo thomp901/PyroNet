@@ -2,6 +2,7 @@ import type {
   ConfigRevisionDraft,
   ConfigurationResponse,
   DownlinkRequest,
+  NearestNeighborGenerationRequest,
   NeighborRevisionDraft,
   NodeId,
 } from "./types";
@@ -21,6 +22,10 @@ export async function updateNeighborRevision(nodeId: NodeId, draft: NeighborRevi
     `/configuration/neighbors/${encodeURIComponent(formatNodeId(nodeId))}`,
     draft,
   );
+}
+
+export async function generateNearestNeighbors(request: NearestNeighborGenerationRequest) {
+  return apiPost<ConfigurationResponse, NearestNeighborGenerationRequest>("/configuration/neighbors/generate", request);
 }
 
 export async function triggerNeighborDistribution(request: DownlinkRequest) {
