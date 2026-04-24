@@ -1,16 +1,131 @@
 #include "../pyronet_ncp.h"
 
+#include <pthread.h>
 #include <string.h>
 
 #include "../swo_debug.h"
 
 #include "coap_service_api.h"
+#include "mesh_system.h"
 #include "mbed-coap/sn_coap_header.h"
 
 #include "pyronet_ncp_events.h"
 #include "pyronet_ncp_local.h"
 #include "pyronet_ncp_pending_tx.h"
 #include "pyronet_ncp_state.h"
+
+typedef struct pyronet_ncp_deferred_registration
+{
+    bool valid;
+    pyronet_host_send_registration_v1_t command;
+} pyronet_ncp_deferred_registration_t;
+
+static pyronet_ncp_deferred_registration_t pyronetNcpDeferredRegistration;
+static pthread_mutex_t pyronetNcpDeferredRegistrationLock;
+static bool pyronetNcpDeferredRegistrationLockInitialized;
+static uint32_t pyronetNcpDeferredRegistrationWaitPolls;
+
+#define PYRONET_REGISTRATION_WAIT_LOG_INTERVAL 5000U
+
+static uint8_t pyronetNcpRouterAddressDetail(pyronet_ncp_router_address_result_t result)
+{
+    switch (result)
+    {
+        case PYRONET_NCP_ROUTER_ADDRESS_NOT_JOINED:
+            return PYRONET_TX_DETAIL_NOT_JOINED;
+        case PYRONET_NCP_ROUTER_ADDRESS_UNAVAILABLE:
+            return PYRONET_TX_DETAIL_ROUTER_UNAVAILABLE;
+        case PYRONET_NCP_ROUTER_ADDRESS_INVALID:
+            return PYRONET_TX_DETAIL_ROUTER_INVALID;
+        case PYRONET_NCP_ROUTER_ADDRESS_READY:
+        default:
+            return PYRONET_TX_DETAIL_NONE;
+    }
+}
+
+static const char *pyronetNcpRouterAddressReasonName(pyronet_ncp_router_address_result_t result)
+{
+    switch (result)
+    {
+        case PYRONET_NCP_ROUTER_ADDRESS_NOT_JOINED:
+            return "not_joined";
+        case PYRONET_NCP_ROUTER_ADDRESS_UNAVAILABLE:
+            return "router_unavailable";
+        case PYRONET_NCP_ROUTER_ADDRESS_INVALID:
+            return "router_invalid";
+        case PYRONET_NCP_ROUTER_ADDRESS_READY:
+        default:
+            return "ready";
+    }
+}
+
+static bool pyronetNcpDeferredRegistrationEnsureInit(void)
+{
+    if (pyronetNcpDeferredRegistrationLockInitialized)
+    {
+        return true;
+    }
+
+    if (pthread_mutex_init(&pyronetNcpDeferredRegistrationLock, NULL) == 0)
+    {
+        pyronetNcpDeferredRegistrationLockInitialized = true;
+        return true;
+    }
+
+    return false;
+}
+
+static void pyronetNcpDeferredRegistrationStore(const pyronet_host_send_registration_v1_t *command)
+{
+    if (command == NULL)
+    {
+        return;
+    }
+
+    if (!pyronetNcpDeferredRegistrationEnsureInit())
+    {
+        return;
+    }
+    (void)pthread_mutex_lock(&pyronetNcpDeferredRegistrationLock);
+    pyronetNcpDeferredRegistration.command = *command;
+    pyronetNcpDeferredRegistration.valid = true;
+    (void)pthread_mutex_unlock(&pyronetNcpDeferredRegistrationLock);
+}
+
+static bool pyronetNcpDeferredRegistrationRead(pyronet_host_send_registration_v1_t *command_out)
+{
+    bool valid;
+
+    if (command_out == NULL)
+    {
+        return false;
+    }
+
+    if (!pyronetNcpDeferredRegistrationEnsureInit())
+    {
+        return false;
+    }
+    (void)pthread_mutex_lock(&pyronetNcpDeferredRegistrationLock);
+    valid = pyronetNcpDeferredRegistration.valid;
+    if (valid)
+    {
+        *command_out = pyronetNcpDeferredRegistration.command;
+    }
+    (void)pthread_mutex_unlock(&pyronetNcpDeferredRegistrationLock);
+
+    return valid;
+}
+
+static void pyronetNcpDeferredRegistrationClear(void)
+{
+    if (!pyronetNcpDeferredRegistrationEnsureInit())
+    {
+        return;
+    }
+    (void)pthread_mutex_lock(&pyronetNcpDeferredRegistrationLock);
+    memset(&pyronetNcpDeferredRegistration, 0, sizeof(pyronetNcpDeferredRegistration));
+    (void)pthread_mutex_unlock(&pyronetNcpDeferredRegistrationLock);
+}
 
 static int pyronetNcpCoapResponseCallback(int8_t service_id,
                                           uint8_t source_address[static 16],
@@ -80,7 +195,7 @@ static bool pyronetNcpSendCoapRequest(uint8_t request_type,
 
     if (service_id < 0)
     {
-        pyronet_ncp_events_queue_tx_result(request_type, PYRONET_TX_STATUS_FAILED, detail);
+        pyronet_ncp_events_queue_tx_result(request_type, PYRONET_TX_STATUS_FAILED, PYRONET_TX_DETAIL_COAP_UNAVAILABLE);
         return false;
     }
 
@@ -97,12 +212,13 @@ static bool pyronetNcpSendCoapRequest(uint8_t request_type,
     {
         (void)swoDebugPrintf("PYRONET_TX_TRACK_EXHAUSTED type=%u detail=%u",
                              (unsigned int)request_type,
-                             (unsigned int)detail);
-        pyronet_ncp_events_queue_tx_result(request_type, PYRONET_TX_STATUS_FAILED, detail);
+                             (unsigned int)PYRONET_TX_DETAIL_TRACK_EXHAUSTED);
+        pyronet_ncp_events_queue_tx_result(request_type, PYRONET_TX_STATUS_FAILED, PYRONET_TX_DETAIL_TRACK_EXHAUSTED);
         return false;
     }
     has_reserved_slot = confirmable;
 
+    nanostack_lock();
     msg_id = coap_service_request_send(service_id,
                                        COAP_REQUEST_OPTIONS_NONE,
                                        destination,
@@ -114,17 +230,23 @@ static bool pyronetNcpSendCoapRequest(uint8_t request_type,
                                        payload,
                                        payload_len,
                                        confirmable ? pyronetNcpCoapResponseCallback : NULL);
+    nanostack_unlock();
 
-    if (msg_id == 0U)
+    if (confirmable && (msg_id == 0U))
     {
         if (has_reserved_slot)
         {
             pyronet_ncp_pending_tx_release(reserved_slot);
         }
-        pyronet_ncp_events_queue_tx_result(request_type, PYRONET_TX_STATUS_FAILED, detail);
+        pyronet_ncp_events_queue_tx_result(request_type, PYRONET_TX_STATUS_FAILED, PYRONET_TX_DETAIL_SEND_REJECTED);
         return false;
     }
 
+    /*
+     * Nanostack returns 0 for non-confirmable requests because no response
+     * callback is registered and no terminal message ID is needed. The send
+     * has already been submitted by coap_service_request_send() at this point.
+     */
     if (has_reserved_slot && !pyronet_ncp_pending_tx_commit(reserved_slot, msg_id))
     {
         /*
@@ -134,8 +256,8 @@ static bool pyronetNcpSendCoapRequest(uint8_t request_type,
          */
         (void)swoDebugPrintf("PYRONET_TX_TRACK_COMMIT_FAILED type=%u detail=%u",
                              (unsigned int)request_type,
-                             (unsigned int)detail);
-        pyronet_ncp_events_queue_tx_result(request_type, PYRONET_TX_STATUS_FAILED, detail);
+                             (unsigned int)PYRONET_TX_DETAIL_TRACK_COMMIT);
+        pyronet_ncp_events_queue_tx_result(request_type, PYRONET_TX_STATUS_FAILED, PYRONET_TX_DETAIL_TRACK_COMMIT);
         return false;
     }
 
@@ -143,15 +265,18 @@ static bool pyronetNcpSendCoapRequest(uint8_t request_type,
     return true;
 }
 
-void pyronet_ncp_send_registration(const pyronet_host_send_registration_v1_t *command)
+static bool pyronetNcpTrySendRegistration(const pyronet_host_send_registration_v1_t *command, bool allow_defer)
 {
     pyronet_mesh_registration_v1_t mesh_packet;
     uint8_t destination[PYRONET_IPV6_ADDR_LEN];
+    pyronet_ncp_router_address_result_t router_result;
 
     if (command == NULL)
     {
-        pyronet_ncp_events_queue_tx_result(PYRONET_HOST_MSG_SEND_REGISTRATION, PYRONET_TX_STATUS_FAILED, 0U);
-        return;
+        pyronet_ncp_events_queue_tx_result(PYRONET_HOST_MSG_SEND_REGISTRATION,
+                                           PYRONET_TX_STATUS_FAILED,
+                                           PYRONET_TX_DETAIL_BAD_COMMAND);
+        return false;
     }
 
     pyronet_ncp_state_remember_local_node_id(command->node_id);
@@ -166,10 +291,22 @@ void pyronet_ncp_send_registration(const pyronet_host_send_registration_v1_t *co
     mesh_packet.battery_pct = command->battery_pct;
     (void)pyronet_ncp_state_read_current_parent(mesh_packet.parent_ipv6);
 
-    if (!pyronet_ncp_state_read_router_address(destination))
+    router_result = pyronet_ncp_state_read_router_address(destination);
+    if (router_result != PYRONET_NCP_ROUTER_ADDRESS_READY)
     {
-        pyronet_ncp_events_queue_tx_result(PYRONET_HOST_MSG_SEND_REGISTRATION, PYRONET_TX_STATUS_FAILED, 0U);
-        return;
+        if (allow_defer)
+        {
+            pyronetNcpDeferredRegistrationStore(command);
+            (void)swoDebugPrintf("PYRONET_REGISTRATION_DEFER node_id=%u reason=%s",
+                                 (unsigned int)command->node_id,
+                                 pyronetNcpRouterAddressReasonName(router_result));
+            return true;
+        }
+
+        pyronet_ncp_events_queue_tx_result(PYRONET_HOST_MSG_SEND_REGISTRATION,
+                                           PYRONET_TX_STATUS_FAILED,
+                                           pyronetNcpRouterAddressDetail(router_result));
+        return false;
     }
 
     /*
@@ -185,7 +322,59 @@ void pyronet_ncp_send_registration(const pyronet_host_send_registration_v1_t *co
                                   sizeof(mesh_packet),
                                   0U))
     {
+        (void)swoDebugPrintf("PYRONET_REGISTRATION_SUBMIT node_id=%u",
+                             (unsigned int)command->node_id);
+        pyronetNcpDeferredRegistrationClear();
         pyronet_ncp_state_clear_registration_required();
+        return true;
+    }
+
+    (void)swoDebugPrintf("PYRONET_REGISTRATION_SUBMIT_FAILED node_id=%u",
+                         (unsigned int)command->node_id);
+    return false;
+}
+
+void pyronet_ncp_send_registration(const pyronet_host_send_registration_v1_t *command)
+{
+    (void)pyronetNcpTrySendRegistration(command, true);
+}
+
+void pyronet_ncp_tx_poll(void)
+{
+    pyronet_host_send_registration_v1_t command;
+    uint8_t destination[PYRONET_IPV6_ADDR_LEN];
+    pyronet_ncp_router_address_result_t router_result;
+
+    if (!pyronetNcpDeferredRegistrationRead(&command))
+    {
+        pyronetNcpDeferredRegistrationWaitPolls = 0U;
+        return;
+    }
+
+    router_result = pyronet_ncp_state_read_router_address(destination);
+    if (router_result != PYRONET_NCP_ROUTER_ADDRESS_READY)
+    {
+        pyronetNcpDeferredRegistrationWaitPolls++;
+        if ((pyronetNcpDeferredRegistrationWaitPolls == 1U) ||
+            (pyronetNcpDeferredRegistrationWaitPolls >= PYRONET_REGISTRATION_WAIT_LOG_INTERVAL))
+        {
+            (void)swoDebugPrintf("PYRONET_REGISTRATION_WAIT node_id=%u reason=%s host_state=%u",
+                                 (unsigned int)command.node_id,
+                                 pyronetNcpRouterAddressReasonName(router_result),
+                                 (unsigned int)pyronet_ncp_state_network_state());
+            pyronetNcpDeferredRegistrationWaitPolls = 0U;
+        }
+        return;
+    }
+
+    pyronetNcpDeferredRegistrationWaitPolls = 0U;
+    (void)swoDebugPrintf("PYRONET_REGISTRATION_ROUTE_READY node_id=%u",
+                         (unsigned int)command.node_id);
+
+    if (pyronetNcpTrySendRegistration(&command, true))
+    {
+        (void)swoDebugPrintf("PYRONET_REGISTRATION_FLUSH node_id=%u",
+                             (unsigned int)command.node_id);
     }
 }
 
@@ -193,10 +382,13 @@ void pyronet_ncp_send_sensor_report(const pyronet_host_send_sensor_report_v1_t *
 {
     pyronet_mesh_sensor_report_v1_t mesh_packet;
     uint8_t destination[PYRONET_IPV6_ADDR_LEN];
+    pyronet_ncp_router_address_result_t router_result;
 
     if (command == NULL)
     {
-        pyronet_ncp_events_queue_tx_result(PYRONET_HOST_MSG_SEND_SENSOR_REPORT, PYRONET_TX_STATUS_FAILED, 0U);
+        pyronet_ncp_events_queue_tx_result(PYRONET_HOST_MSG_SEND_SENSOR_REPORT,
+                                           PYRONET_TX_STATUS_FAILED,
+                                           PYRONET_TX_DETAIL_BAD_COMMAND);
         return;
     }
 
@@ -214,9 +406,12 @@ void pyronet_ncp_send_sensor_report(const pyronet_host_send_sensor_report_v1_t *
     mesh_packet.pm25 = command->pm25_ug_m3_x10;
     mesh_packet.battery_pct = command->battery_pct;
 
-    if (!pyronet_ncp_state_read_router_address(destination))
+    router_result = pyronet_ncp_state_read_router_address(destination);
+    if (router_result != PYRONET_NCP_ROUTER_ADDRESS_READY)
     {
-        pyronet_ncp_events_queue_tx_result(PYRONET_HOST_MSG_SEND_SENSOR_REPORT, PYRONET_TX_STATUS_FAILED, 0U);
+        pyronet_ncp_events_queue_tx_result(PYRONET_HOST_MSG_SEND_SENSOR_REPORT,
+                                           PYRONET_TX_STATUS_FAILED,
+                                           pyronetNcpRouterAddressDetail(router_result));
         return;
     }
 
@@ -233,10 +428,13 @@ void pyronet_ncp_send_sensor_alert(const pyronet_host_send_sensor_alert_v1_t *co
 {
     pyronet_mesh_sensor_alert_v1_t mesh_packet;
     uint8_t destination[PYRONET_IPV6_ADDR_LEN];
+    pyronet_ncp_router_address_result_t router_result;
 
     if (command == NULL)
     {
-        pyronet_ncp_events_queue_tx_result(PYRONET_HOST_MSG_SEND_SENSOR_ALERT, PYRONET_TX_STATUS_FAILED, 0U);
+        pyronet_ncp_events_queue_tx_result(PYRONET_HOST_MSG_SEND_SENSOR_ALERT,
+                                           PYRONET_TX_STATUS_FAILED,
+                                           PYRONET_TX_DETAIL_BAD_COMMAND);
         return;
     }
 
@@ -254,9 +452,12 @@ void pyronet_ncp_send_sensor_alert(const pyronet_host_send_sensor_alert_v1_t *co
     mesh_packet.pm25 = command->pm25_ug_m3_x10;
     mesh_packet.battery_pct = command->battery_pct;
 
-    if (!pyronet_ncp_state_read_router_address(destination))
+    router_result = pyronet_ncp_state_read_router_address(destination);
+    if (router_result != PYRONET_NCP_ROUTER_ADDRESS_READY)
     {
-        pyronet_ncp_events_queue_tx_result(PYRONET_HOST_MSG_SEND_SENSOR_ALERT, PYRONET_TX_STATUS_FAILED, 0U);
+        pyronet_ncp_events_queue_tx_result(PYRONET_HOST_MSG_SEND_SENSOR_ALERT,
+                                           PYRONET_TX_STATUS_FAILED,
+                                           pyronetNcpRouterAddressDetail(router_result));
         return;
     }
 
@@ -278,7 +479,9 @@ void pyronet_ncp_send_neighbor_alert(const pyronet_host_send_neighbor_alert_v1_t
 
     if (command == NULL)
     {
-        pyronet_ncp_events_queue_tx_result(PYRONET_HOST_MSG_SEND_NEIGHBOR_ALERT, PYRONET_TX_STATUS_FAILED, 0U);
+        pyronet_ncp_events_queue_tx_result(PYRONET_HOST_MSG_SEND_NEIGHBOR_ALERT,
+                                           PYRONET_TX_STATUS_FAILED,
+                                           PYRONET_TX_DETAIL_BAD_COMMAND);
         return;
     }
 
@@ -294,7 +497,9 @@ void pyronet_ncp_send_neighbor_alert(const pyronet_host_send_neighbor_alert_v1_t
     neighbor_count = pyronet_ncp_state_copy_neighbors(neighbors);
     if (neighbor_count == 0U)
     {
-        pyronet_ncp_events_queue_tx_result(PYRONET_HOST_MSG_SEND_NEIGHBOR_ALERT, PYRONET_TX_STATUS_FAILED, 0U);
+        pyronet_ncp_events_queue_tx_result(PYRONET_HOST_MSG_SEND_NEIGHBOR_ALERT,
+                                           PYRONET_TX_STATUS_FAILED,
+                                           PYRONET_TX_DETAIL_ROUTER_UNAVAILABLE);
         return;
     }
 
@@ -314,10 +519,13 @@ void pyronet_ncp_send_parent_update(const pyronet_host_request_parent_update_v1_
 {
     pyronet_mesh_parent_update_v1_t mesh_packet;
     uint8_t destination[PYRONET_IPV6_ADDR_LEN];
+    pyronet_ncp_router_address_result_t router_result;
 
     if (command == NULL)
     {
-        pyronet_ncp_events_queue_tx_result(PYRONET_HOST_MSG_REQUEST_PARENT_UPDATE, PYRONET_TX_STATUS_FAILED, 0U);
+        pyronet_ncp_events_queue_tx_result(PYRONET_HOST_MSG_REQUEST_PARENT_UPDATE,
+                                           PYRONET_TX_STATUS_FAILED,
+                                           PYRONET_TX_DETAIL_BAD_COMMAND);
         return;
     }
 
@@ -330,9 +538,12 @@ void pyronet_ncp_send_parent_update(const pyronet_host_request_parent_update_v1_
     mesh_packet.timestamp = command->timestamp;
     (void)pyronet_ncp_state_read_current_parent(mesh_packet.parent_ipv6);
 
-    if (!pyronet_ncp_state_read_router_address(destination))
+    router_result = pyronet_ncp_state_read_router_address(destination);
+    if (router_result != PYRONET_NCP_ROUTER_ADDRESS_READY)
     {
-        pyronet_ncp_events_queue_tx_result(PYRONET_HOST_MSG_REQUEST_PARENT_UPDATE, PYRONET_TX_STATUS_FAILED, 0U);
+        pyronet_ncp_events_queue_tx_result(PYRONET_HOST_MSG_REQUEST_PARENT_UPDATE,
+                                           PYRONET_TX_STATUS_FAILED,
+                                           pyronetNcpRouterAddressDetail(router_result));
         return;
     }
 

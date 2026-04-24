@@ -8,4 +8,4 @@ SWO_SELF_TEST: CC1352P7_DIO16_ITM_CH0 phase=BOOT host_link=starting
 PYRONET_NCP_INIT_OK
 PYRONET_WISUN_STATUS status=MESH_BOOTSTRAP_STARTED host_state=2 queue_registration=0
 HOST_UART_READY baud=115200
-raw_bytes=2089
+raw_bytes=2152

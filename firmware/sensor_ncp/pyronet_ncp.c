@@ -5,6 +5,8 @@
 #include "ncp/pyronet_ncp_pending_tx.h"
 #include "ncp/pyronet_ncp_rx.h"
 #include "ncp/pyronet_ncp_state.h"
+#include "ncp/pyronet_ncp_events.h"
+#include "ncp/pyronet_ncp_tx.h"
 
 #include "swo_debug.h"
 
@@ -179,7 +181,9 @@ void pyronet_ncp_poll(void)
         return;
     }
 
+    pyronet_ncp_state_poll_connectivity();
     pyronet_ncp_state_poll_parent();
+    pyronet_ncp_tx_poll();
 
     pyronetNcpDiagPolls++;
     if (pyronetNcpDiagPolls < PYRONET_NCP_DIAG_POLL_INTERVAL)
@@ -214,6 +218,7 @@ void pyronet_ncp_poll(void)
                              (unsigned long)stats.recv_PAS,
                              (unsigned long)stats.recv_PC,
                              (unsigned long)stats.recv_PCS);
+        pyronet_ncp_state_log_connectivity_snapshot(network_state);
     }
     else
     {
@@ -225,6 +230,21 @@ void pyronet_ncp_poll(void)
 uint8_t pyronet_ncp_network_state(void)
 {
     return pyronet_ncp_state_network_state();
+}
+
+void pyronet_ncp_host_session_ready(void)
+{
+    uint8_t reason = PYRONET_REG_REASON_JOIN;
+
+    if (!pyronet_ncp_state_request_registration_sync(&reason))
+    {
+        return;
+    }
+
+    (void)swoDebugPrintf("PYRONET_HOST_SYNC queue_registration=1 reason=%u host_state=%u",
+                         (unsigned int)reason,
+                         (unsigned int)pyronet_ncp_state_network_state());
+    pyronet_ncp_events_queue_registration_needed(reason);
 }
 
 bool pyronet_ncp_next_event(pyronet_ncp_event_t *out_event)

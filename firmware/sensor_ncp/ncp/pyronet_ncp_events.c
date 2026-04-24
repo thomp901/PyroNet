@@ -48,6 +48,23 @@ static void pyronetNcpEventsPushLocked(const pyronet_ncp_event_t *event)
     pyronetNcpEventQueue.count++;
 }
 
+static pyronet_ncp_event_t *pyronetNcpEventsFindLocked(uint8_t msg_type)
+{
+    uint8_t index;
+    uint8_t slot;
+
+    for (index = 0U; index < pyronetNcpEventQueue.count; ++index)
+    {
+        slot = (uint8_t)((pyronetNcpEventQueue.head + index) % PYRONET_EVENT_QUEUE_LEN);
+        if (pyronetNcpEventQueue.queue[slot].msg_type == msg_type)
+        {
+            return &pyronetNcpEventQueue.queue[slot];
+        }
+    }
+
+    return NULL;
+}
+
 static void pyronetNcpEventsPush(const pyronet_ncp_event_t *event)
 {
     if (event == NULL)
@@ -106,11 +123,23 @@ bool pyronet_ncp_events_next(pyronet_ncp_event_t *out_event)
 void pyronet_ncp_events_queue_registration_needed(uint8_t reason)
 {
     pyronet_ncp_event_t event;
+    pyronet_ncp_event_t *existing_event;
 
     event.msg_type = PYRONET_HOST_MSG_REGISTRATION_NEEDED;
     event.payload_len = sizeof(event.payload.registration_needed);
     event.payload.registration_needed.reason = reason;
-    pyronetNcpEventsPush(&event);
+
+    pyronetNcpEventsLock();
+    existing_event = pyronetNcpEventsFindLocked(PYRONET_HOST_MSG_REGISTRATION_NEEDED);
+    if (existing_event != NULL)
+    {
+        existing_event->payload.registration_needed.reason = reason;
+        pyronetNcpEventsUnlock();
+        return;
+    }
+
+    pyronetNcpEventsPushLocked(&event);
+    pyronetNcpEventsUnlock();
 }
 
 void pyronet_ncp_events_queue_parent_changed(uint8_t change_reason)
