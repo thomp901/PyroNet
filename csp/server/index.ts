@@ -101,6 +101,8 @@ const gatewayDownlinkDispatchIntervalMs = parsePositiveInteger(process.env.GATEW
 const gatewayDownlinkDispatchBatchSize = parsePositiveInteger(process.env.GATEWAY_DOWNLINK_DISPATCH_BATCH_SIZE, 10);
 const gatewayDownlinkTimeoutMs = parsePositiveInteger(process.env.GATEWAY_DOWNLINK_TIMEOUT_MS, 10_000);
 const gatewayDownlinkRetryDelayMs = parsePositiveInteger(process.env.GATEWAY_DOWNLINK_RETRY_DELAY_MS, 15_000);
+const degradedThresholdMs = 2 * 60 * 1000;
+const offlineThresholdMs = 5 * 60 * 1000;
 let isGatewayDownlinkDispatchInFlight = false;
 const notificationEventTypes: NotificationEventType[] = [
   "critical_risk",
@@ -230,11 +232,11 @@ function connectivityFromLastSeen(lastSeenAt: string | null): ConnectivityStatus
 
   const ageMs = getNowMs() - timestampMs(lastSeenAt);
 
-  if (ageMs >= 24 * 60 * 60 * 1000) {
+  if (ageMs >= offlineThresholdMs) {
     return "offline";
   }
 
-  if (ageMs >= 30 * 60 * 1000) {
+  if (ageMs >= degradedThresholdMs) {
     return "degraded";
   }
 
@@ -441,6 +443,7 @@ async function projectRegistrationUplinkInDb(
   gatewayRowId: number,
   gatewayUplinkId: number,
   message: ParsedNodeUplinkEnvelope,
+  requestMetadata: Record<string, string | number | boolean | null>,
   packet: ParsedRegistrationPacket,
 ) {
   const observedAt = epochSecondsToDate(message.receivedAtEpochSeconds);
@@ -543,6 +546,25 @@ async function projectRegistrationUplinkInDb(
       registrationParentIpv6: packet.parentIpv6,
     }),
   });
+
+  const timeSyncTarget = await resolveRegistrationTimeSyncTargetInDb(client, {
+    deviceId,
+    nodeId: packet.nodeId,
+    gatewayId: message.gatewayId,
+    gatewayRowId,
+    observedAt,
+    requestMetadata,
+  });
+
+  if (timeSyncTarget) {
+    await queueTimeSyncForTargetInDb(client, timeSyncTarget, {
+      payloadMetadata: {
+        trigger: "registration",
+        gatewayUplinkId,
+        registrationId,
+      },
+    });
+  }
 }
 
 async function projectSensorUplinkInDb(
@@ -807,10 +829,18 @@ async function projectGatewayUplinkInDb(
   gatewayRowId: number,
   gatewayUplinkId: number,
   message: ParsedNodeUplinkEnvelope,
+  requestMetadata: Record<string, string | number | boolean | null>,
 ) {
   switch (message.decodedPayload.type) {
     case registrationPacketType:
-      await projectRegistrationUplinkInDb(client, gatewayRowId, gatewayUplinkId, message, message.decodedPayload);
+      await projectRegistrationUplinkInDb(
+        client,
+        gatewayRowId,
+        gatewayUplinkId,
+        message,
+        requestMetadata,
+        message.decodedPayload,
+      );
       return;
     case sensorReportPacketType:
     case sensorAlertPacketType:
@@ -937,6 +967,59 @@ async function resolveRoutedDeviceTargetsInDb(
   }));
 }
 
+async function resolveRegistrationTimeSyncTargetInDb(
+  client: PoolClient,
+  options: {
+    deviceId: number;
+    nodeId: number;
+    gatewayId: number;
+    gatewayRowId: number;
+    observedAt: Date;
+    requestMetadata: Record<string, string | number | boolean | null>;
+  },
+): Promise<RoutedDeviceTarget | null> {
+  const latestGatewayRegistration = await client.query<{
+    downlink_url: string | null;
+    latest_gateway_remote_address: string | null;
+  }>(
+    `
+      SELECT
+        raw_payload_metadata->>'downlinkUrl' AS downlink_url,
+        raw_payload_metadata->>'remoteAddress' AS latest_gateway_remote_address
+      FROM gateway_registrations
+      WHERE gateway_row_id = $1
+      ORDER BY reported_at DESC, id DESC
+      LIMIT 1
+    `,
+    [options.gatewayRowId],
+  );
+
+  const requestDownlinkUrl =
+    typeof options.requestMetadata.downlinkUrl === "string" ? options.requestMetadata.downlinkUrl : null;
+  const requestRemoteAddress =
+    typeof options.requestMetadata.remoteAddress === "string" ? options.requestMetadata.remoteAddress : null;
+  const latestRegistration = latestGatewayRegistration.rows[0];
+  const downlinkUrl =
+    normalizeGatewayDownlinkUrl(requestDownlinkUrl) ??
+    deriveGatewayDownlinkUrlFromRemoteAddress(requestRemoteAddress) ??
+    normalizeGatewayDownlinkUrl(latestRegistration?.downlink_url) ??
+    deriveGatewayDownlinkUrlFromRemoteAddress(latestRegistration?.latest_gateway_remote_address);
+
+  if (!downlinkUrl) {
+    return null;
+  }
+
+  return {
+    deviceId: options.deviceId,
+    nodeId: options.nodeId,
+    gatewayRowId: options.gatewayRowId,
+    gatewayId: options.gatewayId,
+    lastObservedGatewayAt: options.observedAt.toISOString(),
+    currentNeighborRevisionId: null,
+    downlinkUrl,
+  };
+}
+
 function buildDownlinkRoutingMetadata(target: RoutedDeviceTarget) {
   return {
     routingBasis: "last_observed_gateway",
@@ -1050,6 +1133,47 @@ async function buildNeighborDistributionPayloadInDb(
   return encodeNeighborTableUpdatePacket({
     targetNodeId: options.targetNodeId,
     neighborIpv6Addresses: result.rows.map((row) => row.neighbor_ipv6 as string),
+  });
+}
+
+async function queueTimeSyncForTargetInDb(
+  client: PoolClient,
+  target: RoutedDeviceTarget,
+  options: {
+    targetTime?: Date;
+    payloadMetadata?: Record<string, string | number | boolean | null>;
+  } = {},
+) {
+  const targetTime = options.targetTime ?? new Date();
+  const timeSyncPayload = encodeTimeSyncPacket({
+    epochSeconds: toEpochSeconds(targetTime),
+  });
+
+  const eventInsert = await client.query<{ id: number }>(
+    `
+      INSERT INTO time_sync_events (device_id, target_time, status, sent_at, payload_metadata)
+      VALUES ($1, $2, 'pending', NOW(), $3::jsonb)
+      RETURNING id
+    `,
+    [
+      target.deviceId,
+      targetTime,
+      JSON.stringify({
+        ...buildDownlinkRoutingMetadata(target),
+        ...(options.payloadMetadata ?? {}),
+      }),
+    ],
+  );
+  const timeSyncEventId = eventInsert.rows[0]?.id;
+  if (!timeSyncEventId) {
+    throw new Error(`Unable to create time sync audit row for node ${target.nodeId}`);
+  }
+
+  await insertGatewayDownlinkInDb(client, {
+    target,
+    commandCode: timeSyncPacketType,
+    innerPayload: timeSyncPayload,
+    timeSyncEventId,
   });
 }
 
@@ -1183,6 +1307,7 @@ async function persistGatewayRegistrationInDb(
       `
         INSERT INTO gateways (
           gateway_id,
+          current_ipv6,
           current_latitude,
           current_longitude,
           current_sw_version_packed,
@@ -1190,9 +1315,14 @@ async function persistGatewayRegistrationInDb(
           last_registered_at,
           last_gateway_timestamp_at
         )
-        VALUES ($1, $2, $3, $4, $5, $5, $5)
+        VALUES ($1, $2, $3, $4, $5, $6, $6, $6)
         ON CONFLICT (gateway_id)
         DO UPDATE SET
+          current_ipv6 = CASE
+            WHEN gateways.last_gateway_timestamp_at IS NULL OR EXCLUDED.last_gateway_timestamp_at >= gateways.last_gateway_timestamp_at
+              THEN EXCLUDED.current_ipv6
+            ELSE gateways.current_ipv6
+          END,
           current_latitude = CASE
             WHEN gateways.last_gateway_timestamp_at IS NULL OR EXCLUDED.last_gateway_timestamp_at >= gateways.last_gateway_timestamp_at
               THEN EXCLUDED.current_latitude
@@ -1224,6 +1354,7 @@ async function persistGatewayRegistrationInDb(
       `,
       [
         message.gatewayId,
+        message.wisunIpv6,
         message.latitude,
         message.longitude,
         message.swVersionPacked,
@@ -1241,6 +1372,7 @@ async function persistGatewayRegistrationInDb(
         INSERT INTO gateway_registrations (
           gateway_row_id,
           reported_at,
+          wisun_ipv6,
           latitude,
           longitude,
           sw_version_packed,
@@ -1248,11 +1380,12 @@ async function persistGatewayRegistrationInDb(
           raw_message,
           raw_payload_metadata
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)
       `,
       [
         gatewayRowId,
         reportedAt,
+        message.wisunIpv6,
         message.latitude,
         message.longitude,
         message.swVersionPacked,
@@ -1809,7 +1942,7 @@ async function persistGatewayUplinkInDb(
       throw new Error(`Unable to persist uplink ${uplinkIdText} for gateway ${message.gatewayId}`);
     }
 
-    await projectGatewayUplinkInDb(client, gatewayRowId, gatewayUplinkId, message);
+    await projectGatewayUplinkInDb(client, gatewayRowId, gatewayUplinkId, message, requestMetadata);
     await client.query(
       `
         UPDATE gateway_uplinks
@@ -2039,6 +2172,7 @@ async function queryNodesFromDb(): Promise<NodeSummary[]> {
     id: number;
     node_id: number;
     current_ipv6: string | null;
+    current_parent_ipv6: string | null;
     current_latitude: string;
     current_longitude: string;
     current_firmware_version: string | null;
@@ -2064,6 +2198,10 @@ async function queryNodesFromDb(): Promise<NodeSummary[]> {
         d.id,
         d.node_id,
         host(d.current_ipv6) AS current_ipv6,
+        CASE
+          WHEN d.current_parent_ipv6 IS NULL THEN NULL
+          ELSE host(d.current_parent_ipv6)
+        END AS current_parent_ipv6,
         d.current_latitude::text,
         d.current_longitude::text,
         d.current_firmware_version,
@@ -2111,6 +2249,7 @@ async function queryNodesFromDb(): Promise<NodeSummary[]> {
       id: String(row.id),
       nodeId: row.node_id,
       ipv6Address: row.current_ipv6,
+      currentParentIpv6: row.current_parent_ipv6,
       connectivity: connectivityFromLastSeen(row.last_seen_at),
       location: {
         lat: Number(row.current_latitude),
@@ -2164,14 +2303,24 @@ async function queryDownlinksFromDb(): Promise<DashboardResponse["downlinks"]> {
       SELECT
         concat('ts-', tse.id) AS id,
         '0x05' AS command_code,
-        'Daily time synchronization' AS command_name,
+        CASE
+          WHEN tse.payload_metadata->>'trigger' = 'registration' THEN 'Registration time synchronization'
+          ELSE 'Daily time synchronization'
+        END AS command_name,
         d.node_id,
         d.node_id AS node_name,
         tse.status::text AS status,
         tse.sent_at::text,
         tse.acknowledged_at::text,
         NULL AS revision_no,
-        COALESCE(tse.result_message, concat('Time sync sent to ', d.node_id)) AS summary
+        COALESCE(
+          tse.result_message,
+          CASE
+            WHEN tse.payload_metadata->>'trigger' = 'registration'
+              THEN concat('Time sync queued after registration for ', d.node_id)
+            ELSE concat('Time sync sent to ', d.node_id)
+          END
+        ) AS summary
       FROM time_sync_events tse
       JOIN devices d ON d.id = tse.device_id
       UNION ALL
@@ -2211,6 +2360,7 @@ async function queryDownlinksFromDb(): Promise<DashboardResponse["downlinks"]> {
 async function queryGatewaysFromDb(): Promise<GatewayMarker[]> {
   const result = await query<{
     gateway_id: number;
+    current_ipv6: string | null;
     current_latitude: string;
     current_longitude: string;
     current_sw_version_packed: number | null;
@@ -2219,6 +2369,10 @@ async function queryGatewaysFromDb(): Promise<GatewayMarker[]> {
     `
       SELECT
         gateway_id,
+        CASE
+          WHEN current_ipv6 IS NULL THEN NULL
+          ELSE host(current_ipv6)
+        END AS current_ipv6,
         current_latitude::text,
         current_longitude::text,
         current_sw_version_packed,
@@ -2233,6 +2387,7 @@ async function queryGatewaysFromDb(): Promise<GatewayMarker[]> {
   return result.rows.map((row: (typeof result.rows)[number]) => ({
     id: `gateway-${row.gateway_id}`,
     gatewayId: row.gateway_id,
+    ipv6Address: row.current_ipv6,
     location: {
       lat: Number(row.current_latitude),
       lng: Number(row.current_longitude),
@@ -2247,6 +2402,7 @@ async function queryGatewaysFromDb(): Promise<GatewayMarker[]> {
 async function getBorderRouterDetailFromDb(gatewayId: number): Promise<BorderRouterDetail> {
   const gatewayResult = await query<{
     gateway_id: number;
+    current_ipv6: string | null;
     current_latitude: string;
     current_longitude: string;
     current_sw_version_packed: number | null;
@@ -2257,6 +2413,10 @@ async function getBorderRouterDetailFromDb(gatewayId: number): Promise<BorderRou
     `
       SELECT
         gateway_id,
+        CASE
+          WHEN current_ipv6 IS NULL THEN NULL
+          ELSE host(current_ipv6)
+        END AS current_ipv6,
         current_latitude::text,
         current_longitude::text,
         current_sw_version_packed,
@@ -2307,6 +2467,7 @@ async function getBorderRouterDetailFromDb(gatewayId: number): Promise<BorderRou
     gateway: {
       id: `gateway-${gatewayRow.gateway_id}`,
       gatewayId: gatewayRow.gateway_id,
+      ipv6Address: gatewayRow.current_ipv6,
       location: {
         lat: Number(gatewayRow.current_latitude),
         lng: Number(gatewayRow.current_longitude),
@@ -2457,7 +2618,7 @@ async function queryAlertsFromDb(nodes?: NodeSummary[]): Promise<AlertIncident[]
   const offlineIncidents = fleet
     .filter((node) => node.connectivity === "offline" && node.lastSeenAt)
     .map((node) => {
-      const derivedAt = new Date(timestampMs(node.lastSeenAt) + 24 * 60 * 60 * 1000).toISOString();
+      const derivedAt = new Date(timestampMs(node.lastSeenAt) + offlineThresholdMs).toISOString();
       return {
         id: `offline-${node.nodeId}`,
         incidentType: "offline" as const,
@@ -2466,7 +2627,7 @@ async function queryAlertsFromDb(nodes?: NodeSummary[]): Promise<AlertIncident[]
         nodeName: String(node.nodeId),
         severity: "warning" as const,
         status: "derived" as const,
-        title: `${node.nodeId} silent for 24 hours`,
+        title: `${node.nodeId} silent for 5 minutes`,
         summary: "Derived offline incident because the node has not been seen within the required window.",
         occurredAt: derivedAt,
         detectedAt: derivedAt,
@@ -2791,12 +2952,12 @@ async function getNodeDetailFromDb(nodeId: NodeId): Promise<NodeDetail> {
   }));
 
   if (node.connectivity === "offline" && node.lastSeenAt) {
-    const derivedAt = new Date(timestampMs(node.lastSeenAt) + 24 * 60 * 60 * 1000).toISOString();
+    const derivedAt = new Date(timestampMs(node.lastSeenAt) + offlineThresholdMs).toISOString();
     alertTimeline.unshift({
       id: `offline-${node.nodeId}`,
       eventCode: "derived-offline",
       title: "Offline incident derived",
-      summary: "No telemetry received for more than 24 hours.",
+      summary: "No telemetry received for more than 5 minutes.",
       occurredAt: derivedAt,
       status: "derived",
       severity: "warning",
@@ -3843,30 +4004,9 @@ async function createTimeSyncInDb(request: DownlinkRequest): Promise<Configurati
   try {
     await client.query("BEGIN");
     const targets = await resolveRoutedDeviceTargetsInDb(client, request.targetNodeIds);
-    const targetTime = new Date();
-    const timeSyncPayload = encodeTimeSyncPacket({
-      epochSeconds: toEpochSeconds(targetTime),
-    });
 
     for (const target of targets) {
-      const eventInsert = await client.query<{ id: number }>(
-        `
-          INSERT INTO time_sync_events (device_id, target_time, status, sent_at, payload_metadata)
-          VALUES ($1, $2, 'pending', NOW(), $3::jsonb)
-          RETURNING id
-        `,
-        [target.deviceId, targetTime, JSON.stringify(buildDownlinkRoutingMetadata(target))],
-      );
-      const timeSyncEventId = eventInsert.rows[0]?.id;
-      if (!timeSyncEventId) {
-        throw new Error(`Unable to create time sync audit row for node ${target.nodeId}`);
-      }
-      await insertGatewayDownlinkInDb(client, {
-        target,
-        commandCode: timeSyncPacketType,
-        innerPayload: timeSyncPayload,
-        timeSyncEventId,
-      });
+      await queueTimeSyncForTargetInDb(client, target);
     }
 
     await client.query("COMMIT");
@@ -4088,6 +4228,7 @@ app.post("/api/v1/uplinks", octetStreamBody, async (request, response, next) => 
       httpContentType: request.get("content-type") ?? null,
       httpContentLength: body.length,
       remoteAddress: request.ip || null,
+      downlinkUrl: resolveGatewayDownlinkUrlFromRequest(request),
     };
 
     let receipt: PersistedUplinkReceipt;

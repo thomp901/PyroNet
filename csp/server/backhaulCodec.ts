@@ -81,6 +81,7 @@ export interface ParsedGatewayRegistration {
   version: number;
   gatewayId: number;
   timestampEpochSeconds: number;
+  wisunIpv6: string;
   latitude: number;
   longitude: number;
   swVersionPacked: number;
@@ -187,7 +188,7 @@ const supportedDownlinkResultStatuses = new Set<DownlinkResultStatus>([
 
 export function parseGatewayRegistrationMessage(input: Buffer | Uint8Array): ParsedGatewayRegistration {
   const rawMessage = asBuffer(input);
-  assertExactLength(rawMessage, 18, "gateway registration");
+  assertExactLength(rawMessage, 34, "gateway registration");
 
   const type = rawMessage.readUInt8(0);
   if (type !== gatewayRegistrationMessageType) {
@@ -199,10 +200,12 @@ export function parseGatewayRegistrationMessage(input: Buffer | Uint8Array): Par
 
   const gatewayId = rawMessage.readUInt16LE(2);
   const timestampEpochSeconds = rawMessage.readUInt32LE(4);
-  const latitude = rawMessage.readFloatLE(8);
-  const longitude = rawMessage.readFloatLE(12);
-  const swVersionPacked = rawMessage.readUInt16LE(16);
+  const wisunIpv6Bytes = rawMessage.subarray(8, 24);
+  const latitude = rawMessage.readFloatLE(24);
+  const longitude = rawMessage.readFloatLE(28);
+  const swVersionPacked = rawMessage.readUInt16LE(32);
 
+  assertIngressIpv6(wisunIpv6Bytes, "wisun_ipv6");
   assertFiniteCoordinate(latitude, "latitude", -90, 90);
   assertFiniteCoordinate(longitude, "longitude", -180, 180);
 
@@ -211,6 +214,7 @@ export function parseGatewayRegistrationMessage(input: Buffer | Uint8Array): Par
     version,
     gatewayId,
     timestampEpochSeconds,
+    wisunIpv6: formatIpv6(wisunIpv6Bytes),
     latitude,
     longitude,
     swVersionPacked,

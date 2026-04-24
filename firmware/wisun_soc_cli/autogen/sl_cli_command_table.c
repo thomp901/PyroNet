@@ -144,6 +144,7 @@ void app_socket_close(sl_cli_command_arg_t *arguments);
 void app_socket_read(sl_cli_command_arg_t *arguments);
 void app_socket_write(sl_cli_command_arg_t *arguments);
 void app_socket_writeto(sl_cli_command_arg_t *arguments);
+void app_pyronet_spoof(sl_cli_command_arg_t *arguments);
 void app_socket_list(sl_cli_command_arg_t *arguments);
 void app_socket_set_option(sl_cli_command_arg_t *arguments);
 void app_mac_allow(sl_cli_command_arg_t *arguments);
@@ -305,6 +306,12 @@ static const sl_cli_command_info_t cli_cmd_wisun_socket_writeto = \
                  "Write to a socket to a specific host: w swt",
                   "Socket Id" SL_CLI_UNIT_SEPARATOR "Remote address" SL_CLI_UNIT_SEPARATOR "Remote port" SL_CLI_UNIT_SEPARATOR "Data to write" SL_CLI_UNIT_SEPARATOR,
                  {SL_CLI_ARG_UINT32, SL_CLI_ARG_STRING, SL_CLI_ARG_UINT16, SL_CLI_ARG_STRING, SL_CLI_ARG_END, });
+
+static const sl_cli_command_info_t cli_cmd_wisun_pyronet_spoof = \
+  SL_CLI_COMMAND(app_pyronet_spoof,
+                 "Send hard-coded PyroNet CSP spoof packets: w ps",
+                  "Remote address" SL_CLI_UNIT_SEPARATOR "Remote port" SL_CLI_UNIT_SEPARATOR,
+                 {SL_CLI_ARG_STRING, SL_CLI_ARG_UINT16, SL_CLI_ARG_END, });
 
 static const sl_cli_command_info_t cli_cmd_wisun_socket_list = \
   SL_CLI_COMMAND(app_socket_list,
@@ -509,6 +516,8 @@ static const sl_cli_command_entry_t wisun_group_table[] = {
   { "sw", &cli_cmd_wisun_socket_write, true },
   { "socket_writeto", &cli_cmd_wisun_socket_writeto, false },
   { "swt", &cli_cmd_wisun_socket_writeto, true },
+  { "pyronet_spoof", &cli_cmd_wisun_pyronet_spoof, false },
+  { "ps", &cli_cmd_wisun_pyronet_spoof, true },
   { "socket_list", &cli_cmd_wisun_socket_list, false },
   { "sl", &cli_cmd_wisun_socket_list, true },
   { "socket_set_option", &cli_cmd_wisun_socket_set_option, false },

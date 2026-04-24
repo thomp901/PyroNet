@@ -13,15 +13,15 @@ export const configThresholdKeys = [
 ] as const satisfies ReadonlyArray<keyof ConfigThresholds>;
 
 export const DEFAULT_CONFIG_THRESHOLDS: ConfigThresholds = {
-  l2TempThresh: 32,
-  l2HumidityThresh: 33,
-  l2VocThresh: 110,
-  l3TempThresh: 36,
-  l3HumidityThresh: 23,
-  l3VocThresh: 165,
-  l4VocThresh: 225,
-  l5VocThresh: 255,
-  l5Pm25Thresh: 58,
+  l2TempThresh: 35,
+  l2HumidityThresh: 40,
+  l2VocThresh: 100,
+  l3TempThresh: 45,
+  l3HumidityThresh: 25,
+  l3VocThresh: 200,
+  l4VocThresh: 300,
+  l5VocThresh: 500,
+  l5Pm25Thresh: 35,
 };
 
 export function cloneConfigThresholds(thresholds: ConfigThresholds = DEFAULT_CONFIG_THRESHOLDS): ConfigThresholds {
