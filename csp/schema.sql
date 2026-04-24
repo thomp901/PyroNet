@@ -163,6 +163,7 @@ ALTER SEQUENCE config_revisions_config_id_seq
 CREATE TABLE gateways (
     id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     gateway_id integer NOT NULL,
+    current_ipv6 inet,
     current_latitude numeric(9,6),
     current_longitude numeric(9,6),
     current_sw_version_packed integer,
@@ -173,8 +174,17 @@ CREATE TABLE gateways (
     updated_at timestamptz NOT NULL DEFAULT NOW(),
     metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
     CONSTRAINT uq_gateways_gateway_id UNIQUE (gateway_id),
+    CONSTRAINT uq_gateways_current_ipv6 UNIQUE (current_ipv6),
     CONSTRAINT chk_gateways_gateway_id_uint16 CHECK (
         gateway_id >= 0 AND gateway_id <= 65535
+    ),
+    CONSTRAINT chk_gateways_current_ipv6_global_unicast CHECK (
+        current_ipv6 IS NULL OR (
+            family(current_ipv6) = 6
+            AND NOT (current_ipv6 <<= inet '::/128')
+            AND NOT (current_ipv6 <<= inet '::1/128')
+            AND NOT (current_ipv6 <<= inet 'ff00::/8')
+        )
     ),
     CONSTRAINT chk_gateways_latitude CHECK (
         current_latitude >= -90 AND current_latitude <= 90
@@ -213,6 +223,7 @@ CREATE TABLE gateway_registrations (
     gateway_row_id bigint NOT NULL REFERENCES gateways(id) ON DELETE CASCADE,
     reported_at timestamptz NOT NULL,
     ingested_at timestamptz NOT NULL DEFAULT NOW(),
+    wisun_ipv6 inet NOT NULL,
     latitude numeric(9,6) NOT NULL,
     longitude numeric(9,6) NOT NULL,
     sw_version_packed integer NOT NULL,
@@ -221,6 +232,12 @@ CREATE TABLE gateway_registrations (
     raw_payload_metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
     CONSTRAINT chk_gateway_registrations_latitude CHECK (
         latitude >= -90 AND latitude <= 90
+    ),
+    CONSTRAINT chk_gateway_registrations_wisun_ipv6_global_unicast CHECK (
+        family(wisun_ipv6) = 6
+        AND NOT (wisun_ipv6 <<= inet '::/128')
+        AND NOT (wisun_ipv6 <<= inet '::1/128')
+        AND NOT (wisun_ipv6 <<= inet 'ff00::/8')
     ),
     CONSTRAINT chk_gateway_registrations_longitude CHECK (
         longitude >= -180 AND longitude <= 180
@@ -232,7 +249,7 @@ CREATE TABLE gateway_registrations (
         backhaul_version >= 0 AND backhaul_version <= 255
     ),
     CONSTRAINT chk_gateway_registrations_raw_message_length CHECK (
-        octet_length(raw_message) = 18
+        octet_length(raw_message) = 34
     ),
     CONSTRAINT chk_gateway_registrations_metadata_object CHECK (
         jsonb_typeof(raw_payload_metadata) = 'object'

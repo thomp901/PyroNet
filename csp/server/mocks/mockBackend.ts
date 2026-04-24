@@ -143,7 +143,8 @@ interface RecipientRecord {
 
 interface DeliveryRecord extends NotificationDelivery {}
 
-const OFFLINE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
+const DEGRADED_THRESHOLD_MS = 2 * 60 * 1000;
+const OFFLINE_THRESHOLD_MS = 5 * 60 * 1000;
 const SLA_THRESHOLD_MS = 10 * 60 * 1000;
 const NOW = "2026-04-14T20:00:00Z";
 
@@ -523,7 +524,7 @@ const timeline: TimelineRecord[] = [
     deviceId: "dev-003",
     eventCode: "derived-offline",
     title: "Offline incident derived",
-    summary: "Node has been silent for more than 24 hours based on last-seen telemetry.",
+    summary: "Node has been silent for more than 5 minutes based on last-seen telemetry.",
     occurredAt: "2026-04-14T10:30:00Z",
     status: "derived",
     severity: "warning",
@@ -589,15 +590,15 @@ const configRevisions: ConfigRevisionRecord[] = [
     createdAt: "2026-04-14T07:45:00Z",
     notes: "Current active revision for dry and windy conditions.",
     thresholds: {
-      l2TempThresh: 32,
-      l2HumidityThresh: 33,
-      l2VocThresh: 110,
-      l3TempThresh: 36,
-      l3HumidityThresh: 23,
-      l3VocThresh: 165,
-      l4VocThresh: 225,
-      l5VocThresh: 255,
-      l5Pm25Thresh: 58,
+      l2TempThresh: 35,
+      l2HumidityThresh: 40,
+      l2VocThresh: 100,
+      l3TempThresh: 45,
+      l3HumidityThresh: 25,
+      l3VocThresh: 200,
+      l4VocThresh: 300,
+      l5VocThresh: 500,
+      l5Pm25Thresh: 35,
     },
   },
 ];
@@ -772,7 +773,7 @@ function getConnectivity(lastSeenAt: string | null): ConnectivityStatus {
     return "offline";
   }
 
-  if (ageMs >= 30 * 60 * 1000) {
+  if (ageMs >= DEGRADED_THRESHOLD_MS) {
     return "degraded";
   }
 
@@ -786,6 +787,7 @@ function toNodeSummary(device: DeviceRecord): NodeSummary {
     id: device.id,
     nodeId: device.nodeId,
     ipv6Address: device.ipv6Address,
+    currentParentIpv6: device.currentParentIpv6,
     connectivity: getConnectivity(device.lastSeenAt),
     location: device.location,
     firmwareVersion: device.firmwareVersion,
@@ -904,8 +906,8 @@ function getOfflineIncidents(): AlertIncident[] {
         nodeName: device.displayName,
         severity: "warning" as const,
         status: "derived" as const,
-        title: `${device.displayName} silent for 24 hours`,
-        summary: "Derived offline incident because the node has not checked in for more than 24 hours.",
+        title: `${device.displayName} silent for 5 minutes`,
+        summary: "Derived offline incident because the node has not checked in for more than 5 minutes.",
         occurredAt: offlineAt,
         detectedAt: offlineAt,
         latestEventAt: offlineAt,
@@ -1201,6 +1203,7 @@ export function listMockGateways(): GatewayMarker[] {
     {
       id: "gateway-1",
       gatewayId: 1,
+      ipv6Address: "2001:db8:100::1",
       location: {
         lat: 40.43539954526423,
         lng: -86.92967431940525,

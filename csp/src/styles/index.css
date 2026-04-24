@@ -493,6 +493,32 @@ table {
   font-size: 0.9rem;
 }
 
+.map-legend-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  color: #f8f3e9;
+  cursor: pointer;
+}
+
+.map-legend-toggle input {
+  margin: 0;
+  width: 13px;
+  height: 13px;
+  accent-color: #1f78ff;
+  flex: 0 0 auto;
+}
+
+.map-legend-line-swatch {
+  width: 18px;
+  height: 0;
+  border-top: 2px dashed #1f78ff;
+  flex: 0 0 auto;
+}
+
 .map-legend-swatch {
   width: 12px;
   height: 12px;

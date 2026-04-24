@@ -133,7 +133,7 @@ export function AlertsPage() {
           <div className="section-heading">
             <div>
               <h2>Offline</h2>
-              <p>Derived connectivity loss incidents based on the 24-hour silence rule.</p>
+              <p>Derived connectivity loss incidents based on the 5-minute silence rule.</p>
             </div>
           </div>
           {offlineAlerts.length === 0 ? (

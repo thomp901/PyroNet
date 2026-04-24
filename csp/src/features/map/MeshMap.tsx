@@ -1,6 +1,6 @@
 import { latLngBounds, type Map as LeafletMap } from "leaflet";
 import { useEffect, useState } from "react";
-import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
+import { CircleMarker, MapContainer, Pane, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import { useNavigate } from "react-router-dom";
 import type { GatewayMarker, MeshLink, NodeSummary } from "../../api/types";
 import { formatTimestamp, riskLabel } from "../../lib/format";
@@ -25,6 +25,14 @@ const nodeLegendItems = [
 ] as const;
 
 const fallbackCenter: [number, number] = [34.2605, -118.472];
+const parentLinkColor = "#1f78ff";
+
+interface ParentLink {
+  id: string;
+  childNodeId: number;
+  parentLabel: string;
+  points: [[number, number], [number, number]];
+}
 
 function applyMeshViewport(
   map: LeafletMap,
@@ -95,6 +103,57 @@ function markerColor(node: NodeSummary) {
   return "#2f9d68";
 }
 
+function buildParentLinks(nodes: NodeSummary[], gateways: GatewayMarker[]): ParentLink[] {
+  const nodesByIpv6 = new Map(
+    nodes
+      .filter((node) => node.ipv6Address !== null)
+      .map((node) => [node.ipv6Address, node] as const),
+  );
+  const gatewaysByIpv6 = new Map(
+    gateways
+      .filter((gateway) => gateway.ipv6Address !== null)
+      .map((gateway) => [gateway.ipv6Address, gateway] as const),
+  );
+
+  return nodes.flatMap((node) => {
+    if (!node.currentParentIpv6) {
+      return [];
+    }
+
+    const parentNode = nodesByIpv6.get(node.currentParentIpv6);
+    if (parentNode && parentNode.nodeId !== node.nodeId) {
+      return [
+        {
+          id: `${node.nodeId}-node-${parentNode.nodeId}`,
+          childNodeId: node.nodeId,
+          parentLabel: `node ${parentNode.nodeId}`,
+          points: [
+            [node.location.lat, node.location.lng],
+            [parentNode.location.lat, parentNode.location.lng],
+          ],
+        },
+      ];
+    }
+
+    const parentGateway = gatewaysByIpv6.get(node.currentParentIpv6);
+    if (!parentGateway) {
+      return [];
+    }
+
+    return [
+      {
+        id: `${node.nodeId}-gateway-${parentGateway.gatewayId}`,
+        childNodeId: node.nodeId,
+        parentLabel: `gateway ${parentGateway.gatewayId}`,
+        points: [
+          [node.location.lat, node.location.lng],
+          [parentGateway.location.lat, parentGateway.location.lng],
+        ],
+      },
+    ];
+  });
+}
+
 export function MeshMap({
   nodes,
   gateways = [],
@@ -105,6 +164,8 @@ export function MeshMap({
 }: MeshMapProps) {
   const navigate = useNavigate();
   const [map, setMap] = useState<LeafletMap | null>(null);
+  const [showParentLinks, setShowParentLinks] = useState(false);
+  const parentLinks = buildParentLinks(nodes, gateways);
   const center = nodes[0]
     ? ([nodes[0].location.lat, nodes[0].location.lng] as [number, number])
     : gateways[0]
@@ -118,11 +179,35 @@ export function MeshMap({
           attribution='&copy; OpenStreetMap contributors &copy; CARTO'
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
+        <Pane name="parent-links-pane" style={{ zIndex: 380 }} />
+        <Pane name="node-markers-pane" style={{ zIndex: 420 }} />
         <RegisterMapInstance onReady={setMap} />
         <FitToMesh nodes={nodes} gateways={gateways} focusNodeId={focusNodeId} focusZoom={focusZoom} />
+        {showParentLinks
+          ? parentLinks.map((link) => (
+              <Polyline
+                key={link.id}
+                pane="parent-links-pane"
+                positions={link.points}
+                pathOptions={{
+                  color: parentLinkColor,
+                  weight: 2,
+                  opacity: 0.8,
+                  dashArray: "6 6",
+                }}
+              >
+                <Popup>
+                  <strong>Preferred parent</strong>
+                  <br />
+                  Node {link.childNodeId} to {link.parentLabel}
+                </Popup>
+              </Polyline>
+            ))
+          : null}
         {nodes.map((node) => (
           <CircleMarker
             key={node.id}
+            pane="node-markers-pane"
             center={[node.location.lat, node.location.lng]}
             radius={10}
             pathOptions={{
@@ -147,6 +232,7 @@ export function MeshMap({
         {gateways.map((gateway) => (
           <CircleMarker
             key={gateway.id}
+            pane="node-markers-pane"
             center={[gateway.location.lat, gateway.location.lng]}
             radius={8}
             pathOptions={{
@@ -189,6 +275,15 @@ export function MeshMap({
             </li>
           ))}
         </ul>
+        <label className="map-legend-toggle">
+          <input
+            type="checkbox"
+            checked={showParentLinks}
+            onChange={(event) => setShowParentLinks(event.target.checked)}
+          />
+          <span className="map-legend-line-swatch" aria-hidden="true" />
+          <span>Show Links</span>
+        </label>
       </details>
     </div>
   );

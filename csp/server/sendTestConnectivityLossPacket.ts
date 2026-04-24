@@ -3,7 +3,7 @@ import { isIP } from "node:net";
 export {};
 
 const defaultApiPort = Number(process.env.API_PORT ?? "4000");
-const OFFLINE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
+const OFFLINE_THRESHOLD_MS = 5 * 60 * 1000;
 
 function toNumber(value: string | undefined, fallback: number) {
   const parsed = Number(value);
@@ -79,10 +79,10 @@ function buildRegistrationPayload({
 async function main() {
   const nodeId = clamp(Math.round(toNumber(process.argv[2], 26)), 1, 65_535);
   const apiBaseUrl = process.argv[3]?.trim() || `http://127.0.0.1:${defaultApiPort}`;
-  const hoursAgo = Math.max(25, Math.round(toNumber(process.argv[4], 25)));
+  const minutesAgo = Math.max(6, Math.round(toNumber(process.argv[4], 6)));
   const sourceIpv6 = process.argv[5]?.trim() || `2001:db8:100::${nodeId.toString(16)}`;
   const parentIpv6 = process.argv[6]?.trim() || "2001:db8:100::1";
-  const receivedAt = new Date(Date.now() - hoursAgo * 60 * 60 * 1000);
+  const receivedAt = new Date(Date.now() - minutesAgo * 60 * 1000);
   const offlineAt = new Date(receivedAt.getTime() + OFFLINE_THRESHOLD_MS);
   const payload = buildRegistrationPayload({
     nodeId,
@@ -96,7 +96,7 @@ async function main() {
   console.info("[connectivity:packet] Sending stale 0x01 registration packet", {
     nodeId,
     apiBaseUrl,
-    hoursAgo,
+    minutesAgo,
     sourceIpv6,
     parentIpv6: parentIpv6.toLowerCase() === "none" ? null : parentIpv6,
     receivedAt: receivedAt.toISOString(),

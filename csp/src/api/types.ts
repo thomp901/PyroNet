@@ -57,6 +57,7 @@ export interface NodeSummary {
   id: string;
   nodeId: NodeId;
   ipv6Address: string | null;
+  currentParentIpv6: string | null;
   connectivity: ConnectivityStatus;
   location: Coordinate;
   firmwareVersion: string | null;
@@ -104,6 +105,7 @@ export interface MeshLink {
 export interface GatewayMarker {
   id: string;
   gatewayId: number;
+  ipv6Address: string | null;
   location: Coordinate;
   lastRegisteredAt: string | null;
   softwareVersion: string | null;

@@ -32,7 +32,7 @@ export function BorderRouterDetailPage() {
     <PageContainer title={`Border Router ${data.gateway.gatewayId}`}>
       <div className="stat-grid">
         <StatCard label="Software" value={data.gateway.softwareVersion ?? "Unknown"} />
-        <StatCard label="First registered" value={formatTimestamp(data.firstRegisteredAt)} />
+        <StatCard label="IPv6 address" value={data.gateway.ipv6Address ?? "Unknown"} />
         <StatCard label="Last registered" value={formatTimestamp(data.gateway.lastRegisteredAt)} />
         <StatCard label="Registrations" value={formatInteger(data.registrationCount)} />
       </div>
@@ -70,8 +70,8 @@ export function BorderRouterDetailPage() {
                 <dd>{formatCoordinatePair(data.gateway.location.lat, data.gateway.location.lng)}</dd>
               </div>
               <div>
-                <dt>First registered</dt>
-                <dd>{formatTimestamp(data.firstRegisteredAt)}</dd>
+                <dt>IPv6 address</dt>
+                <dd>{data.gateway.ipv6Address ?? "Unknown"}</dd>
               </div>
               <div>
                 <dt>Last registered</dt>
