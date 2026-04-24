@@ -16,6 +16,7 @@ import type {
   HistoryTrendSummary,
   HistoryWindow,
   MeshLink,
+  NearestNeighborGenerationRequest,
   NeighborMembership,
   NeighborRevision,
   NeighborRevisionDraft,
@@ -147,6 +148,18 @@ const DEGRADED_THRESHOLD_MS = 2 * 60 * 1000;
 const OFFLINE_THRESHOLD_MS = 5 * 60 * 1000;
 const SLA_THRESHOLD_MS = 10 * 60 * 1000;
 const NOW = "2026-04-14T20:00:00Z";
+
+function haversineDistanceMeters(first: { lat: number; lng: number }, second: { lat: number; lng: number }) {
+  const toRad = (value: number) => (value * Math.PI) / 180;
+  const earthRadius = 6_371_000;
+  const deltaLat = toRad(second.lat - first.lat);
+  const deltaLng = toRad(second.lng - first.lng);
+  const a =
+    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+    Math.cos(toRad(first.lat)) * Math.cos(toRad(second.lat)) * Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(earthRadius * c);
+}
 
 const devices: DeviceRecord[] = [
   {
@@ -1487,6 +1500,76 @@ export function updateMockNeighborRevision(nodeId: NodeId, draft: NeighborRevisi
     acknowledgedAt: null,
     revisionNo: nextRevisionNo,
     summary: `Revision ${nextRevisionNo} queued for ${device.displayName}.`,
+  });
+
+  return getMockConfiguration();
+}
+
+export function generateMockNearestNeighbors(request: NearestNeighborGenerationRequest): ConfigurationResponse {
+  const radiusMeters = request.radiusMeters ?? 250;
+  const maxNeighbors = request.maxNeighbors ?? 4;
+  const targetNodeIds = request.targetNodeIds?.length ? request.targetNodeIds : devices.map((device) => device.nodeId);
+
+  targetNodeIds.forEach((nodeId, index) => {
+    const device = devices.find((entry) => entry.nodeId === nodeId);
+    if (!device) {
+      return;
+    }
+
+    const existingRevision = neighborRevisions.find((entry) => entry.id === device.currentNeighborRevisionId);
+    const nextRevisionId = Math.max(...neighborRevisions.map((revision) => revision.id)) + 1;
+    const nextRevisionNo = (existingRevision?.revisionNo ?? 0) + 1;
+
+    neighborRevisions.push({
+      id: nextRevisionId,
+      deviceId: device.id,
+      revisionNo: nextRevisionNo,
+      radiusMeters,
+      revisionSource: "automatic",
+      activeFrom: NOW,
+    });
+
+    for (let membershipIndex = memberships.length - 1; membershipIndex >= 0; membershipIndex -= 1) {
+      if (memberships[membershipIndex]?.ownerDeviceId === device.id) {
+        memberships.splice(membershipIndex, 1);
+      }
+    }
+
+    devices
+      .filter((candidate) => candidate.id !== device.id)
+      .map((candidate) => ({
+        candidate,
+        distanceMeters: haversineDistanceMeters(device.location, candidate.location),
+      }))
+      .filter((candidate) => candidate.distanceMeters <= radiusMeters)
+      .sort((left, right) => left.distanceMeters - right.distanceMeters || left.candidate.nodeId - right.candidate.nodeId)
+      .slice(0, maxNeighbors)
+      .forEach((neighbor, neighborIndex) => {
+        memberships.push({
+          revisionId: nextRevisionId,
+          ownerDeviceId: device.id,
+          neighborDeviceId: neighbor.candidate.id,
+          rank: neighborIndex + 1,
+          distanceMeters: neighbor.distanceMeters,
+        });
+      });
+
+    device.currentNeighborRevisionId = nextRevisionId;
+    device.currentNeighborRevisionNo = nextRevisionNo;
+
+    if (request.queueDistribution ?? true) {
+      downlinks.unshift({
+        id: `dl-0x04-generate-${Date.now()}-${index}`,
+        commandCode: "0x04",
+        commandName: "Neighbor table distribution",
+        deviceId: device.id,
+        status: "sent",
+        sentAt: NOW,
+        acknowledgedAt: null,
+        revisionNo: nextRevisionNo,
+        summary: `Generated NN revision ${nextRevisionNo} queued for ${device.displayName}.`,
+      });
+    }
   });
 
   return getMockConfiguration();

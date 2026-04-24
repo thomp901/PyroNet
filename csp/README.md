@@ -63,6 +63,8 @@ schema.sql          PostgreSQL schema used by the API layer
 - `VITE_API_BASE_URL=/api` keeps the frontend pointed at the local API proxy by default.
 - `API_PORT=4000` controls the API server port.
 - `DATABASE_URL=postgres://...` enables live PostgreSQL reads and writes.
+- `NN_DEFAULT_RADIUS_METERS=250` and `NN_DEFAULT_MAX_NEIGHBORS=4` control automatic affected-radius NN generation.
+- `NN_ON_REGISTRATION=false` disables automatic NN regeneration when nodes join or rejoin.
 
 ## Architecture notes
 
