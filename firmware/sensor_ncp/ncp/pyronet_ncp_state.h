@@ -37,6 +37,7 @@ bool pyronet_ncp_state_request_registration_sync(uint8_t *reason_out);
 void pyronet_ncp_state_clear_registration_required(void);
 void pyronet_ncp_state_remember_local_node_id(uint16_t node_id);
 bool pyronet_ncp_state_read_current_parent(uint8_t parent_out[static PYRONET_IPV6_ADDR_LEN]);
+bool pyronet_ncp_state_read_current_parent_global(uint8_t parent_out[static PYRONET_IPV6_ADDR_LEN]);
 pyronet_ncp_router_address_result_t pyronet_ncp_state_read_router_address(
   uint8_t destination_out[static PYRONET_IPV6_ADDR_LEN]);
 uint8_t pyronet_ncp_state_copy_neighbors(uint8_t neighbors_out[PYRONET_MAX_NEIGHBORS][PYRONET_IPV6_ADDR_LEN]);

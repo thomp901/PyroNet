@@ -7555,3 +7555,901 @@
 2026-04-24T10:51:18.374-04:00 LOGGER waiting_for_port glob=/dev/cu.usbmodem*
 2026-04-24T10:51:20.380-04:00 LOGGER waiting_for_port glob=/dev/cu.usbmodem*
 2026-04-24T10:51:22.384-04:00 LOGGER waiting_for_port glob=/dev/cu.usbmodem*
+2026-04-24T12:07:47.047-04:00 LOGGER connected port=/dev/cu.usbmodemLS41069U4 baud=3000000
+2026-04-24T12:08:02.530-04:00 LOGGER connected port=/dev/cu.usbmodemLS41069U4 baud=3000000
+2026-04-24T12:08:15.339-04:00 LOGGER unexpected_error port=/dev/cu.usbmodemLS41069U4 error=[Errno 6] Device not configured
+2026-04-24T12:08:22.226-04:00 LOGGER connected port=/dev/cu.usbmodemLS41069U4 baud=3000000
+2026-04-24T12:09:27.579-04:00 LOGGER connected port=/dev/cu.usbmodemLS41069U4 baud=3000000
+2026-04-24T12:10:03.089-04:00 LOGGER connected port=/dev/cu.usbmodemLS41069U4 baud=3000000
+2026-04-24T12:10:42.799-04:00 LOGGER unexpected_error port=/dev/cu.usbmodemLS41069U4 error=[Errno 6] Device not configured
+2026-04-24T12:10:44.808-04:00 LOGGER waiting_for_port glob=/dev/cu.usbmodem*
+2026-04-24T12:10:46.814-04:00 LOGGER connected port=/dev/cu.usbmodemLS41069U4 baud=3000000
+2026-04-24T12:11:23.432-04:00 LOGGER unexpected_error port=/dev/cu.usbmodemLS41069U4 error=[Errno 6] Device not configured
+2026-04-24T12:11:25.437-04:00 LOGGER waiting_for_port glob=/dev/cu.usbmodem*
+2026-04-24T12:11:27.442-04:00 LOGGER waiting_for_port glob=/dev/cu.usbmodem*
+2026-04-24T12:11:29.445-04:00 LOGGER connected port=/dev/cu.usbmodemLS41069U4 baud=3000000
+2026-04-24T12:12:15.641-04:00 ITM reset token
+2026-04-24T12:12:15.642-04:00 SWO_SELF_TEST: CC1352P7_DIO16_ITM_CH0 phase=BOOT host_link=starting
+2026-04-24T12:12:15.642-04:00 PYRONET_NCP_INIT_OK
+2026-04-24T12:12:15.643-04:00 PYRONET_WISUN_STATUS status=MESH_BOOTSTRAP_STARTED host_state=2 queue_registration=0
+2026-04-24T12:12:15.643-04:00 HOST_UART_READY baud=115200
+2026-04-24T12:12:28.391-04:00 ITM reset token
+2026-04-24T12:12:28.392-04:00 SWO_SELF_TEST: CC1352P7_DIO16_ITM_CH0 phase=BOOT host_link=starting
+2026-04-24T12:12:28.392-04:00 PYRONET_NCP_INIT_OK
+2026-04-24T12:12:28.392-04:00 PYRONET_WISUN_STATUS status=MESH_BOOTSTRAP_STARTED host_state=2 queue_registration=0
+2026-04-24T12:12:28.392-04:00 HOST_UART_READY baud=115200
+2026-04-24T12:12:40.839-04:00 LOGGER connected port=/dev/cu.usbmodemLS41069U4 baud=3000000
+2026-04-24T12:12:42.450-04:00 ITM reset token
+2026-04-24T12:12:42.561-04:00 SWO_SELF_TEST: CC1352P7_DIO16_ITM_CH0 phase=BOOT host_link=starting
+2026-04-24T12:12:42.561-04:00 PYRONET_NCP_INIT_OK
+2026-04-24T12:12:42.561-04:00 PYRONET_WISUN_STATUS status=MESH_BOOTSTRAP_STARTED host_state=2 queue_registration=0
+2026-04-24T12:12:42.561-04:00 HOST_UART_READY baud=115200
+2026-04-24T12:12:47.681-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=5 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:12:47.785-04:00 PYRONET_WISUN_ADDR host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 gp=- gp_sec=- nd_status=-2 nd_br=- nd_prefix=- parent_status=0 parent=-
+2026-04-24T12:12:52.929-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=10 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:12:52.929-04:00 PYRONET_WISUN_ADDR host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 gp=- gp_sec=- nd_status=-2 nd_br=- nd_prefix=- parent_status=0 parent=-
+2026-04-24T12:12:58.145-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=15 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:12:58.145-04:00 PYRONET_WISUN_ADDR host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 gp=- gp_sec=- nd_status=-2 nd_br=- nd_prefix=- parent_status=0 parent=-
+2026-04-24T12:13:03.369-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=20 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:13:03.370-04:00 PYRONET_WISUN_ADDR host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 gp=- gp_sec=- nd_status=-2 nd_br=- nd_prefix=- parent_status=0 parent=-
+2026-04-24T12:13:08.583-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=25 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:13:08.584-04:00 PYRONET_WISUN_ADDR host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 gp=- gp_sec=- nd_status=-2 nd_br=- nd_prefix=- parent_status=0 parent=-
+2026-04-24T12:13:13.822-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=26 j2=0 j3=5 j4=0 j5=0 recv_pa=1 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:13:13.823-04:00 PYRONET_WISUN_ADDR host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 gp=- gp_sec=- nd_status=-2 nd_br=- nd_prefix=- parent_status=0 parent=-
+2026-04-24T12:13:19.066-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=26 j2=0 j3=10 j4=0 j5=0 recv_pa=1 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:13:19.066-04:00 PYRONET_WISUN_ADDR host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 gp=- gp_sec=- nd_status=-2 nd_br=- nd_prefix=- parent_status=0 parent=-
+2026-04-24T12:13:24.222-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=26 j2=0 j3=15 j4=0 j5=0 recv_pa=1 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:13:24.331-04:00 PYRONET_WISUN_ADDR host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 gp=- gp_sec=- nd_status=-2 nd_br=- nd_prefix=- parent_status=0 parent=-
+2026-04-24T12:13:29.402-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=26 j2=0 j3=20 j4=0 j5=0 recv_pa=1 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:13:29.523-04:00 PYRONET_WISUN_ADDR host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 gp=- gp_sec=- nd_status=-2 nd_br=- nd_prefix=- parent_status=0 parent=-
+2026-04-24T12:13:34.622-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=26 j2=0 j3=23 j4=2 j5=0 recv_pa=1 recv_pas=0 recv_pc=2 recv_pcs=0
+2026-04-24T12:13:34.734-04:00 PYRONET_WISUN_ADDR host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 gp=- gp_sec=- nd_status=-2 nd_br=- nd_prefix=- parent_status=0 parent=fe80::8e8b:48ff:fe22:858
+2026-04-24T12:13:39.842-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=26 j2=0 j3=23 j4=7 j5=0 recv_pa=2 recv_pas=0 recv_pc=2 recv_pcs=0
+2026-04-24T12:13:39.844-04:00 PYRONET_WISUN_ADDR host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 gp=- gp_sec=- nd_status=-2 nd_br=- nd_prefix=- parent_status=0 parent=fe80::8e8b:48ff:fe22:858
+2026-04-24T12:13:45.090-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=26 j2=0 j3=23 j4=12 j5=0 recv_pa=2 recv_pas=0 recv_pc=2 recv_pcs=0
+2026-04-24T12:13:45.091-04:00 PYRONET_WISUN_ADDR host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 gp=- gp_sec=- nd_status=-2 nd_br=- nd_prefix=- parent_status=0 parent=fe80::8e8b:48ff:fe22:858
+2026-04-24T12:13:50.320-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=26 j2=0 j3=23 j4=15 j5=0 recv_pa=2 recv_pas=0 recv_pc=2 recv_pcs=0
+2026-04-24T12:13:50.320-04:00 PYRONET_WISUN_ADDR host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 gp=- gp_sec=- nd_status=-2 nd_br=- nd_prefix=- parent_status=0 parent=fe80::8e8b:48ff:fe22:858
+2026-04-24T12:13:55.544-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=26 j2=0 j3=23 j4=21 j5=0 recv_pa=2 recv_pas=0 recv_pc=2 recv_pcs=0
+2026-04-24T12:13:55.544-04:00 PYRONET_WISUN_ADDR host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 gp=- gp_sec=- nd_status=-2 nd_br=- nd_prefix=- parent_status=0 parent=fe80::8e8b:48ff:fe22:858
+2026-04-24T12:14:00.741-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=26 j2=0 j3=23 j4=26 j5=0 recv_pa=2 recv_pas=0 recv_pc=2 recv_pcs=0
+2026-04-24T12:14:00.741-04:00 PYRONET_WISUN_ADDR host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 gp=fd12:3456::212:4b00:28ed:d802 gp_sec=- nd_status=-2 nd_br=- nd_prefix=- parent_status=0 par
+2026-04-24T12:14:06.004-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=26 j2=0 j3=23 j4=31 j5=0 recv_pa=2 recv_pas=0 recv_pc=2 recv_pcs=0
+2026-04-24T12:14:06.005-04:00 PYRONET_WISUN_ADDR host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 gp=fd12:3456::212:4b00:28ed:d802 gp_sec=- nd_status=-2 nd_br=- nd_prefix=- parent_status=0 par
+2026-04-24T12:14:11.123-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=26 j2=0 j3=23 j4=36 j5=0 recv_pa=2 recv_pas=0 recv_pc=2 recv_pcs=0
+2026-04-24T12:14:11.229-04:00 PYRONET_WISUN_ADDR host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 gp=fd12:3456::212:4b00:28ed:d802 gp_sec=- nd_status=-2 nd_br=- nd_prefix=- parent_status=0 par
+2026-04-24T12:14:13.959-04:00 PYRONET_WISUN_STATUS status=MESH_CONNECTED host_state=2 queue_registration=0
+2026-04-24T12:14:13.959-04:00 PYRONET_ROUTE_SELECT result=ready source=parent_fallback router_status=-1 nd_status=-2 has_global=1 has_parent=1 dest=fe80::8e8b:48ff:fe22:8504 global=fd12:345
+2026-04-24T12:14:13.960-04:00 PYRONET_WISUN_READY reason=1
+2026-04-24T12:15:28.333-04:00 HOST_RX type=HELLO seq=0 len=8
+2026-04-24T12:15:28.335-04:00 HOST_TX type=HELLO_ACK seq=0 len=8
+2026-04-24T12:15:28.335-04:00 HOST_LINK_HELLO was_ready=0 sync_pending=1
+2026-04-24T12:15:28.335-04:00 HOST_LINK_READY
+2026-04-24T12:15:29.388-04:00 HOST_RX type=HELLO seq=1 len=8
+2026-04-24T12:15:29.389-04:00 HOST_TX type=HELLO_ACK seq=1 len=8
+2026-04-24T12:15:29.389-04:00 HOST_LINK_HELLO was_ready=1 sync_pending=1
+2026-04-24T12:15:29.840-04:00 HOST_RX type=HELLO seq=2 len=8
+2026-04-24T12:15:29.840-04:00 HOST_TX type=HELLO_ACK seq=2 len=8
+2026-04-24T12:15:29.840-04:00 HOST_LINK_HELLO was_ready=1 sync_pending=1
+2026-04-24T12:15:29.840-04:00 HOST_RX type=PING seq=3 len=4
+2026-04-24T12:15:29.840-04:00 HOST_TX type=PONG seq=3 len=4
+2026-04-24T12:15:29.841-04:00 HOST_RX type=GET_STATUS seq=4 len=0
+2026-04-24T12:15:29.841-04:00 HOST_TX type=STATUS seq=4 len=8
+2026-04-24T12:15:29.841-04:00 HOST_LINK_SYNC_AFTER_STATUS
+2026-04-24T12:15:29.841-04:00 PYRONET_HOST_SYNC queue_registration=1 reason=2 host_state=3
+2026-04-24T12:15:29.841-04:00 HOST_TX type=REGISTRATION_NEEDED seq=5 len=1
+2026-04-24T12:15:29.841-04:00 HOST_RX type=SEND_REGISTRATION seq=5 len=13
+2026-04-24T12:15:29.841-04:00 HOST_TX type=TX_RESULT seq=6 len=4
+2026-04-24T12:15:29.842-04:00 PYRONET_COAP_TX type=16 uri=uplink confirmable=1 dest=fe80::8e8b:48ff:fe22:8504 payload_len=31 detail=0 service=1
+2026-04-24T12:15:29.842-04:00 PYRONET_COAP_TX_SUBMIT type=16 status=sent msg_id=64364 dest=fe80::8e8b:48ff:fe22:8504
+2026-04-24T12:15:29.842-04:00 PYRONET_REGISTRATION_SUBMIT node_id=1001
+2026-04-24T12:15:30.005-04:00 HOST_TX type=TX_RESULT seq=7 len=4
+2026-04-24T12:15:30.227-04:00 PYRONET_COAP_ACK type=16 detail=0 msg_id=64364 src=fe80::8e8b:48ff:fe22:8504 port=5683 status=0 code=68
+2026-04-24T12:15:30.227-04:00 HOST_TX type=TX_RESULT seq=8 len=4
+2026-04-24T12:15:33.388-04:00 PYRONET_COAP_RX src=fe80::8e8b:48ff:fe22:8504 port=58921 code=2 payload_type=5 payload_len=6 service=1
+2026-04-24T12:15:33.389-04:00 PYRONET_TIME_SYNC_RX unix_time_s=1777047330
+2026-04-24T12:15:33.389-04:00 HOST_TX type=TIME_SYNC_UPDATE seq=9 len=4
+2026-04-24T12:15:33.498-04:00 PYRONET_COAP_RX src=fe80::8e8b:48ff:fe22:8504 port=42892 code=2 payload_type=4 payload_len=37 service=1
+2026-04-24T12:16:27.976-04:00 HOST_RX type=SEND_SENSOR_REPORT seq=6 len=16
+2026-04-24T12:16:27.978-04:00 HOST_TX type=TX_RESULT seq=10 len=4
+2026-04-24T12:16:27.978-04:00 PYRONET_COAP_TX type=17 uri=uplink confirmable=0 dest=fe80::8e8b:48ff:fe22:8504 payload_len=18 detail=0 service=1
+2026-04-24T12:16:27.978-04:00 PYRONET_COAP_TX_SUBMIT type=17 status=sent msg_id=0 dest=fe80::8e8b:48ff:fe22:8504
+2026-04-24T12:16:27.978-04:00 HOST_TX type=TX_RESULT seq=11 len=4
+2026-04-24T12:17:27.816-04:00 HOST_RX type=SEND_SENSOR_REPORT seq=7 len=16
+2026-04-24T12:17:27.818-04:00 HOST_TX type=TX_RESULT seq=12 len=4
+2026-04-24T12:17:27.818-04:00 PYRONET_COAP_TX type=17 uri=uplink confirmable=0 dest=fe80::8e8b:48ff:fe22:8504 payload_len=18 detail=0 service=1
+2026-04-24T12:17:27.818-04:00 PYRONET_COAP_TX_SUBMIT type=17 status=sent msg_id=0 dest=fe80::8e8b:48ff:fe22:8504
+2026-04-24T12:17:27.818-04:00 HOST_TX type=TX_RESULT seq=13 len=4
+2026-04-24T12:18:27.633-04:00 HOST_RX type=SEND_SENSOR_REPORT seq=8 len=16
+2026-04-24T12:18:27.633-04:00 HOST_TX type=TX_RESULT seq=14 len=4
+2026-04-24T12:18:27.634-04:00 PYRONET_COAP_TX type=17 uri=uplink confirmable=0 dest=fe80::8e8b:48ff:fe22:8504 payload_len=18 detail=0 service=1
+2026-04-24T12:18:27.634-04:00 PYRONET_COAP_TX_SUBMIT type=17 status=sent msg_id=0 dest=fe80::8e8b:48ff:fe22:8504
+2026-04-24T12:18:27.634-04:00 HOST_TX type=TX_RESULT seq=15 len=4
+2026-04-24T12:19:27.415-04:00 HOST_RX type=SEND_SENSOR_REPORT seq=9 len=16
+2026-04-24T12:19:27.416-04:00 HOST_TX type=TX_RESULT seq=16 len=4
+2026-04-24T12:19:27.416-04:00 PYRONET_COAP_TX type=17 uri=uplink confirmable=0 dest=fe80::8e8b:48ff:fe22:8504 payload_len=18 detail=0 service=1
+2026-04-24T12:19:27.416-04:00 PYRONET_COAP_TX_SUBMIT type=17 status=sent msg_id=0 dest=fe80::8e8b:48ff:fe22:8504
+2026-04-24T12:19:27.416-04:00 HOST_TX type=TX_RESULT seq=17 len=4
+2026-04-24T12:20:27.209-04:00 HOST_RX type=SEND_SENSOR_REPORT seq=10 len=16
+2026-04-24T12:20:27.214-04:00 HOST_TX type=TX_RESULT seq=18 len=4
+2026-04-24T12:20:27.214-04:00 PYRONET_COAP_TX type=17 uri=uplink confirmable=0 dest=fe80::8e8b:48ff:fe22:8504 payload_len=18 detail=0 service=1
+2026-04-24T12:20:27.214-04:00 PYRONET_COAP_TX_SUBMIT type=17 status=sent msg_id=0 dest=fe80::8e8b:48ff:fe22:8504
+2026-04-24T12:20:27.216-04:00 HOST_TX type=TX_RESULT seq=19 len=4
+2026-04-24T12:21:27.100-04:00 HOST_RX type=SEND_SENSOR_REPORT seq=11 len=16
+2026-04-24T12:21:27.101-04:00 HOST_TX type=TX_RESULT seq=20 len=4
+2026-04-24T12:21:27.101-04:00 PYRONET_COAP_TX type=17 uri=uplink confirmable=0 dest=fe80::8e8b:48ff:fe22:8504 payload_len=18 detail=0 service=1
+2026-04-24T12:21:27.101-04:00 PYRONET_COAP_TX_SUBMIT type=17 status=sent msg_id=0 dest=fe80::8e8b:48ff:fe22:8504
+2026-04-24T12:21:27.101-04:00 HOST_TX type=TX_RESULT seq=21 len=4
+2026-04-24T12:22:26.851-04:00 HOST_RX type=SEND_SENSOR_REPORT seq=12 len=16
+2026-04-24T12:22:26.855-04:00 HOST_TX type=TX_RESULT seq=22 len=4
+2026-04-24T12:22:26.855-04:00 PYRONET_COAP_TX type=17 uri=uplink confirmable=0 dest=fe80::8e8b:48ff:fe22:8504 payload_len=18 detail=0 service=1
+2026-04-24T12:22:26.855-04:00 PYRONET_COAP_TX_SUBMIT type=17 status=sent msg_id=0 dest=fe80::8e8b:48ff:fe22:8504
+2026-04-24T12:22:26.856-04:00 HOST_TX type=TX_RESULT seq=23 len=4
+2026-04-24T12:23:26.659-04:00 HOST_RX type=SEND_SENSOR_REPORT seq=13 len=16
+2026-04-24T12:23:26.660-04:00 HOST_TX type=TX_RESULT seq=24 len=4
+2026-04-24T12:23:26.660-04:00 PYRONET_COAP_TX type=17 uri=uplink confirmable=0 dest=fe80::8e8b:48ff:fe22:8504 payload_len=18 detail=0 service=1
+2026-04-24T12:23:26.660-04:00 PYRONET_COAP_TX_SUBMIT type=17 status=sent msg_id=0 dest=fe80::8e8b:48ff:fe22:8504
+2026-04-24T12:23:26.660-04:00 HOST_TX type=TX_RESULT seq=25 len=4
+2026-04-24T12:24:04.688-04:00 LOGGER unexpected_error port=/dev/cu.usbmodemLS41069U4 error=[Errno 6] Device not configured
+2026-04-24T12:24:06.694-04:00 LOGGER waiting_for_port glob=/dev/cu.usbmodem*
+2026-04-24T12:24:08.699-04:00 LOGGER connected port=/dev/cu.usbmodemLS41069U4 baud=3000000
+2026-04-24T12:24:13.155-04:00 ITM reset token
+2026-04-24T12:24:13.155-04:00 SWO_SELF_TEST: CC1352P7_DIO16_ITM_CH0 phase=BOOT host_link=starting
+2026-04-24T12:24:13.155-04:00 PYRONET_NCP_INIT_OK
+2026-04-24T12:24:13.155-04:00 PYRONET_WISUN_STATUS status=MESH_BOOTSTRAP_STARTED host_state=2 queue_registration=0
+2026-04-24T12:24:13.155-04:00 HOST_UART_READY baud=115200
+2026-04-24T12:24:25.889-04:00 ITM reset token
+2026-04-24T12:24:26.000-04:00 SWO_SELF_TEST: CC1352P7_DIO16_ITM_CH0 phase=BOOT host_link=starting
+2026-04-24T12:24:26.001-04:00 PYRONET_NCP_INIT_OK
+2026-04-24T12:24:26.001-04:00 PYRONET_WISUN_STATUS status=MESH_BOOTSTRAP_STARTED host_state=2 queue_registration=0
+2026-04-24T12:24:26.002-04:00 HOST_UART_READY baud=115200
+2026-04-24T12:24:33.351-04:00 LOGGER connected port=/dev/cu.usbmodemLS41069U4 baud=3000000
+2026-04-24T12:24:35.136-04:00 ITM reset token
+2026-04-24T12:24:35.136-04:00 SWO_SELF_TEST: CC1352P7_DIO16_ITM_CH0 phase=BOOT host_link=starting
+2026-04-24T12:24:35.136-04:00 PYRONET_NCP_INIT_OK
+2026-04-24T12:24:35.136-04:00 PYRONET_WISUN_STATUS status=MESH_BOOTSTRAP_STARTED host_state=2 queue_registration=0
+2026-04-24T12:24:35.136-04:00 HOST_UART_READY baud=115200
+2026-04-24T12:24:40.303-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=5 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:24:40.309-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:24:40.309-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:24:40.310-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:25:55.971-04:00 LOGGER connected port=/dev/cu.usbmodemLS41069U4 baud=3000000
+2026-04-24T12:25:59.372-04:00 ITM reset token
+2026-04-24T12:25:59.372-04:00 SWO_SELF_TEST: CC1352P7_DIO16_ITM_CH0 phase=BOOT host_link=starting
+2026-04-24T12:25:59.372-04:00 PYRONET_NCP_INIT_OK
+2026-04-24T12:25:59.372-04:00 PYRONET_WISUN_STATUS status=MESH_BOOTSTRAP_STARTED host_state=2 queue_registration=0
+2026-04-24T12:25:59.372-04:00 HOST_UART_READY baud=115200
+2026-04-24T12:26:00.085-04:00 HOST_RX type=HELLO seq=25 len=8
+2026-04-24T12:26:00.085-04:00 HOST_TX type=HELLO_ACK seq=25 len=8
+2026-04-24T12:26:00.085-04:00 HOST_LINK_HELLO was_ready=0 sync_pending=1
+2026-04-24T12:26:00.085-04:00 HOST_LINK_READY
+2026-04-24T12:26:00.085-04:00 HOST_RX type=PING seq=26 len=4
+2026-04-24T12:26:00.085-04:00 HOST_TX type=PONG seq=26 len=4
+2026-04-24T12:26:00.085-04:00 HOST_RX type=GET_STATUS seq=27 len=0
+2026-04-24T12:26:00.085-04:00 HOST_TX type=STATUS seq=27 len=8
+2026-04-24T12:26:00.085-04:00 HOST_LINK_SYNC_AFTER_STATUS
+2026-04-24T12:26:02.167-04:00 HOST_RX type=HELLO seq=0 len=8
+2026-04-24T12:26:02.167-04:00 HOST_TX type=HELLO_ACK seq=0 len=8
+2026-04-24T12:26:02.167-04:00 HOST_LINK_HELLO was_ready=1 sync_pending=1
+2026-04-24T12:26:03.305-04:00 HOST_RX type=HELLO seq=1 len=8
+2026-04-24T12:26:03.305-04:00 HOST_TX type=HELLO_ACK seq=1 len=8
+2026-04-24T12:26:03.305-04:00 HOST_LINK_HELLO was_ready=1 sync_pending=1
+2026-04-24T12:26:03.740-04:00 HOST_RX type=HELLO seq=2 len=8
+2026-04-24T12:26:03.740-04:00 HOST_TX type=HELLO_ACK seq=2 len=8
+2026-04-24T12:26:03.796-04:00 HOST_LINK_HELLO was_ready=1 sync_pending=1
+2026-04-24T12:26:03.796-04:00 HOST_RX type=PING seq=3 len=4
+2026-04-24T12:26:03.796-04:00 HOST_TX type=PONG seq=3 len=4
+2026-04-24T12:26:03.796-04:00 HOST_RX type=GET_STATUS seq=4 len=0
+2026-04-24T12:26:03.796-04:00 HOST_TX type=STATUS seq=4 len=8
+2026-04-24T12:26:03.796-04:00 HOST_LINK_SYNC_AFTER_STATUS
+2026-04-24T12:26:04.502-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=5 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:26:04.502-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:26:04.502-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:26:04.502-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:28:07.349-04:00 LOGGER unexpected_error port=/dev/cu.usbmodemLS41069U4 error=[Errno 6] Device not configured
+2026-04-24T12:28:09.350-04:00 LOGGER waiting_for_port glob=/dev/cu.usbmodem*
+2026-04-24T12:28:11.353-04:00 LOGGER connected port=/dev/cu.usbmodemLS41069U4 baud=3000000
+2026-04-24T12:28:18.585-04:00 ITM reset token
+2026-04-24T12:28:18.690-04:00 SWO_SELF_TEST: CC1352P7_DIO16_ITM_CH0 phase=BOOT host_link=starting
+2026-04-24T12:28:18.690-04:00 PYRONET_NCP_INIT_OK
+2026-04-24T12:28:18.691-04:00 PYRONET_WISUN_STATUS status=MESH_BOOTSTRAP_STARTED host_state=2 queue_registration=0
+2026-04-24T12:28:18.691-04:00 HOST_UART_READY baud=115200
+2026-04-24T12:28:31.119-04:00 ITM reset token
+2026-04-24T12:28:31.120-04:00 SWO_SELF_TEST: CC1352P7_DIO16_ITM_CH0 phase=BOOT host_link=starting
+2026-04-24T12:28:31.120-04:00 PYRONET_NCP_INIT_OK
+2026-04-24T12:28:31.121-04:00 PYRONET_WISUN_STATUS status=MESH_BOOTSTRAP_STARTED host_state=2 queue_registration=0
+2026-04-24T12:28:31.121-04:00 HOST_UART_READY baud=115200
+2026-04-24T12:28:39.250-04:00 LOGGER connected port=/dev/cu.usbmodemLS41069U4 baud=3000000
+2026-04-24T12:28:41.217-04:00 ITM reset token
+2026-04-24T12:28:41.325-04:00 SWO_SELF_TEST: CC1352P7_DIO16_ITM_CH0 phase=BOOT host_link=starting
+2026-04-24T12:28:41.325-04:00 PYRONET_NCP_INIT_OK
+2026-04-24T12:28:41.325-04:00 PYRONET_WISUN_STATUS status=MESH_BOOTSTRAP_STARTED host_state=2 queue_registration=0
+2026-04-24T12:28:41.325-04:00 HOST_UART_READY baud=115200
+2026-04-24T12:28:46.453-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=5 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:28:46.561-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:28:46.561-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:28:46.561-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:28:46.561-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:28:51.660-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=10 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:28:51.768-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:28:51.768-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:28:51.768-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:28:51.768-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:28:56.878-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=15 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:28:56.879-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:28:56.879-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:28:56.879-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:28:56.988-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:29:02.105-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=20 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:29:02.107-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:29:02.107-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:29:02.214-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:29:02.214-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:29:07.317-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=25 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:29:07.317-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:29:07.317-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:29:07.318-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:29:07.432-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:29:12.503-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=31 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:29:12.503-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:29:12.503-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:29:12.503-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:29:12.611-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:29:17.728-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=32 j2=0 j3=4 j4=0 j5=0 recv_pa=1 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:29:17.728-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:29:17.728-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:29:17.728-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:29:17.841-04:00 PYRONET_PARENT_METRIC if=1 join=3 pan=65534 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:29:22.938-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=32 j2=0 j3=9 j4=0 j5=0 recv_pa=1 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:29:22.939-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:29:22.939-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:29:22.939-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:29:23.051-04:00 PYRONET_PARENT_METRIC if=1 join=3 pan=65534 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:29:28.175-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=32 j2=0 j3=14 j4=0 j5=0 recv_pa=1 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:29:28.176-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:29:28.229-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:29:28.229-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:29:28.229-04:00 PYRONET_PARENT_METRIC if=1 join=3 pan=65534 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:29:33.418-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=32 j2=0 j3=18 j4=1 j5=0 recv_pa=1 recv_pas=0 recv_pc=3 recv_pcs=0
+2026-04-24T12:29:33.418-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:29:33.418-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:29:33.418-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8588 cand_gp=-
+2026-04-24T12:29:33.418-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=127 rsl_out=255
+2026-04-24T12:29:38.593-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=32 j2=0 j3=18 j4=6 j5=0 recv_pa=1 recv_pas=0 recv_pc=5 recv_pcs=0
+2026-04-24T12:29:38.593-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=fd12:3456::212:4b00:28ed:d802 node_gp_sec=-
+2026-04-24T12:29:38.593-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:29:38.706-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8588 cand_gp=fd12:3456::8e8b:48ff:fe22:8588
+2026-04-24T12:29:38.706-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=126 rsl_out=255
+2026-04-24T12:29:43.893-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=32 j2=0 j3=18 j4=11 j5=0 recv_pa=1 recv_pas=0 recv_pc=5 recv_pcs=0
+2026-04-24T12:29:43.894-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=fd12:3456::212:4b00:28ed:d802 node_gp_sec=-
+2026-04-24T12:29:43.894-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:29:43.894-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8588 cand_gp=fd12:3456::8e8b:48ff:fe22:8588
+2026-04-24T12:29:43.894-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=126 rsl_out=255
+2026-04-24T12:29:49.096-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=32 j2=0 j3=18 j4=14 j5=0 recv_pa=2 recv_pas=0 recv_pc=5 recv_pcs=0
+2026-04-24T12:29:49.096-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=fd12:3456::212:4b00:28ed:d802 node_gp_sec=-
+2026-04-24T12:29:49.097-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:29:49.097-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8588 cand_gp=fd12:3456::8e8b:48ff:fe22:8588
+2026-04-24T12:29:49.097-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=126 rsl_out=255
+2026-04-24T12:29:54.056-04:00 PYRONET_WISUN_STATUS status=MESH_CONNECTED host_state=2 queue_registration=0
+2026-04-24T12:29:54.057-04:00 PYRONET_ROUTE_SELECT result=ready source=parent_fallback router_status=-1 nd_status=-2 has_gp=1 has_parent=1
+2026-04-24T12:29:54.057-04:00 PYRONET_ROUTE_ADDR dest=fe80::8e8b:48ff:fe22:8588 node_gp=fd12:3456::212:4b00:28ed:d802 parent_ll=fe80::8e8b:48ff:fe22:8588 nd_br=-
+2026-04-24T12:29:54.057-04:00 PYRONET_ROUTE_CAND source=node_gp_parent_iid addr=fd12:3456::8e8b:48ff:fe22:8588
+2026-04-24T12:29:54.057-04:00 PYRONET_WISUN_READY reason=1
+2026-04-24T12:30:48.356-04:00 HOST_RX type=HELLO seq=0 len=8
+2026-04-24T12:30:48.414-04:00 HOST_TX type=HELLO_ACK seq=0 len=8
+2026-04-24T12:30:48.414-04:00 HOST_LINK_HELLO was_ready=0 sync_pending=1
+2026-04-24T12:30:48.414-04:00 HOST_LINK_READY
+2026-04-24T12:30:49.484-04:00 HOST_RX type=HELLO seq=1 len=8
+2026-04-24T12:30:49.484-04:00 HOST_TX type=HELLO_ACK seq=1 len=8
+2026-04-24T12:30:49.485-04:00 HOST_LINK_HELLO was_ready=1 sync_pending=1
+2026-04-24T12:30:49.986-04:00 HOST_RX type=HELLO seq=2 len=8
+2026-04-24T12:30:49.986-04:00 HOST_TX type=HELLO_ACK seq=2 len=8
+2026-04-24T12:30:49.989-04:00 HOST_LINK_HELLO was_ready=1 sync_pending=1
+2026-04-24T12:30:49.989-04:00 HOST_RX type=PING seq=3 len=4
+2026-04-24T12:30:49.990-04:00 HOST_TX type=PONG seq=3 len=4
+2026-04-24T12:30:49.990-04:00 HOST_RX type=GET_STATUS seq=4 len=0
+2026-04-24T12:30:49.990-04:00 HOST_TX type=STATUS seq=4 len=8
+2026-04-24T12:30:49.990-04:00 HOST_LINK_SYNC_AFTER_STATUS
+2026-04-24T12:30:49.990-04:00 PYRONET_HOST_SYNC queue_registration=1 reason=2 host_state=3
+2026-04-24T12:30:49.990-04:00 HOST_TX type=REGISTRATION_NEEDED seq=5 len=1
+2026-04-24T12:30:49.990-04:00 HOST_RX type=SEND_REGISTRATION seq=5 len=13
+2026-04-24T12:30:49.991-04:00 HOST_TX type=TX_RESULT seq=6 len=4
+2026-04-24T12:30:49.991-04:00 PYRONET_COAP_TX type=16 uri=uplink confirmable=1 dest=fe80::8e8b:48ff:fe22:8588 payload_len=31 detail=0 service=1
+2026-04-24T12:30:49.991-04:00 PYRONET_COAP_TX_SUBMIT type=16 status=sent msg_id=31313 dest=fe80::8e8b:48ff:fe22:8588
+2026-04-24T12:30:49.991-04:00 PYRONET_REGISTRATION_SUBMIT node_id=1001
+2026-04-24T12:30:49.991-04:00 HOST_TX type=TX_RESULT seq=7 len=4
+2026-04-24T12:30:50.327-04:00 PYRONET_COAP_ACK type=16 detail=0 msg_id=31313 src=fe80::8e8b:48ff:fe22:8588 port=5683 status=0 code=128
+2026-04-24T12:30:50.328-04:00 HOST_TX type=TX_RESULT seq=8 len=4
+2026-04-24T12:30:59.352-04:00 PYRONET_WISUN_STATUS status=MESH_CONNECTED host_state=3 queue_registration=0
+2026-04-24T12:31:13.297-04:00 HOST_RX type=HELLO seq=0 len=8
+2026-04-24T12:31:13.297-04:00 HOST_TX type=HELLO_ACK seq=0 len=8
+2026-04-24T12:31:13.297-04:00 HOST_LINK_HELLO was_ready=1 sync_pending=1
+2026-04-24T12:31:14.346-04:00 HOST_RX type=HELLO seq=1 len=8
+2026-04-24T12:31:14.346-04:00 HOST_TX type=HELLO_ACK seq=1 len=8
+2026-04-24T12:31:14.346-04:00 HOST_LINK_HELLO was_ready=1 sync_pending=1
+2026-04-24T12:31:14.849-04:00 HOST_RX type=HELLO seq=2 len=8
+2026-04-24T12:31:14.850-04:00 HOST_TX type=HELLO_ACK seq=2 len=8
+2026-04-24T12:31:14.850-04:00 HOST_LINK_HELLO was_ready=1 sync_pending=1
+2026-04-24T12:31:14.850-04:00 HOST_RX type=PING seq=3 len=4
+2026-04-24T12:31:14.850-04:00 HOST_TX type=PONG seq=3 len=4
+2026-04-24T12:31:14.850-04:00 HOST_RX type=GET_STATUS seq=4 len=0
+2026-04-24T12:31:14.850-04:00 HOST_TX type=STATUS seq=4 len=8
+2026-04-24T12:31:14.850-04:00 HOST_LINK_SYNC_AFTER_STATUS
+2026-04-24T12:31:14.850-04:00 PYRONET_HOST_SYNC queue_registration=1 reason=2 host_state=3
+2026-04-24T12:31:14.850-04:00 HOST_TX type=REGISTRATION_NEEDED seq=14 len=1
+2026-04-24T12:31:14.850-04:00 HOST_RX type=SEND_REGISTRATION seq=5 len=13
+2026-04-24T12:31:14.850-04:00 HOST_TX type=TX_RESULT seq=15 len=4
+2026-04-24T12:31:14.851-04:00 PYRONET_COAP_TX type=16 uri=uplink confirmable=1 dest=fe80::8e8b:48ff:fe22:8588 payload_len=31 detail=0 service=1
+2026-04-24T12:31:14.963-04:00 PYRONET_COAP_TX_SUBMIT type=16 status=sent msg_id=31314 dest=fe80::8e8b:48ff:fe22:8588
+2026-04-24T12:31:14.963-04:00 PYRONET_REGISTRATION_SUBMIT node_id=1001
+2026-04-24T12:31:14.964-04:00 HOST_TX type=TX_RESULT seq=16 len=4
+2026-04-24T12:31:14.964-04:00 PYRONET_COAP_ACK type=16 detail=0 msg_id=31314 src=fe80::8e8b:48ff:fe22:8588 port=5683 status=0 code=128
+2026-04-24T12:31:14.964-04:00 HOST_TX type=TX_RESULT seq=17 len=4
+2026-04-24T12:31:39.257-04:00 HOST_RX type=HELLO seq=0 len=8
+2026-04-24T12:31:39.257-04:00 HOST_TX type=HELLO_ACK seq=0 len=8
+2026-04-24T12:31:39.257-04:00 HOST_LINK_HELLO was_ready=1 sync_pending=1
+2026-04-24T12:31:40.296-04:00 HOST_RX type=HELLO seq=1 len=8
+2026-04-24T12:31:40.297-04:00 HOST_TX type=HELLO_ACK seq=1 len=8
+2026-04-24T12:31:40.297-04:00 HOST_LINK_HELLO was_ready=1 sync_pending=1
+2026-04-24T12:31:40.852-04:00 HOST_RX type=HELLO seq=2 len=8
+2026-04-24T12:31:40.852-04:00 HOST_TX type=HELLO_ACK seq=2 len=8
+2026-04-24T12:31:40.852-04:00 HOST_LINK_HELLO was_ready=1 sync_pending=1
+2026-04-24T12:31:40.852-04:00 HOST_RX type=PING seq=3 len=4
+2026-04-24T12:31:40.852-04:00 HOST_TX type=PONG seq=3 len=4
+2026-04-24T12:31:40.853-04:00 HOST_RX type=GET_STATUS seq=4 len=0
+2026-04-24T12:31:40.853-04:00 HOST_TX type=STATUS seq=4 len=8
+2026-04-24T12:31:40.853-04:00 HOST_LINK_SYNC_AFTER_STATUS
+2026-04-24T12:31:40.853-04:00 PYRONET_HOST_SYNC queue_registration=1 reason=2 host_state=3
+2026-04-24T12:31:40.853-04:00 HOST_TX type=REGISTRATION_NEEDED seq=23 len=1
+2026-04-24T12:31:40.854-04:00 HOST_RX type=SEND_REGISTRATION seq=5 len=13
+2026-04-24T12:31:40.854-04:00 HOST_TX type=TX_RESULT seq=24 len=4
+2026-04-24T12:31:40.854-04:00 PYRONET_COAP_TX type=16 uri=uplink confirmable=1 dest=fe80::8e8b:48ff:fe22:8588 payload_len=31 detail=0 service=1
+2026-04-24T12:31:40.911-04:00 PYRONET_COAP_TX_SUBMIT type=16 status=sent msg_id=31315 dest=fe80::8e8b:48ff:fe22:8588
+2026-04-24T12:31:40.911-04:00 PYRONET_REGISTRATION_SUBMIT node_id=1001
+2026-04-24T12:31:40.911-04:00 HOST_TX type=TX_RESULT seq=25 len=4
+2026-04-24T12:31:40.912-04:00 PYRONET_COAP_ACK type=16 detail=0 msg_id=31315 src=fe80::8e8b:48ff:fe22:8588 port=5683 status=0 code=128
+2026-04-24T12:31:40.912-04:00 HOST_TX type=TX_RESULT seq=26 len=4
+2026-04-24T12:34:40.227-04:00 LOGGER connected port=/dev/cu.usbmodemLS41069U4 baud=3000000
+2026-04-24T12:34:41.885-04:00 ITM reset token
+2026-04-24T12:34:41.996-04:00 SWO_SELF_TEST: CC1352P7_DIO16_ITM_CH0 phase=BOOT host_link=starting
+2026-04-24T12:34:41.996-04:00 PYRONET_NCP_INIT_OK
+2026-04-24T12:34:41.996-04:00 PYRONET_WISUN_STATUS status=MESH_BOOTSTRAP_STARTED host_state=2 queue_registration=0
+2026-04-24T12:34:41.996-04:00 HOST_UART_READY baud=115200
+2026-04-24T12:34:47.209-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=5 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:34:47.209-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:34:47.209-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:34:47.210-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:34:47.210-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:34:52.383-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=10 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:34:52.384-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:34:52.384-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:34:52.384-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:34:52.384-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:34:57.567-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=15 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:34:57.567-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:34:57.567-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:34:57.567-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:34:57.567-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:35:02.784-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=20 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:35:02.784-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:35:02.785-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:35:02.785-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:35:02.785-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:35:08.034-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=25 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:35:08.035-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:35:08.035-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:35:08.035-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:35:08.035-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:35:13.204-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=31 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:35:13.204-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:35:13.204-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:35:13.204-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:35:13.204-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:35:18.424-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=36 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:35:18.424-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:35:18.424-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:35:18.425-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:35:18.425-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:35:23.617-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=41 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:35:23.617-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:35:23.617-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:35:23.617-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:35:23.618-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:35:28.783-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=46 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:35:28.784-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:35:28.784-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:35:28.784-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:35:28.784-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:35:34.047-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=51 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:35:34.048-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:35:34.048-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:35:34.048-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:35:34.048-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:35:39.221-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=56 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:35:39.221-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:35:39.221-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:35:39.221-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:35:39.222-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:35:44.437-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=61 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:35:44.437-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:35:44.437-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:35:44.437-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:35:44.437-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:35:49.698-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=64 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:35:49.698-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:35:49.699-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:35:49.699-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:35:49.699-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:35:54.921-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=67 j2=0 j3=3 j4=0 j5=0 recv_pa=1 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:35:54.921-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:35:54.921-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:35:54.922-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:35:54.922-04:00 PYRONET_PARENT_METRIC if=1 join=3 pan=65534 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:36:00.143-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=67 j2=0 j3=8 j4=0 j5=0 recv_pa=1 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:36:00.143-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:36:00.143-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:36:00.143-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:36:00.143-04:00 PYRONET_PARENT_METRIC if=1 join=3 pan=65534 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:36:05.341-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=67 j2=0 j3=13 j4=0 j5=0 recv_pa=1 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:36:05.342-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:36:05.342-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:36:05.342-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:36:05.342-04:00 PYRONET_PARENT_METRIC if=1 join=3 pan=65534 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:36:10.597-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=67 j2=0 j3=18 j4=0 j5=0 recv_pa=2 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:36:10.597-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:36:10.598-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:36:10.598-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:36:10.599-04:00 PYRONET_PARENT_METRIC if=1 join=3 pan=65534 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:36:15.788-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=67 j2=0 j3=21 j4=2 j5=0 recv_pa=2 recv_pas=0 recv_pc=1 recv_pcs=0
+2026-04-24T12:36:15.788-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:36:15.788-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:36:15.789-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8504 cand_gp=-
+2026-04-24T12:36:15.789-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=255 rsl_out=255
+2026-04-24T12:36:20.988-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=67 j2=0 j3=21 j4=7 j5=0 recv_pa=2 recv_pas=0 recv_pc=1 recv_pcs=0
+2026-04-24T12:36:20.989-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:36:20.989-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:36:20.989-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8504 cand_gp=-
+2026-04-24T12:36:20.989-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=255 rsl_out=255
+2026-04-24T12:36:26.201-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=67 j2=0 j3=21 j4=13 j5=0 recv_pa=2 recv_pas=0 recv_pc=3 recv_pcs=0
+2026-04-24T12:36:26.201-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:36:26.201-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:36:26.202-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8504 cand_gp=-
+2026-04-24T12:36:26.203-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=255 rsl_out=255
+2026-04-24T12:36:31.400-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=67 j2=0 j3=21 j4=18 j5=0 recv_pa=2 recv_pas=0 recv_pc=4 recv_pcs=0
+2026-04-24T12:36:31.400-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:36:31.400-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:36:31.400-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8504 cand_gp=-
+2026-04-24T12:36:31.401-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=255 rsl_out=255
+2026-04-24T12:36:36.568-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=67 j2=0 j3=21 j4=23 j5=0 recv_pa=3 recv_pas=0 recv_pc=4 recv_pcs=0
+2026-04-24T12:36:36.568-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:36:36.568-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:36:36.568-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8504 cand_gp=-
+2026-04-24T12:36:36.568-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=152 rsl_out=255
+2026-04-24T12:36:41.824-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=67 j2=0 j3=21 j4=28 j5=0 recv_pa=3 recv_pas=0 recv_pc=4 recv_pcs=0
+2026-04-24T12:36:41.824-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=fd12:3456::212:4b00:28ed:d802 node_gp_sec=-
+2026-04-24T12:36:41.824-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:36:41.881-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8504 cand_gp=fd12:3456::8e8b:48ff:fe22:8504
+2026-04-24T12:36:41.881-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=152 rsl_out=255
+2026-04-24T12:36:47.003-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=67 j2=0 j3=21 j4=33 j5=0 recv_pa=3 recv_pas=0 recv_pc=4 recv_pcs=0
+2026-04-24T12:36:47.114-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=fd12:3456::212:4b00:28ed:d802 node_gp_sec=-
+2026-04-24T12:36:47.114-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:36:47.114-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8504 cand_gp=fd12:3456::8e8b:48ff:fe22:8504
+2026-04-24T12:36:47.114-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=152 rsl_out=255
+2026-04-24T12:36:52.291-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=67 j2=0 j3=21 j4=38 j5=0 recv_pa=3 recv_pas=0 recv_pc=5 recv_pcs=0
+2026-04-24T12:36:52.291-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=fd12:3456::212:4b00:28ed:d802 node_gp_sec=-
+2026-04-24T12:36:52.291-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:36:52.291-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8504 cand_gp=fd12:3456::8e8b:48ff:fe22:8504
+2026-04-24T12:36:52.291-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=152 rsl_out=255
+2026-04-24T12:36:54.270-04:00 PYRONET_WISUN_STATUS status=MESH_CONNECTED host_state=2 queue_registration=0
+2026-04-24T12:36:54.382-04:00 PYRONET_ROUTE_SELECT result=ready source=derived_parent_global router_status=-1 nd_status=-2 has_gp=1 has_parent=1
+2026-04-24T12:36:54.382-04:00 PYRONET_ROUTE_ADDR dest=fd12:3456::8e8b:48ff:fe22:8504 node_gp=fd12:3456::212:4b00:28ed:d802 parent_ll=fe80::8e8b:48ff:fe22:8504 nd_br=-
+2026-04-24T12:36:54.382-04:00 PYRONET_ROUTE_CAND source=node_gp_parent_iid addr=fd12:3456::8e8b:48ff:fe22:8504
+2026-04-24T12:36:54.383-04:00 PYRONET_WISUN_READY reason=1
+2026-04-24T12:37:34.239-04:00 HOST_RX type=HELLO seq=0 len=8
+2026-04-24T12:37:34.239-04:00 HOST_TX type=HELLO_ACK seq=0 len=8
+2026-04-24T12:37:34.239-04:00 HOST_LINK_HELLO was_ready=0 sync_pending=1
+2026-04-24T12:37:34.239-04:00 HOST_LINK_READY
+2026-04-24T12:37:35.290-04:00 HOST_RX type=HELLO seq=1 len=8
+2026-04-24T12:37:35.291-04:00 HOST_TX type=HELLO_ACK seq=1 len=8
+2026-04-24T12:37:35.398-04:00 HOST_LINK_HELLO was_ready=1 sync_pending=1
+2026-04-24T12:37:35.798-04:00 HOST_RX type=HELLO seq=2 len=8
+2026-04-24T12:37:35.798-04:00 HOST_TX type=HELLO_ACK seq=2 len=8
+2026-04-24T12:37:35.799-04:00 HOST_LINK_HELLO was_ready=1 sync_pending=1
+2026-04-24T12:37:35.799-04:00 HOST_RX type=PING seq=3 len=4
+2026-04-24T12:37:35.799-04:00 HOST_TX type=PONG seq=3 len=4
+2026-04-24T12:37:35.799-04:00 HOST_RX type=GET_STATUS seq=4 len=0
+2026-04-24T12:37:35.799-04:00 HOST_TX type=STATUS seq=4 len=8
+2026-04-24T12:37:35.799-04:00 HOST_LINK_SYNC_AFTER_STATUS
+2026-04-24T12:37:35.800-04:00 PYRONET_HOST_SYNC queue_registration=1 reason=2 host_state=3
+2026-04-24T12:37:35.800-04:00 HOST_TX type=REGISTRATION_NEEDED seq=5 len=1
+2026-04-24T12:37:35.800-04:00 HOST_RX type=SEND_REGISTRATION seq=5 len=13
+2026-04-24T12:37:35.800-04:00 HOST_TX type=TX_RESULT seq=6 len=4
+2026-04-24T12:37:35.911-04:00 PYRONET_COAP_TX type=16 uri=uplink confirmable=1 dest=fd12:3456::8e8b:48ff:fe22:8504 payload_len=31 detail=0 service=1
+2026-04-24T12:37:35.912-04:00 PYRONET_COAP_TX_SUBMIT type=16 status=sent msg_id=12448 dest=fd12:3456::8e8b:48ff:fe22:8504
+2026-04-24T12:37:35.912-04:00 PYRONET_REGISTRATION_SUBMIT node_id=1001
+2026-04-24T12:37:35.912-04:00 HOST_TX type=TX_RESULT seq=7 len=4
+2026-04-24T12:37:36.021-04:00 PYRONET_COAP_ACK type=16 detail=0 msg_id=12448 src=fd12:3456::8e8b:48ff:fe22:8504 port=5683 status=0 code=68
+2026-04-24T12:37:36.021-04:00 HOST_TX type=TX_RESULT seq=8 len=4
+2026-04-24T12:37:39.405-04:00 PYRONET_COAP_RX src=fd12:3456::8e8b:48ff:fe22:8504 port=32967 code=2 payload_type=5 payload_len=6 service=1
+2026-04-24T12:37:39.405-04:00 PYRONET_TIME_SYNC_RX unix_time_s=1777048656
+2026-04-24T12:37:39.406-04:00 HOST_TX type=TIME_SYNC_UPDATE seq=9 len=4
+2026-04-24T12:37:39.624-04:00 PYRONET_COAP_RX src=fd12:3456::8e8b:48ff:fe22:8504 port=49473 code=2 payload_type=4 payload_len=37 service=1
+2026-04-24T12:38:33.938-04:00 HOST_RX type=SEND_SENSOR_REPORT seq=6 len=16
+2026-04-24T12:38:33.940-04:00 HOST_TX type=TX_RESULT seq=10 len=4
+2026-04-24T12:38:33.941-04:00 PYRONET_COAP_TX type=17 uri=uplink confirmable=0 dest=fd12:3456::8e8b:48ff:fe22:8504 payload_len=18 detail=0 service=1
+2026-04-24T12:38:33.941-04:00 PYRONET_COAP_TX_SUBMIT type=17 status=sent msg_id=0 dest=fd12:3456::8e8b:48ff:fe22:8504
+2026-04-24T12:38:33.941-04:00 HOST_TX type=TX_RESULT seq=11 len=4
+2026-04-24T12:39:33.785-04:00 HOST_RX type=SEND_SENSOR_REPORT seq=7 len=16
+2026-04-24T12:39:33.787-04:00 HOST_TX type=TX_RESULT seq=12 len=4
+2026-04-24T12:39:33.788-04:00 PYRONET_COAP_TX type=17 uri=uplink confirmable=0 dest=fd12:3456::8e8b:48ff:fe22:8504 payload_len=18 detail=0 service=1
+2026-04-24T12:39:33.788-04:00 PYRONET_COAP_TX_SUBMIT type=17 status=sent msg_id=0 dest=fd12:3456::8e8b:48ff:fe22:8504
+2026-04-24T12:39:33.788-04:00 HOST_TX type=TX_RESULT seq=13 len=4
+2026-04-24T12:40:26.898-04:00 LOGGER connected port=/dev/cu.usbmodemLS41069U4 baud=3000000
+2026-04-24T12:40:28.624-04:00 ITM reset token
+2026-04-24T12:40:28.624-04:00 SWO_SELF_TEST: CC1352P7_DIO16_ITM_CH0 phase=BOOT host_link=starting
+2026-04-24T12:40:28.624-04:00 PYRONET_NCP_INIT_OK
+2026-04-24T12:40:28.624-04:00 PYRONET_WISUN_STATUS status=MESH_BOOTSTRAP_STARTED host_state=2 queue_registration=0
+2026-04-24T12:40:28.624-04:00 HOST_UART_READY baud=115200
+2026-04-24T12:40:33.558-04:00 HOST_RX type=SEND_SENSOR_REPORT seq=8 len=16
+2026-04-24T12:40:33.840-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=5 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:40:33.840-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:40:33.840-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:40:33.841-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:40:33.841-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:40:39.040-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=10 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:40:39.042-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:40:39.042-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:40:39.042-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:40:39.042-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:40:44.261-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=15 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:40:44.261-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:40:44.262-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:40:44.262-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:40:44.263-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:40:49.454-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=20 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:40:49.455-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:40:49.455-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:40:49.455-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:40:49.455-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:40:54.624-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=25 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:40:54.733-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:40:54.734-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:40:54.734-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:40:54.734-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:40:59.937-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=31 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:40:59.937-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:40:59.937-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:40:59.937-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:40:59.937-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:41:05.034-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=32 j2=0 j3=4 j4=0 j5=0 recv_pa=3 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:41:05.144-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:41:05.144-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:41:05.144-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:41:05.144-04:00 PYRONET_PARENT_METRIC if=1 join=3 pan=65534 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:41:10.268-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=32 j2=0 j3=9 j4=0 j5=0 recv_pa=4 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:41:10.378-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:41:10.378-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:41:10.378-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:41:10.379-04:00 PYRONET_PARENT_METRIC if=1 join=3 pan=65534 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:41:15.519-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=32 j2=0 j3=14 j4=0 j5=0 recv_pa=4 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:41:15.520-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:41:15.520-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:41:15.520-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:41:15.634-04:00 PYRONET_PARENT_METRIC if=1 join=3 pan=65534 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:41:20.807-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=32 j2=0 j3=17 j4=2 j5=0 recv_pa=4 recv_pas=0 recv_pc=2 recv_pcs=0
+2026-04-24T12:41:20.808-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:41:20.809-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:41:20.809-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8504 cand_gp=-
+2026-04-24T12:41:20.809-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=255 rsl_out=255
+2026-04-24T12:41:25.996-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=32 j2=0 j3=17 j4=7 j5=0 recv_pa=4 recv_pas=0 recv_pc=6 recv_pcs=0
+2026-04-24T12:41:25.996-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:41:25.996-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:41:25.997-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8504 cand_gp=-
+2026-04-24T12:41:25.997-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=255 rsl_out=255
+2026-04-24T12:41:31.135-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=32 j2=0 j3=17 j4=13 j5=0 recv_pa=4 recv_pas=0 recv_pc=6 recv_pcs=0
+2026-04-24T12:41:31.135-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:41:31.135-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:41:31.136-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8504 cand_gp=-
+2026-04-24T12:41:31.137-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=255 rsl_out=255
+2026-04-24T12:41:33.364-04:00 HOST_RX type=SEND_SENSOR_REPORT seq=9 len=16
+2026-04-24T12:41:36.330-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=32 j2=0 j3=17 j4=18 j5=0 recv_pa=4 recv_pas=0 recv_pc=6 recv_pcs=0
+2026-04-24T12:41:36.331-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:41:36.331-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:41:36.331-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8504 cand_gp=-
+2026-04-24T12:41:36.331-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=255 rsl_out=255
+2026-04-24T12:41:41.571-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=32 j2=0 j3=17 j4=23 j5=0 recv_pa=5 recv_pas=0 recv_pc=6 recv_pcs=0
+2026-04-24T12:41:41.571-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:41:41.571-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:41:41.572-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8504 cand_gp=-
+2026-04-24T12:41:41.572-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=255 rsl_out=255
+2026-04-24T12:41:46.771-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=32 j2=0 j3=17 j4=28 j5=0 recv_pa=5 recv_pas=0 recv_pc=6 recv_pcs=0
+2026-04-24T12:41:46.772-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:41:46.772-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:41:46.772-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8504 cand_gp=-
+2026-04-24T12:41:46.886-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=255 rsl_out=255
+2026-04-24T12:41:51.952-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=32 j2=0 j3=17 j4=33 j5=0 recv_pa=5 recv_pas=0 recv_pc=6 recv_pcs=0
+2026-04-24T12:41:51.952-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=fd12:3456::212:4b00:28ed:d802 node_gp_sec=-
+2026-04-24T12:41:51.952-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:41:51.953-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8504 cand_gp=fd12:3456::8e8b:48ff:fe22:8504
+2026-04-24T12:41:51.953-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=152 rsl_out=255
+2026-04-24T12:41:57.163-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=32 j2=0 j3=17 j4=38 j5=0 recv_pa=5 recv_pas=0 recv_pc=6 recv_pcs=0
+2026-04-24T12:41:57.164-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=fd12:3456::212:4b00:28ed:d802 node_gp_sec=-
+2026-04-24T12:41:57.164-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:41:57.276-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8504 cand_gp=fd12:3456::8e8b:48ff:fe22:8504
+2026-04-24T12:41:57.277-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=152 rsl_out=255
+2026-04-24T12:42:02.374-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=32 j2=0 j3=17 j4=44 j5=0 recv_pa=5 recv_pas=0 recv_pc=6 recv_pcs=0
+2026-04-24T12:42:02.375-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=fd12:3456::212:4b00:28ed:d802 node_gp_sec=-
+2026-04-24T12:42:02.375-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:42:02.482-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8504 cand_gp=fd12:3456::8e8b:48ff:fe22:8504
+2026-04-24T12:42:02.482-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=152 rsl_out=255
+2026-04-24T12:42:04.812-04:00 PYRONET_WISUN_STATUS status=MESH_CONNECTED host_state=2 queue_registration=0
+2026-04-24T12:42:04.813-04:00 PYRONET_ROUTE_SELECT result=ready source=derived_parent_global router_status=-1 nd_status=-2 has_gp=1 has_parent=1
+2026-04-24T12:42:04.813-04:00 PYRONET_ROUTE_ADDR dest=fd12:3456::8e8b:48ff:fe22:8504 node_gp=fd12:3456::212:4b00:28ed:d802 parent_ll=fe80::8e8b:48ff:fe22:8504 nd_br=-
+2026-04-24T12:42:04.813-04:00 PYRONET_ROUTE_CAND source=node_gp_parent_iid addr=fd12:3456::8e8b:48ff:fe22:8504
+2026-04-24T12:42:04.813-04:00 PYRONET_WISUN_READY reason=1
+2026-04-24T12:42:33.122-04:00 HOST_RX type=SEND_SENSOR_REPORT seq=10 len=16
+2026-04-24T12:43:32.917-04:00 HOST_RX type=SEND_SENSOR_REPORT seq=11 len=16
+2026-04-24T12:44:32.760-04:00 HOST_RX type=SEND_SENSOR_REPORT seq=12 len=16
+2026-04-24T12:45:20.693-04:00 LOGGER unexpected_error port=/dev/cu.usbmodemLS41069U4 error=[Errno 6] Device not configured
+2026-04-24T12:45:22.695-04:00 LOGGER connected port=/dev/cu.usbmodemLS41069U4 baud=3000000
+2026-04-24T12:45:27.702-04:00 ITM reset token
+2026-04-24T12:45:27.702-04:00 SWO_SELF_TEST: CC1352P7_DIO16_ITM_CH0 phase=BOOT host_link=starting
+2026-04-24T12:45:27.703-04:00 PYRONET_NCP_INIT_OK
+2026-04-24T12:45:27.703-04:00 PYRONET_WISUN_STATUS status=MESH_BOOTSTRAP_STARTED host_state=2 queue_registration=0
+2026-04-24T12:45:27.703-04:00 HOST_UART_READY baud=115200
+2026-04-24T12:45:40.512-04:00 ITM reset token
+2026-04-24T12:45:40.512-04:00 SWO_SELF_TEST: CC1352P7_DIO16_ITM_CH0 phase=BOOT host_link=starting
+2026-04-24T12:45:40.513-04:00 PYRONET_NCP_INIT_OK
+2026-04-24T12:45:40.513-04:00 PYRONET_WISUN_STATUS status=MESH_BOOTSTRAP_STARTED host_state=2 queue_registration=0
+2026-04-24T12:45:40.513-04:00 HOST_UART_READY baud=115200
+2026-04-24T12:48:38.073-04:00 LOGGER connected port=/dev/cu.usbmodemLS41069U4 baud=3000000
+2026-04-24T12:48:39.857-04:00 ITM reset token
+2026-04-24T12:48:39.857-04:00 SWO_SELF_TEST: CC1352P7_DIO16_ITM_CH0 phase=BOOT host_link=starting
+2026-04-24T12:48:39.857-04:00 PYRONET_NCP_INIT_OK
+2026-04-24T12:48:39.857-04:00 PYRONET_WISUN_STATUS status=MESH_BOOTSTRAP_STARTED host_state=2 queue_registration=0
+2026-04-24T12:48:39.857-04:00 HOST_UART_READY baud=115200
+2026-04-24T12:48:45.071-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=5 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:48:45.071-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:48:45.072-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:48:45.072-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:48:45.072-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:48:50.182-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=10 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:48:50.295-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:48:50.295-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:48:50.295-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:48:50.295-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:48:55.394-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=15 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:48:55.502-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:48:55.502-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:48:55.502-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:48:55.502-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:49:00.607-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=20 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:49:00.607-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:49:00.607-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:49:00.716-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:49:00.716-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:49:05.844-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=25 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:49:05.845-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:49:05.845-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:49:05.845-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:49:05.958-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:49:11.054-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=31 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:49:11.054-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:49:11.054-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:49:11.054-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:49:11.054-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:49:16.264-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=36 j2=0 j3=0 j4=0 j5=0 recv_pa=0 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:49:16.264-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:49:16.264-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:49:16.265-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:49:16.380-04:00 PYRONET_PARENT_METRIC if=1 join=1 pan=65535 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:49:21.479-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=38 j2=0 j3=3 j4=0 j5=0 recv_pa=1 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:49:21.479-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:49:21.479-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:49:21.479-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:49:21.479-04:00 PYRONET_PARENT_METRIC if=1 join=3 pan=65534 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:49:26.716-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=38 j2=0 j3=8 j4=0 j5=0 recv_pa=1 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:49:26.717-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:49:26.717-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:49:26.717-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:49:26.717-04:00 PYRONET_PARENT_METRIC if=1 join=3 pan=65534 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:49:31.931-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=38 j2=0 j3=13 j4=0 j5=0 recv_pa=1 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:49:31.931-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:49:31.931-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:49:31.932-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:49:31.932-04:00 PYRONET_PARENT_METRIC if=1 join=3 pan=65534 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:49:37.193-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=38 j2=0 j3=18 j4=0 j5=0 recv_pa=1 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:49:37.193-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:49:37.193-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:49:37.193-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:49:37.193-04:00 PYRONET_PARENT_METRIC if=1 join=3 pan=65534 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:49:42.365-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=38 j2=0 j3=24 j4=0 j5=0 recv_pa=1 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:49:42.365-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:49:42.365-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:49:42.365-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:49:42.365-04:00 PYRONET_PARENT_METRIC if=1 join=3 pan=65534 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:49:47.577-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=38 j2=0 j3=29 j4=0 j5=0 recv_pa=1 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:49:47.578-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:49:47.632-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:49:47.633-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:49:47.633-04:00 PYRONET_PARENT_METRIC if=1 join=3 pan=65534 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:49:52.776-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=38 j2=0 j3=34 j4=0 j5=0 recv_pa=2 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:49:52.776-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:49:52.776-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:49:52.776-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:49:52.776-04:00 PYRONET_PARENT_METRIC if=1 join=3 pan=65534 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:49:57.999-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=38 j2=0 j3=39 j4=0 j5=0 recv_pa=2 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:49:57.999-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:49:58.000-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:49:58.000-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:49:58.000-04:00 PYRONET_PARENT_METRIC if=1 join=3 pan=65534 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:50:03.267-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=38 j2=0 j3=44 j4=0 j5=0 recv_pa=2 recv_pas=0 recv_pc=0 recv_pcs=0
+2026-04-24T12:50:03.268-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:50:03.268-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:50:03.268-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T12:50:03.268-04:00 PYRONET_PARENT_METRIC if=1 join=3 pan=65534 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T12:50:08.420-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=38 j2=0 j3=47 j4=2 j5=0 recv_pa=2 recv_pas=0 recv_pc=2 recv_pcs=0
+2026-04-24T12:50:08.420-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:50:08.420-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:50:08.421-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8656 cand_gp=-
+2026-04-24T12:50:08.421-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=255 rsl_out=255
+2026-04-24T12:50:13.666-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=38 j2=0 j3=47 j4=8 j5=0 recv_pa=2 recv_pas=0 recv_pc=2 recv_pcs=0
+2026-04-24T12:50:13.666-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:50:13.666-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:50:13.666-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8656 cand_gp=-
+2026-04-24T12:50:13.667-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=255 rsl_out=255
+2026-04-24T12:50:18.865-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=38 j2=0 j3=47 j4=13 j5=0 recv_pa=2 recv_pas=0 recv_pc=2 recv_pcs=0
+2026-04-24T12:50:18.865-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:50:18.865-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:50:18.865-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8656 cand_gp=-
+2026-04-24T12:50:18.865-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=255 rsl_out=255
+2026-04-24T12:50:24.053-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=38 j2=0 j3=47 j4=18 j5=0 recv_pa=2 recv_pas=0 recv_pc=2 recv_pcs=0
+2026-04-24T12:50:24.053-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=- node_gp_sec=-
+2026-04-24T12:50:24.053-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:50:24.053-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8656 cand_gp=-
+2026-04-24T12:50:24.053-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=255 rsl_out=255
+2026-04-24T12:50:29.268-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=38 j2=0 j3=47 j4=23 j5=0 recv_pa=2 recv_pas=0 recv_pc=3 recv_pcs=0
+2026-04-24T12:50:29.269-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=fd12:3456::212:4b00:28ed:d802 node_gp_sec=-
+2026-04-24T12:50:29.269-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:50:29.326-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8504 cand_gp=fd12:3456::8e8b:48ff:fe22:8504
+2026-04-24T12:50:29.326-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=151 rsl_out=255
+2026-04-24T12:50:34.492-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=38 j2=0 j3=47 j4=26 j5=0 recv_pa=2 recv_pas=0 recv_pc=5 recv_pcs=0
+2026-04-24T12:50:34.492-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=fd12:3456::212:4b00:28ed:d802 node_gp_sec=-
+2026-04-24T12:50:34.549-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:50:34.549-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8504 cand_gp=fd12:3456::8e8b:48ff:fe22:8504
+2026-04-24T12:50:34.549-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=151 rsl_out=255
+2026-04-24T12:50:39.716-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=38 j2=0 j3=47 j4=31 j5=0 recv_pa=2 recv_pas=0 recv_pc=5 recv_pcs=0
+2026-04-24T12:50:39.716-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=fd12:3456::212:4b00:28ed:d802 node_gp_sec=-
+2026-04-24T12:50:39.716-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:50:39.716-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8504 cand_gp=fd12:3456::8e8b:48ff:fe22:8504
+2026-04-24T12:50:39.716-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=151 rsl_out=255
+2026-04-24T12:50:44.906-04:00 PYRONET_WISUN_DIAG host_state=2 router_status=-1 router=- j1=38 j2=0 j3=47 j4=36 j5=0 recv_pa=2 recv_pas=0 recv_pc=5 recv_pcs=0
+2026-04-24T12:50:44.907-04:00 PYRONET_ADDR_NODE host_state=2 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=fd12:3456::212:4b00:28ed:d802 node_gp_sec=-
+2026-04-24T12:50:44.907-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T12:50:44.907-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=fe80::8e8b:48ff:fe22:8504 cand_gp=fd12:3456::8e8b:48ff:fe22:8504
+2026-04-24T12:50:44.907-04:00 PYRONET_PARENT_METRIC if=1 join=5 pan=65534 cost=0 rsl_in=151 rsl_out=255
+2026-04-24T12:50:44.962-04:00 PYRONET_WISUN_STATUS status=MESH_CONNECTED host_state=2 queue_registration=0
+2026-04-24T12:50:44.962-04:00 PYRONET_ROUTE_SELECT result=ready source=derived_parent_global router_status=-1 nd_status=-2 has_gp=1 has_parent=1
+2026-04-24T12:50:44.963-04:00 PYRONET_ROUTE_ADDR dest=fd12:3456::8e8b:48ff:fe22:8504 node_gp=fd12:3456::212:4b00:28ed:d802 parent_ll=fe80::8e8b:48ff:fe22:8504 nd_br=-
+2026-04-24T12:50:44.963-04:00 PYRONET_ROUTE_CAND source=node_gp_parent_iid addr=fd12:3456::8e8b:48ff:fe22:8504
+2026-04-24T12:50:44.963-04:00 PYRONET_WISUN_READY reason=1
+2026-04-24T12:51:18.540-04:00 HOST_RX type=HELLO seq=0 len=8
+2026-04-24T12:51:18.540-04:00 HOST_TX type=HELLO_ACK seq=0 len=8
+2026-04-24T12:51:18.540-04:00 HOST_LINK_HELLO was_ready=0 sync_pending=1
+2026-04-24T12:51:18.540-04:00 HOST_LINK_READY
+2026-04-24T12:51:19.758-04:00 HOST_RX type=HELLO seq=1 len=8
+2026-04-24T12:51:19.759-04:00 HOST_TX type=HELLO_ACK seq=1 len=8
+2026-04-24T12:51:19.759-04:00 HOST_LINK_HELLO was_ready=1 sync_pending=1
+2026-04-24T12:51:20.152-04:00 HOST_RX type=HELLO seq=2 len=8
+2026-04-24T12:51:20.152-04:00 HOST_TX type=HELLO_ACK seq=2 len=8
+2026-04-24T12:51:20.152-04:00 HOST_LINK_HELLO was_ready=1 sync_pending=1
+2026-04-24T12:51:20.153-04:00 HOST_RX type=PING seq=3 len=4
+2026-04-24T12:51:20.153-04:00 HOST_TX type=PONG seq=3 len=4
+2026-04-24T12:51:20.153-04:00 HOST_RX type=GET_STATUS seq=4 len=0
+2026-04-24T12:51:20.153-04:00 HOST_TX type=STATUS seq=4 len=8
+2026-04-24T12:51:20.153-04:00 HOST_LINK_SYNC_AFTER_STATUS
+2026-04-24T12:51:20.153-04:00 PYRONET_HOST_SYNC queue_registration=1 reason=2 host_state=3
+2026-04-24T12:51:20.153-04:00 HOST_TX type=REGISTRATION_NEEDED seq=5 len=1
+2026-04-24T12:51:20.208-04:00 HOST_RX type=SEND_REGISTRATION seq=5 len=13
+2026-04-24T12:51:20.208-04:00 HOST_TX type=TX_RESULT seq=6 len=4
+2026-04-24T12:51:20.208-04:00 PYRONET_COAP_TX type=16 uri=uplink confirmable=1 dest=fd12:3456::8e8b:48ff:fe22:8504 payload_len=31 detail=0 service=1
+2026-04-24T12:51:20.208-04:00 PYRONET_COAP_TX_SUBMIT type=16 status=sent msg_id=61996 dest=fd12:3456::8e8b:48ff:fe22:8504
+2026-04-24T12:51:20.208-04:00 PYRONET_REGISTRATION_PARENT node_id=1001 parent=fd12:3456::8e8b:48ff:fe22:8504
+2026-04-24T12:51:20.208-04:00 PYRONET_REGISTRATION_SUBMIT node_id=1001
+2026-04-24T12:51:20.209-04:00 HOST_TX type=TX_RESULT seq=7 len=4
+2026-04-24T12:51:20.546-04:00 PYRONET_COAP_ACK type=16 detail=0 msg_id=61996 src=fd12:3456::8e8b:48ff:fe22:8504 port=5683 status=0 code=68
+2026-04-24T12:51:20.546-04:00 HOST_TX type=TX_RESULT seq=8 len=4
+2026-04-24T12:51:24.765-04:00 PYRONET_COAP_RX src=fd12:3456::8e8b:48ff:fe22:8504 port=45200 code=2 payload_type=5 payload_len=6 service=1
+2026-04-24T12:51:24.765-04:00 PYRONET_TIME_SYNC_RX unix_time_s=1777049481
+2026-04-24T12:51:24.766-04:00 HOST_TX type=TIME_SYNC_UPDATE seq=9 len=4
+2026-04-24T12:51:24.987-04:00 PYRONET_COAP_RX src=fd12:3456::8e8b:48ff:fe22:8504 port=35951 code=2 payload_type=4 payload_len=37 service=1
+2026-04-24T12:52:18.268-04:00 HOST_RX type=SEND_SENSOR_REPORT seq=6 len=16
+2026-04-24T12:52:18.270-04:00 HOST_TX type=TX_RESULT seq=10 len=4
+2026-04-24T12:52:18.270-04:00 PYRONET_COAP_TX type=17 uri=uplink confirmable=0 dest=fd12:3456::8e8b:48ff:fe22:8504 payload_len=18 detail=0 service=1
+2026-04-24T12:52:18.270-04:00 PYRONET_COAP_TX_SUBMIT type=17 status=sent msg_id=0 dest=fd12:3456::8e8b:48ff:fe22:8504
+2026-04-24T12:52:18.270-04:00 HOST_TX type=TX_RESULT seq=11 len=4
+2026-04-24T12:53:18.082-04:00 HOST_RX type=SEND_SENSOR_REPORT seq=7 len=16
+2026-04-24T12:53:18.084-04:00 HOST_TX type=TX_RESULT seq=12 len=4
+2026-04-24T12:53:18.145-04:00 PYRONET_COAP_TX type=17 uri=uplink confirmable=0 dest=fd12:3456::8e8b:48ff:fe22:8504 payload_len=18 detail=0 service=1
+2026-04-24T12:53:18.145-04:00 PYRONET_COAP_TX_SUBMIT type=17 status=sent msg_id=0 dest=fd12:3456::8e8b:48ff:fe22:8504
+2026-04-24T12:53:18.146-04:00 HOST_TX type=TX_RESULT seq=13 len=4
+2026-04-24T12:54:17.873-04:00 HOST_RX type=SEND_SENSOR_REPORT seq=8 len=16
+2026-04-24T12:54:17.875-04:00 HOST_TX type=TX_RESULT seq=14 len=4
+2026-04-24T12:54:17.875-04:00 PYRONET_COAP_TX type=17 uri=uplink confirmable=0 dest=fd12:3456::8e8b:48ff:fe22:8504 payload_len=18 detail=0 service=1
+2026-04-24T12:54:17.875-04:00 PYRONET_COAP_TX_SUBMIT type=17 status=sent msg_id=0 dest=fd12:3456::8e8b:48ff:fe22:8504
+2026-04-24T12:54:17.985-04:00 HOST_TX type=TX_RESULT seq=15 len=4
+2026-04-24T12:55:17.706-04:00 HOST_RX type=SEND_SENSOR_REPORT seq=9 len=16
+2026-04-24T12:55:17.706-04:00 HOST_TX type=TX_RESULT seq=16 len=4
+2026-04-24T12:55:17.707-04:00 PYRONET_COAP_TX type=17 uri=uplink confirmable=0 dest=fd12:3456::8e8b:48ff:fe22:8504 payload_len=18 detail=0 service=1
+2026-04-24T12:55:17.820-04:00 PYRONET_COAP_TX_SUBMIT type=17 status=sent msg_id=0 dest=fd12:3456::8e8b:48ff:fe22:8504
+2026-04-24T12:55:17.821-04:00 HOST_TX type=TX_RESULT seq=17 len=4
+2026-04-24T12:56:17.573-04:00 HOST_RX type=SEND_SENSOR_REPORT seq=10 len=16
+2026-04-24T12:56:17.575-04:00 HOST_TX type=TX_RESULT seq=18 len=4
+2026-04-24T12:56:17.575-04:00 PYRONET_COAP_TX type=17 uri=uplink confirmable=0 dest=fd12:3456::8e8b:48ff:fe22:8504 payload_len=18 detail=0 service=1
+2026-04-24T12:56:17.575-04:00 PYRONET_COAP_TX_SUBMIT type=17 status=sent msg_id=0 dest=fd12:3456::8e8b:48ff:fe22:8504
+2026-04-24T12:56:17.575-04:00 HOST_TX type=TX_RESULT seq=19 len=4
+2026-04-24T12:57:17.326-04:00 HOST_RX type=SEND_SENSOR_REPORT seq=11 len=16
+2026-04-24T12:57:17.328-04:00 HOST_TX type=TX_RESULT seq=20 len=4
+2026-04-24T12:57:17.328-04:00 PYRONET_COAP_TX type=17 uri=uplink confirmable=0 dest=fd12:3456::8e8b:48ff:fe22:8504 payload_len=18 detail=0 service=1
+2026-04-24T12:57:17.388-04:00 PYRONET_COAP_TX_SUBMIT type=17 status=sent msg_id=0 dest=fd12:3456::8e8b:48ff:fe22:8504
+2026-04-24T12:57:17.388-04:00 HOST_TX type=TX_RESULT seq=21 len=4
+2026-04-24T12:57:22.230-04:00 HOST_TX type=PARENT_CHANGED seq=22 len=1
+2026-04-24T12:57:22.231-04:00 HOST_RX type=REQUEST_PARENT_UPDATE seq=12 len=6
+2026-04-24T12:57:22.234-04:00 HOST_TX type=TX_RESULT seq=23 len=4
+2026-04-24T12:57:22.234-04:00 PYRONET_ROUTE_SELECT result=unavailable source=none router_status=-1 nd_status=-2 has_gp=1 has_parent=0
+2026-04-24T12:57:22.235-04:00 PYRONET_ROUTE_ADDR dest=- node_gp=fd12:3456::212:4b00:28ed:d802 parent_ll=- nd_br=-
+2026-04-24T12:57:22.235-04:00 HOST_TX type=TX_RESULT seq=24 len=4
+2026-04-24T12:58:17.120-04:00 HOST_RX type=SEND_SENSOR_REPORT seq=13 len=16
+2026-04-24T12:58:17.121-04:00 HOST_TX type=TX_RESULT seq=25 len=4
+2026-04-24T12:58:17.178-04:00 PYRONET_ROUTE_SELECT result=ready source=derived_parent_global router_status=-1 nd_status=-2 has_gp=1 has_parent=1
+2026-04-24T12:58:17.179-04:00 PYRONET_ROUTE_ADDR dest=fd12:3456::8e8b:48ff:fe22:8656 node_gp=fd12:3456::212:4b00:28ed:d802 parent_ll=fe80::8e8b:48ff:fe22:8656 nd_br=-
+2026-04-24T12:58:17.179-04:00 PYRONET_ROUTE_CAND source=node_gp_parent_iid addr=fd12:3456::8e8b:48ff:fe22:8656
+2026-04-24T12:58:17.180-04:00 PYRONET_COAP_TX type=17 uri=uplink confirmable=0 dest=fd12:3456::8e8b:48ff:fe22:8656 payload_len=18 detail=0 service=1
+2026-04-24T12:58:17.180-04:00 PYRONET_COAP_TX_SUBMIT type=17 status=sent msg_id=0 dest=fd12:3456::8e8b:48ff:fe22:8656
+2026-04-24T12:58:17.180-04:00 HOST_TX type=TX_RESULT seq=26 len=4
+2026-04-24T12:58:32.689-04:00 HOST_TX type=PARENT_CHANGED seq=27 len=1
+2026-04-24T12:58:32.747-04:00 HOST_RX type=REQUEST_PARENT_UPDATE seq=14 len=6
+2026-04-24T12:58:32.748-04:00 HOST_TX type=TX_RESULT seq=28 len=4
+2026-04-24T12:58:32.748-04:00 PYRONET_ROUTE_SELECT result=unavailable source=none router_status=-1 nd_status=-2 has_gp=1 has_parent=0
+2026-04-24T12:58:32.748-04:00 PYRONET_ROUTE_ADDR dest=- node_gp=fd12:3456::212:4b00:28ed:d802 parent_ll=- nd_br=-
+2026-04-24T12:58:32.749-04:00 HOST_TX type=TX_RESULT seq=29 len=4
+2026-04-24T12:59:16.930-04:00 HOST_RX type=SEND_SENSOR_REPORT seq=15 len=16
+2026-04-24T12:59:16.931-04:00 HOST_TX type=TX_RESULT seq=30 len=4
+2026-04-24T12:59:16.932-04:00 PYRONET_ROUTE_SELECT result=ready source=derived_parent_global router_status=-1 nd_status=-2 has_gp=1 has_parent=1
+2026-04-24T12:59:16.932-04:00 PYRONET_ROUTE_ADDR dest=fd12:3456::8e8b:48ff:fe22:8588 node_gp=fd12:3456::212:4b00:28ed:d802 parent_ll=fe80::8e8b:48ff:fe22:8588 nd_br=-
+2026-04-24T12:59:16.932-04:00 PYRONET_ROUTE_CAND source=node_gp_parent_iid addr=fd12:3456::8e8b:48ff:fe22:8588
+2026-04-24T12:59:17.043-04:00 PYRONET_COAP_TX type=17 uri=uplink confirmable=0 dest=fd12:3456::8e8b:48ff:fe22:8588 payload_len=18 detail=0 service=1
+2026-04-24T12:59:17.043-04:00 PYRONET_COAP_TX_SUBMIT type=17 status=sent msg_id=0 dest=fd12:3456::8e8b:48ff:fe22:8588
+2026-04-24T12:59:17.043-04:00 HOST_TX type=TX_RESULT seq=31 len=4
+2026-04-24T13:00:02.730-04:00 HOST_TX type=PARENT_CHANGED seq=32 len=1
+2026-04-24T13:00:02.731-04:00 HOST_RX type=REQUEST_PARENT_UPDATE seq=16 len=6
+2026-04-24T13:00:02.732-04:00 HOST_TX type=TX_RESULT seq=33 len=4
+2026-04-24T13:00:02.732-04:00 PYRONET_ROUTE_SELECT result=unavailable source=none router_status=-1 nd_status=-2 has_gp=1 has_parent=0
+2026-04-24T13:00:02.732-04:00 PYRONET_ROUTE_ADDR dest=- node_gp=fd12:3456::212:4b00:28ed:d802 parent_ll=- nd_br=-
+2026-04-24T13:00:02.732-04:00 HOST_TX type=TX_RESULT seq=34 len=4
+2026-04-24T13:00:08.330-04:00 PYRONET_WISUN_STATUS status=MESH_BOOTSTRAP_FAILED host_state=1 queue_registration=0
+2026-04-24T13:00:10.066-04:00 PYRONET_WISUN_DIAG host_state=1 router_status=-1 router=- j1=38 j2=0 j3=47 j4=37 j5=556 recv_pa=14 recv_pas=0 recv_pc=8 recv_pcs=0
+2026-04-24T13:00:10.067-04:00 PYRONET_ADDR_NODE host_state=1 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=fd12:3456::212:4b00:28ed:d802 node_gp_sec=-
+2026-04-24T13:00:10.183-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T13:00:10.183-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T13:00:10.184-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T13:00:15.325-04:00 PYRONET_WISUN_DIAG host_state=1 router_status=-1 router=- j1=38 j2=0 j3=47 j4=42 j5=556 recv_pa=14 recv_pas=0 recv_pc=8 recv_pcs=0
+2026-04-24T13:00:15.325-04:00 PYRONET_ADDR_NODE host_state=1 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=fd12:3456::212:4b00:28ed:d802 node_gp_sec=-
+2026-04-24T13:00:15.325-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T13:00:15.326-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T13:00:15.326-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T13:00:16.731-04:00 HOST_RX type=SEND_SENSOR_REPORT seq=17 len=16
+2026-04-24T13:00:16.732-04:00 HOST_TX type=TX_RESULT seq=35 len=4
+2026-04-24T13:00:16.732-04:00 PYRONET_ROUTE_SELECT result=not_joined source=none router_status=-1 nd_status=-1 has_gp=0 has_parent=0
+2026-04-24T13:00:16.844-04:00 PYRONET_ROUTE_ADDR dest=- node_gp=- parent_ll=- nd_br=-
+2026-04-24T13:00:16.844-04:00 HOST_TX type=TX_RESULT seq=36 len=4
+2026-04-24T13:00:20.536-04:00 PYRONET_WISUN_DIAG host_state=1 router_status=-1 router=- j1=38 j2=0 j3=47 j4=48 j5=556 recv_pa=14 recv_pas=0 recv_pc=8 recv_pcs=0
+2026-04-24T13:00:20.537-04:00 PYRONET_ADDR_NODE host_state=1 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=fd12:3456::212:4b00:28ed:d802 node_gp_sec=-
+2026-04-24T13:00:20.537-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T13:00:20.537-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T13:00:20.537-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=0 rsl_out=0
+2026-04-24T13:00:25.724-04:00 PYRONET_WISUN_DIAG host_state=1 router_status=-1 router=- j1=38 j2=0 j3=47 j4=53 j5=556 recv_pa=14 recv_pas=0 recv_pc=8 recv_pcs=0
+2026-04-24T13:00:25.725-04:00 PYRONET_ADDR_NODE host_state=1 if=1 ll=fe80::212:4b00:28ed:d802 node_gp=fd12:3456::212:4b00:28ed:d802 node_gp_sec=-
+2026-04-24T13:00:25.725-04:00 PYRONET_ADDR_ND if=1 status=-2 br=- prefix=-
+2026-04-24T13:00:25.834-04:00 PYRONET_ADDR_PARENT if=1 status=0 ll=- cand_gp=-
+2026-04-24T13:00:25.834-04:00 PYRONET_PARENT_METRIC if=1 join=4 pan=65534 cost=0 rsl_in=0 rsl_out=0

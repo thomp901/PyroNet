@@ -4,6 +4,8 @@
 
 #include "../swo_debug.h"
 
+#include "ip6string.h"
+
 #include "pyronet_mesh_decode.h"
 #include "pyronet_ncp_events.h"
 #include "pyronet_ncp_state.h"
@@ -120,13 +122,28 @@ int pyronet_ncp_downlink_receive(int8_t service_id,
                                  uint16_t source_port,
                                  sn_coap_hdr_s *request_ptr)
 {
-    (void)source_address;
-    (void)source_port;
+    char source_str[PYRONET_ROUTER_ADDR_STR_LEN];
 
     if (request_ptr == NULL)
     {
         return -1;
     }
+
+    memset(source_str, 0, sizeof(source_str));
+    if (source_address != NULL)
+    {
+        ip6tos(source_address, source_str);
+    }
+
+    (void)swoDebugPrintf("PYRONET_COAP_RX src=%s port=%u code=%u payload_type=%u payload_len=%u service=%d",
+                         (source_address != NULL) ? source_str : "-",
+                         (unsigned int)source_port,
+                         (unsigned int)request_ptr->msg_code,
+                         ((request_ptr->payload_ptr != NULL) && (request_ptr->payload_len > 0U))
+                           ? (unsigned int)request_ptr->payload_ptr[0]
+                           : 0U,
+                         (unsigned int)request_ptr->payload_len,
+                         (int)service_id);
 
     if (request_ptr->msg_code != COAP_MSG_CODE_REQUEST_POST)
     {

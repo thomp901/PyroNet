@@ -6,6 +6,7 @@
 #include "../swo_debug.h"
 
 #include "coap_service_api.h"
+#include "ip6string.h"
 #include "mesh_system.h"
 #include "mbed-coap/sn_coap_header.h"
 
@@ -134,17 +135,40 @@ static int pyronetNcpCoapResponseCallback(int8_t service_id,
 {
     uint8_t request_type = 0U;
     uint8_t detail = 0U;
+    uint16_t msg_id = (response_ptr != NULL) ? response_ptr->msg_id : 0U;
+    char source_str[PYRONET_ROUTER_ADDR_STR_LEN];
 
     (void)service_id;
 
-    if (!pyronet_ncp_pending_tx_match_and_consume((response_ptr != NULL) ? response_ptr->msg_id : 0U,
+    memset(source_str, 0, sizeof(source_str));
+    if (source_address != NULL)
+    {
+        ip6tos(source_address, source_str);
+    }
+
+    if (!pyronet_ncp_pending_tx_match_and_consume(msg_id,
                                                   source_address,
                                                   source_port,
                                                   &request_type,
                                                   &detail))
     {
+        (void)swoDebugPrintf("PYRONET_COAP_ACK_UNMATCHED msg_id=%u src=%s port=%u status=%d code=%u",
+                             (unsigned int)msg_id,
+                             (source_address != NULL) ? source_str : "-",
+                             (unsigned int)source_port,
+                             (response_ptr != NULL) ? (int)response_ptr->coap_status : -1,
+                             (response_ptr != NULL) ? (unsigned int)response_ptr->msg_code : 0U);
         return 0;
     }
+
+    (void)swoDebugPrintf("PYRONET_COAP_ACK type=%u detail=%u msg_id=%u src=%s port=%u status=%d code=%u",
+                         (unsigned int)request_type,
+                         (unsigned int)detail,
+                         (unsigned int)msg_id,
+                         (source_address != NULL) ? source_str : "-",
+                         (unsigned int)source_port,
+                         (response_ptr != NULL) ? (int)response_ptr->coap_status : -1,
+                         (response_ptr != NULL) ? (unsigned int)response_ptr->msg_code : 0U);
 
     if (response_ptr == NULL)
     {
@@ -189,9 +213,12 @@ static bool pyronetNcpSendCoapRequest(uint8_t request_type,
     bool confirmable;
     bool has_reserved_slot = false;
     uint8_t reserved_slot = 0U;
+    char destination_str[PYRONET_ROUTER_ADDR_STR_LEN];
 
     service_id = pyronet_ncp_state_coap_service_id();
     confirmable = (msg_type == COAP_MSG_TYPE_CONFIRMABLE);
+    memset(destination_str, 0, sizeof(destination_str));
+    ip6tos(destination, destination_str);
 
     if (service_id < 0)
     {
@@ -218,6 +245,15 @@ static bool pyronetNcpSendCoapRequest(uint8_t request_type,
     }
     has_reserved_slot = confirmable;
 
+    (void)swoDebugPrintf("PYRONET_COAP_TX type=%u uri=%s confirmable=%u dest=%s payload_len=%u detail=%u service=%d",
+                         (unsigned int)request_type,
+                         uri,
+                         confirmable ? 1U : 0U,
+                         destination_str,
+                         (unsigned int)payload_len,
+                         (unsigned int)detail,
+                         (int)service_id);
+
     nanostack_lock();
     msg_id = coap_service_request_send(service_id,
                                        COAP_REQUEST_OPTIONS_NONE,
@@ -238,6 +274,9 @@ static bool pyronetNcpSendCoapRequest(uint8_t request_type,
         {
             pyronet_ncp_pending_tx_release(reserved_slot);
         }
+        (void)swoDebugPrintf("PYRONET_COAP_TX_SUBMIT type=%u status=rejected dest=%s",
+                             (unsigned int)request_type,
+                             destination_str);
         pyronet_ncp_events_queue_tx_result(request_type, PYRONET_TX_STATUS_FAILED, PYRONET_TX_DETAIL_SEND_REJECTED);
         return false;
     }
@@ -262,6 +301,10 @@ static bool pyronetNcpSendCoapRequest(uint8_t request_type,
     }
 
     pyronet_ncp_events_queue_tx_result(request_type, PYRONET_TX_STATUS_SENT, detail);
+    (void)swoDebugPrintf("PYRONET_COAP_TX_SUBMIT type=%u status=sent msg_id=%u dest=%s",
+                         (unsigned int)request_type,
+                         (unsigned int)msg_id,
+                         destination_str);
     return true;
 }
 
@@ -270,6 +313,8 @@ static bool pyronetNcpTrySendRegistration(const pyronet_host_send_registration_v
     pyronet_mesh_registration_v1_t mesh_packet;
     uint8_t destination[PYRONET_IPV6_ADDR_LEN];
     pyronet_ncp_router_address_result_t router_result;
+    char parent_str[PYRONET_ROUTER_ADDR_STR_LEN];
+    bool has_parent_global;
 
     if (command == NULL)
     {
@@ -289,7 +334,7 @@ static bool pyronetNcpTrySendRegistration(const pyronet_host_send_registration_v
     mesh_packet.longitude = command->longitude;
     mesh_packet.fw_version = command->fw_version;
     mesh_packet.battery_pct = command->battery_pct;
-    (void)pyronet_ncp_state_read_current_parent(mesh_packet.parent_ipv6);
+    has_parent_global = pyronet_ncp_state_read_current_parent_global(mesh_packet.parent_ipv6);
 
     router_result = pyronet_ncp_state_read_router_address(destination);
     if (router_result != PYRONET_NCP_ROUTER_ADDRESS_READY)
@@ -322,6 +367,14 @@ static bool pyronetNcpTrySendRegistration(const pyronet_host_send_registration_v
                                   sizeof(mesh_packet),
                                   0U))
     {
+        memset(parent_str, 0, sizeof(parent_str));
+        if (has_parent_global)
+        {
+            ip6tos(mesh_packet.parent_ipv6, parent_str);
+        }
+        (void)swoDebugPrintf("PYRONET_REGISTRATION_PARENT node_id=%u parent=%s",
+                             (unsigned int)command->node_id,
+                             has_parent_global ? parent_str : "-");
         (void)swoDebugPrintf("PYRONET_REGISTRATION_SUBMIT node_id=%u",
                              (unsigned int)command->node_id);
         pyronetNcpDeferredRegistrationClear();
@@ -520,6 +573,8 @@ void pyronet_ncp_send_parent_update(const pyronet_host_request_parent_update_v1_
     pyronet_mesh_parent_update_v1_t mesh_packet;
     uint8_t destination[PYRONET_IPV6_ADDR_LEN];
     pyronet_ncp_router_address_result_t router_result;
+    char parent_str[PYRONET_ROUTER_ADDR_STR_LEN];
+    bool has_parent_global;
 
     if (command == NULL)
     {
@@ -536,7 +591,7 @@ void pyronet_ncp_send_parent_update(const pyronet_host_request_parent_update_v1_
     mesh_packet.version = PYRONET_MESH_SCHEMA_VERSION;
     mesh_packet.node_id = command->node_id;
     mesh_packet.timestamp = command->timestamp;
-    (void)pyronet_ncp_state_read_current_parent(mesh_packet.parent_ipv6);
+    has_parent_global = pyronet_ncp_state_read_current_parent_global(mesh_packet.parent_ipv6);
 
     router_result = pyronet_ncp_state_read_router_address(destination);
     if (router_result != PYRONET_NCP_ROUTER_ADDRESS_READY)
@@ -554,4 +609,12 @@ void pyronet_ncp_send_parent_update(const pyronet_host_request_parent_update_v1_
                                     (const uint8_t *)&mesh_packet,
                                     sizeof(mesh_packet),
                                     0U);
+    memset(parent_str, 0, sizeof(parent_str));
+    if (has_parent_global)
+    {
+        ip6tos(mesh_packet.parent_ipv6, parent_str);
+    }
+    (void)swoDebugPrintf("PYRONET_PARENT_UPDATE_PARENT node_id=%u parent=%s",
+                         (unsigned int)command->node_id,
+                         has_parent_global ? parent_str : "-");
 }
