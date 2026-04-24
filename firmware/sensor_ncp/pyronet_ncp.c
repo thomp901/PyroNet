@@ -1,5 +1,7 @@
 #include "pyronet_ncp.h"
 
+#include "pyronet_wisun_diag.h"
+
 #include "ncp/pyronet_ncp_events.h"
 #include "ncp/pyronet_ncp_local.h"
 #include "ncp/pyronet_ncp_pending_tx.h"
@@ -21,6 +23,7 @@
 static bool pyronetNcpInitialized;
 static uint8_t pyronetNcpUnicastChannelMask[] = CONFIG_UNICAST_CHANNEL_MASK;
 static uint32_t pyronetNcpDiagPolls;
+static uint32_t pyronetNcpLastSecurityDiagSequence;
 
 #define PYRONET_NCP_DIAG_POLL_INTERVAL 5000U
 
@@ -184,6 +187,22 @@ void pyronet_ncp_poll(void)
     pyronet_ncp_state_poll_connectivity();
     pyronet_ncp_state_poll_parent();
     pyronet_ncp_tx_poll();
+
+    {
+        pyronet_wisun_diag_snapshot_t security_diag;
+
+        if (pyronet_wisun_diag_snapshot(&security_diag) &&
+            security_diag.sequence != pyronetNcpLastSecurityDiagSequence)
+        {
+            pyronetNcpLastSecurityDiagSequence = security_diag.sequence;
+            (void)swoDebugPrintf("PYRONET_WISUN_SEC_DIAG seq=%lu event=%u a=%ld b=%ld c=%ld",
+                                 (unsigned long)security_diag.sequence,
+                                 (unsigned int)security_diag.event,
+                                 (long)security_diag.a,
+                                 (long)security_diag.b,
+                                 (long)security_diag.c);
+        }
+    }
 
     pyronetNcpDiagPolls++;
     if (pyronetNcpDiagPolls < PYRONET_NCP_DIAG_POLL_INTERVAL)

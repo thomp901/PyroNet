@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml-stylesheet type="text/xsl" href="DefaultStylesheet.xsl"?>
+<log>
+<record>
+  <date>2026-04-24T06:46:18</date>
+  <millis>1777027578116</millis>
+  <sequence>57</sequence>
+  <logger>com.ti.debug.engine.scripting.DebugSession</logger>
+  <level>INFO</level>
+  <class>com.ti.debug.engine.scripting.DebugSession$DebuggerInfoListener</class>
+  <method>onEvent</method>
+  <thread>12</thread>
+  <message>Cortex_M4_0: GEL Output: Memory Map Initialization Complete.
+</message>
+</record>
+<record>
+  <date>2026-04-24T06:48:33</date>
+  <millis>1777027713692</millis>
+  <sequence>73</sequence>
+  <logger>com.ti.debug.engine.scripting.DebugSession</logger>
+  <level>SEVERE</level>
+  <class>com.ti.debug.engine.scripting.DebugSession$DebuggerFatalListener</class>
+  <method>onEvent</method>
+  <thread>12</thread>
+  <message>Cortex_M4_0: Error: (Error -261 @ 0x0) Invalid response was received from the XDS110. (Emulation package 20.5.0.3900) 
+</message>
+</record>
+<record>
+  <date>2026-04-24T06:48:33</date>
+  <millis>1777027713747</millis>
+  <sequence>74</sequence>
+  <logger>com.ti.debug.engine.scripting.DebugSession</logger>
+  <level>SEVERE</level>
+  <class>com.ti.debug.engine.scripting.DebugSession$DebuggerFatalListener</class>
+  <method>onEvent</method>
+  <thread>12</thread>
+  <message>CS_DAP_0: Error: (Error -261 @ 0x0) Invalid response was received from the XDS110. (Emulation package 20.5.0.3900) 
+</message>
+</record>
+<record>
+  <date>2026-04-24T06:48:34</date>
+  <millis>1777027714121</millis>
+  <sequence>75</sequence>
+  <logger>com.ti.debug.engine.scripting.DebugSession</logger>
+  <level>SEVERE</level>
+  <class>com.ti.debug.engine.scripting.DebugSession$DebuggerFatalListener</class>
+  <method>onEvent</method>
+  <thread>12</thread>
+  <message>CS_DAP_0: Error: (Error -215 @ 0x0) The semaphore for the test bus controller is in a time-out state. Unified-SCIF was unable to acquire the semaphore used to express ownership of a controller by a utility or debugger. You may have to exit other clients because the timeout occurred. (Emulation package 20.5.0.3900) 
+</message>
+</record>
+<record>
+  <date>2026-04-24T06:48:34</date>
+  <millis>1777027714423</millis>
+  <sequence>76</sequence>
+  <logger>com.ti.debug.engine.scripting.DebugSession</logger>
+  <level>SEVERE</level>
+  <class>com.ti.debug.engine.scripting.DebugSession$DebuggerFatalListener</class>
+  <method>onEvent</method>
+  <thread>12</thread>
+  <message>Cortex_M4_0: Error: (Error -215 @ 0x0) The semaphore for the test bus controller is in a time-out state. Unified-SCIF was unable to acquire the semaphore used to express ownership of a controller by a utility or debugger. You may have to exit other clients because the timeout occurred. (Emulation package 20.5.0.3900) 
+</message>
+</record>
+<record>
+  <date>2026-04-24T06:48:39</date>
+  <millis>1777027719892</millis>
+  <sequence>77</sequence>
+  <logger>com.ti.debug.engine.scripting.DebugSession</logger>
+  <level>SEVERE</level>
+  <class>com.ti.debug.engine.scripting.DebugSession$DebuggerFatalListener</class>
+  <method>onEvent</method>
+  <thread>12</thread>
+  <message>CS_DAP_0: Error: (Error -261 @ 0x0) Invalid response was received from the XDS110. (Emulation package 20.5.0.3900) 
+</message>
+</record>
+<record>
+  <date>2026-04-24T06:48:40</date>
+  <millis>1777027720513</millis>
+  <sequence>78</sequence>
+  <logger>com.ti.debug.engine.scripting.DebugSession</logger>
+  <level>SEVERE</level>
+  <class>com.ti.debug.engine.scripting.DebugSession$DebuggerFatalListener</class>
+  <method>onEvent</method>
+  <thread>12</thread>
+  <message>CS_DAP_0: Error: (Error -215 @ 0x0) The semaphore for the test bus controller is in a time-out state. Unified-SCIF was unable to acquire the semaphore used to express ownership of a controller by a utility or debugger. You may have to exit other clients because the timeout occurred. (Emulation package 20.5.0.3900) 
+</message>
+</record>
+<record>
+  <date>2026-04-24T06:48:44</date>
+  <millis>1777027724118</millis>
+  <sequence>79</sequence>
+  <logger>com.ti.debug.engine.scripting.DebugSession</logger>
+  <level>SEVERE</level>
+  <class>com.ti.debug.engine.scripting.DebugSession$DebuggerErrorListener</class>
+  <method>onEvent</method>
+  <thread>12</thread>
+  <message>CS_DAP_0: Unable to determine target status after 20 attempts
+</message>
+</record>
+<record>
+  <date>2026-04-24T06:48:44</date>
+  <millis>1777027724443</millis>
+  <sequence>80</sequence>
+  <logger>com.ti.debug.engine.scripting.DebugSession</logger>
+  <level>SEVERE</level>
+  <class>com.ti.debug.engine.scripting.DebugSession$DebuggerErrorListener</class>
+  <method>onEvent</method>
+  <thread>12</thread>
+  <message>CS_DAP_0: Failed to remove the debug state from the target before disconnecting.  There may still be breakpoint op-codes embedded in program memory.  It is recommended that you reset the emulator before you connect and reload your program before you continue debugging
+</message>
+</record>
+<record>
+  <date>2026-04-24T06:48:46</date>
+  <millis>1777027726289</millis>
+  <sequence>81</sequence>
+  <logger>com.ti.debug.engine.scripting.DebugSession</logger>
+  <level>SEVERE</level>
+  <class>com.ti.debug.engine.scripting.DebugSession$DebuggerFatalListener</class>
+  <method>onEvent</method>
+  <thread>12</thread>
+  <message>Cortex_M4_0: Trouble Halting Target CPU: (Error -261 @ 0x0) Invalid response was received from the XDS110. (Emulation package 20.5.0.3900) 
+</message>
+</record>
+<record>
+  <date>2026-04-24T06:48:46</date>
+  <millis>1777027726398</millis>
+  <sequence>82</sequence>
+  <logger>com.ti.debug.engine.scripting.DebugSession</logger>
+  <level>SEVERE</level>
+  <class>com.ti.debug.engine.scripting.DebugSession$DebuggerErrorListener</class>
+  <method>onEvent</method>
+  <thread>12</thread>
+  <message>Cortex_M4_0: Failed to remove the debug state from the target before disconnecting.  There may still be breakpoint op-codes embedded in program memory.  It is recommended that you reset the emulator before you connect and reload your program before you continue debugging
+</message>
+</record>
