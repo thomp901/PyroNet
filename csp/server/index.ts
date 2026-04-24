@@ -441,6 +441,7 @@ async function projectRegistrationUplinkInDb(
   gatewayRowId: number,
   gatewayUplinkId: number,
   message: ParsedNodeUplinkEnvelope,
+  requestMetadata: Record<string, string | number | boolean | null>,
   packet: ParsedRegistrationPacket,
 ) {
   const observedAt = epochSecondsToDate(message.receivedAtEpochSeconds);
@@ -543,6 +544,25 @@ async function projectRegistrationUplinkInDb(
       registrationParentIpv6: packet.parentIpv6,
     }),
   });
+
+  const timeSyncTarget = await resolveRegistrationTimeSyncTargetInDb(client, {
+    deviceId,
+    nodeId: packet.nodeId,
+    gatewayId: message.gatewayId,
+    gatewayRowId,
+    observedAt,
+    requestMetadata,
+  });
+
+  if (timeSyncTarget) {
+    await queueTimeSyncForTargetInDb(client, timeSyncTarget, {
+      payloadMetadata: {
+        trigger: "registration",
+        gatewayUplinkId,
+        registrationId,
+      },
+    });
+  }
 }
 
 async function projectSensorUplinkInDb(
@@ -807,10 +827,18 @@ async function projectGatewayUplinkInDb(
   gatewayRowId: number,
   gatewayUplinkId: number,
   message: ParsedNodeUplinkEnvelope,
+  requestMetadata: Record<string, string | number | boolean | null>,
 ) {
   switch (message.decodedPayload.type) {
     case registrationPacketType:
-      await projectRegistrationUplinkInDb(client, gatewayRowId, gatewayUplinkId, message, message.decodedPayload);
+      await projectRegistrationUplinkInDb(
+        client,
+        gatewayRowId,
+        gatewayUplinkId,
+        message,
+        requestMetadata,
+        message.decodedPayload,
+      );
       return;
     case sensorReportPacketType:
     case sensorAlertPacketType:
@@ -937,6 +965,59 @@ async function resolveRoutedDeviceTargetsInDb(
   }));
 }
 
+async function resolveRegistrationTimeSyncTargetInDb(
+  client: PoolClient,
+  options: {
+    deviceId: number;
+    nodeId: number;
+    gatewayId: number;
+    gatewayRowId: number;
+    observedAt: Date;
+    requestMetadata: Record<string, string | number | boolean | null>;
+  },
+): Promise<RoutedDeviceTarget | null> {
+  const latestGatewayRegistration = await client.query<{
+    downlink_url: string | null;
+    latest_gateway_remote_address: string | null;
+  }>(
+    `
+      SELECT
+        raw_payload_metadata->>'downlinkUrl' AS downlink_url,
+        raw_payload_metadata->>'remoteAddress' AS latest_gateway_remote_address
+      FROM gateway_registrations
+      WHERE gateway_row_id = $1
+      ORDER BY reported_at DESC, id DESC
+      LIMIT 1
+    `,
+    [options.gatewayRowId],
+  );
+
+  const requestDownlinkUrl =
+    typeof options.requestMetadata.downlinkUrl === "string" ? options.requestMetadata.downlinkUrl : null;
+  const requestRemoteAddress =
+    typeof options.requestMetadata.remoteAddress === "string" ? options.requestMetadata.remoteAddress : null;
+  const latestRegistration = latestGatewayRegistration.rows[0];
+  const downlinkUrl =
+    normalizeGatewayDownlinkUrl(requestDownlinkUrl) ??
+    deriveGatewayDownlinkUrlFromRemoteAddress(requestRemoteAddress) ??
+    normalizeGatewayDownlinkUrl(latestRegistration?.downlink_url) ??
+    deriveGatewayDownlinkUrlFromRemoteAddress(latestRegistration?.latest_gateway_remote_address);
+
+  if (!downlinkUrl) {
+    return null;
+  }
+
+  return {
+    deviceId: options.deviceId,
+    nodeId: options.nodeId,
+    gatewayRowId: options.gatewayRowId,
+    gatewayId: options.gatewayId,
+    lastObservedGatewayAt: options.observedAt.toISOString(),
+    currentNeighborRevisionId: null,
+    downlinkUrl,
+  };
+}
+
 function buildDownlinkRoutingMetadata(target: RoutedDeviceTarget) {
   return {
     routingBasis: "last_observed_gateway",
@@ -1050,6 +1131,47 @@ async function buildNeighborDistributionPayloadInDb(
   return encodeNeighborTableUpdatePacket({
     targetNodeId: options.targetNodeId,
     neighborIpv6Addresses: result.rows.map((row) => row.neighbor_ipv6 as string),
+  });
+}
+
+async function queueTimeSyncForTargetInDb(
+  client: PoolClient,
+  target: RoutedDeviceTarget,
+  options: {
+    targetTime?: Date;
+    payloadMetadata?: Record<string, string | number | boolean | null>;
+  } = {},
+) {
+  const targetTime = options.targetTime ?? new Date();
+  const timeSyncPayload = encodeTimeSyncPacket({
+    epochSeconds: toEpochSeconds(targetTime),
+  });
+
+  const eventInsert = await client.query<{ id: number }>(
+    `
+      INSERT INTO time_sync_events (device_id, target_time, status, sent_at, payload_metadata)
+      VALUES ($1, $2, 'pending', NOW(), $3::jsonb)
+      RETURNING id
+    `,
+    [
+      target.deviceId,
+      targetTime,
+      JSON.stringify({
+        ...buildDownlinkRoutingMetadata(target),
+        ...(options.payloadMetadata ?? {}),
+      }),
+    ],
+  );
+  const timeSyncEventId = eventInsert.rows[0]?.id;
+  if (!timeSyncEventId) {
+    throw new Error(`Unable to create time sync audit row for node ${target.nodeId}`);
+  }
+
+  await insertGatewayDownlinkInDb(client, {
+    target,
+    commandCode: timeSyncPacketType,
+    innerPayload: timeSyncPayload,
+    timeSyncEventId,
   });
 }
 
@@ -1809,7 +1931,7 @@ async function persistGatewayUplinkInDb(
       throw new Error(`Unable to persist uplink ${uplinkIdText} for gateway ${message.gatewayId}`);
     }
 
-    await projectGatewayUplinkInDb(client, gatewayRowId, gatewayUplinkId, message);
+    await projectGatewayUplinkInDb(client, gatewayRowId, gatewayUplinkId, message, requestMetadata);
     await client.query(
       `
         UPDATE gateway_uplinks
@@ -2164,14 +2286,24 @@ async function queryDownlinksFromDb(): Promise<DashboardResponse["downlinks"]> {
       SELECT
         concat('ts-', tse.id) AS id,
         '0x05' AS command_code,
-        'Daily time synchronization' AS command_name,
+        CASE
+          WHEN tse.payload_metadata->>'trigger' = 'registration' THEN 'Registration time synchronization'
+          ELSE 'Daily time synchronization'
+        END AS command_name,
         d.node_id,
         d.node_id AS node_name,
         tse.status::text AS status,
         tse.sent_at::text,
         tse.acknowledged_at::text,
         NULL AS revision_no,
-        COALESCE(tse.result_message, concat('Time sync sent to ', d.node_id)) AS summary
+        COALESCE(
+          tse.result_message,
+          CASE
+            WHEN tse.payload_metadata->>'trigger' = 'registration'
+              THEN concat('Time sync queued after registration for ', d.node_id)
+            ELSE concat('Time sync sent to ', d.node_id)
+          END
+        ) AS summary
       FROM time_sync_events tse
       JOIN devices d ON d.id = tse.device_id
       UNION ALL
@@ -3843,30 +3975,9 @@ async function createTimeSyncInDb(request: DownlinkRequest): Promise<Configurati
   try {
     await client.query("BEGIN");
     const targets = await resolveRoutedDeviceTargetsInDb(client, request.targetNodeIds);
-    const targetTime = new Date();
-    const timeSyncPayload = encodeTimeSyncPacket({
-      epochSeconds: toEpochSeconds(targetTime),
-    });
 
     for (const target of targets) {
-      const eventInsert = await client.query<{ id: number }>(
-        `
-          INSERT INTO time_sync_events (device_id, target_time, status, sent_at, payload_metadata)
-          VALUES ($1, $2, 'pending', NOW(), $3::jsonb)
-          RETURNING id
-        `,
-        [target.deviceId, targetTime, JSON.stringify(buildDownlinkRoutingMetadata(target))],
-      );
-      const timeSyncEventId = eventInsert.rows[0]?.id;
-      if (!timeSyncEventId) {
-        throw new Error(`Unable to create time sync audit row for node ${target.nodeId}`);
-      }
-      await insertGatewayDownlinkInDb(client, {
-        target,
-        commandCode: timeSyncPacketType,
-        innerPayload: timeSyncPayload,
-        timeSyncEventId,
-      });
+      await queueTimeSyncForTargetInDb(client, target);
     }
 
     await client.query("COMMIT");
@@ -4088,6 +4199,7 @@ app.post("/api/v1/uplinks", octetStreamBody, async (request, response, next) => 
       httpContentType: request.get("content-type") ?? null,
       httpContentLength: body.length,
       remoteAddress: request.ip || null,
+      downlinkUrl: resolveGatewayDownlinkUrlFromRequest(request),
     };
 
     let receipt: PersistedUplinkReceipt;
