@@ -111,7 +111,7 @@ static void test_level5_alerts_flush_after_time_sync(void)
   };
 
   test_reset_host_link_state();
-  pyronet_risk_service_init(&service, 0LL, &anchor, test_resolve_unix_time);
+  pyronet_risk_service_init(&service, 0LL, &anchor, test_resolve_unix_time, NULL);
   pyronet_risk_service_set_node_id(&service, 77U);
   pyronet_risk_service_set_battery_pct(&service, 66U);
 
@@ -160,7 +160,7 @@ static void test_report_flush_after_node_id_becomes_valid(void)
   };
 
   test_reset_host_link_state();
-  pyronet_risk_service_init(&service, 0LL, &anchor, test_resolve_unix_time);
+  pyronet_risk_service_init(&service, 0LL, &anchor, test_resolve_unix_time, NULL);
   pyronet_risk_service_set_battery_pct(&service, 55U);
 
   pyronet_risk_service_submit_pm25(&service, 9000000000LL, 10.0f);

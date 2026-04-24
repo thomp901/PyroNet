@@ -4,6 +4,9 @@
 
 #include "em_device.h"
 
+#define MONOTONIC_TIME_US_PER_SECOND  1000000ULL
+#define MONOTONIC_TIME_NS_PER_SECOND  1000000000ULL
+
 static bool monotonic_time_initialized = false;
 static uint32_t monotonic_time_last_cycles = 0U;
 static uint64_t monotonic_time_wrap_count = 0U;
@@ -12,6 +15,29 @@ static void monotonic_time_enable_cycle_counter(void)
 {
   CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
   DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+}
+
+static uint64_t monotonic_time_cycles_to_units(uint64_t cycles,
+                                               uint64_t units_per_second)
+{
+  uint64_t seconds;
+  uint64_t remaining_cycles;
+  uint64_t scaled_seconds;
+
+  if ((SystemCoreClock == 0U) || (units_per_second == 0U)) {
+    return 0U;
+  }
+
+  seconds = cycles / (uint64_t)SystemCoreClock;
+  remaining_cycles = cycles % (uint64_t)SystemCoreClock;
+
+  if (seconds > (UINT64_MAX / units_per_second)) {
+    return UINT64_MAX;
+  }
+
+  scaled_seconds = seconds * units_per_second;
+  return scaled_seconds
+         + ((remaining_cycles * units_per_second) / (uint64_t)SystemCoreClock);
 }
 
 void monotonic_time_init(void)
@@ -44,22 +70,20 @@ uint64_t monotonic_time_now_us(void)
 {
   uint64_t cycles = monotonic_time_now_cycles();
 
-  if (SystemCoreClock == 0U) {
-    return 0U;
-  }
-
-  return (cycles * 1000000ULL) / (uint64_t)SystemCoreClock;
+  return monotonic_time_cycles_to_units(cycles, MONOTONIC_TIME_US_PER_SECOND);
 }
 
 int64_t monotonic_time_now_ns(void)
 {
   uint64_t cycles = monotonic_time_now_cycles();
+  uint64_t ns = monotonic_time_cycles_to_units(cycles,
+                                               MONOTONIC_TIME_NS_PER_SECOND);
 
-  if (SystemCoreClock == 0U) {
-    return 0;
+  if (ns > (uint64_t)INT64_MAX) {
+    return INT64_MAX;
   }
 
-  return (int64_t)((cycles * 1000000000ULL) / (uint64_t)SystemCoreClock);
+  return (int64_t)ns;
 }
 
 void monotonic_time_delay_us(uint32_t period_us)

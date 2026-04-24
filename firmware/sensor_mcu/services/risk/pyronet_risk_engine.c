@@ -5,38 +5,28 @@
 
 #define PYRONET_RISK_MINUTE_NS          60000000000LL
 #define PYRONET_RISK_HOUR_NS            (60LL * PYRONET_RISK_MINUTE_NS)
-#define PYRONET_RISK_DECAY_TIMEOUT_NS   (30LL * PYRONET_RISK_MINUTE_NS)
 
 static int64_t pyronet_risk_report_interval_for_level(pyronet_risk_level_t level)
 {
-  switch (level) {
-    case PYRONET_RISK_LEVEL_2:
-      return 4LL * PYRONET_RISK_HOUR_NS;
-    case PYRONET_RISK_LEVEL_3:
-      return 2LL * PYRONET_RISK_HOUR_NS;
-    case PYRONET_RISK_LEVEL_4:
-    case PYRONET_RISK_LEVEL_5:
-      return 5LL * PYRONET_RISK_MINUTE_NS;
-    case PYRONET_RISK_LEVEL_1:
-    default:
-      return 8LL * PYRONET_RISK_HOUR_NS;
-  }
+  (void)level;
+
+  return 8LL * PYRONET_RISK_HOUR_NS;
 }
 
-static uint8_t pyronet_risk_pm25_schedule_for_level(
-  const pyronet_risk_engine_t *engine,
-  pyronet_risk_level_t level)
+static pyronet_risk_reason_t pyronet_risk_reason_for_level(
+  pyronet_risk_level_t level,
+  pyronet_risk_reason_t fallback_reason)
 {
   switch (level) {
     case PYRONET_RISK_LEVEL_4:
-      return 6U;
+      return PYRONET_RISK_REASON_L4_VOC;
     case PYRONET_RISK_LEVEL_5:
-      return 8U;
+      return PYRONET_RISK_REASON_L5_SENSOR;
     case PYRONET_RISK_LEVEL_1:
     case PYRONET_RISK_LEVEL_2:
     case PYRONET_RISK_LEVEL_3:
     default:
-      return engine->config.normal_pm25_samples_per_day;
+      return fallback_reason;
   }
 }
 
@@ -105,11 +95,7 @@ static pyronet_risk_level_t pyronet_risk_supported_level_now(
   }
 
   level = pyronet_risk_live_sensor_level(engine);
-
-  if ((engine->neighbor_hold_until_ns > now_ns)
-      && (level < PYRONET_RISK_LEVEL_4)) {
-    level = PYRONET_RISK_LEVEL_4;
-  }
+  (void)now_ns;
 
   return level;
 }
@@ -118,20 +104,10 @@ static void pyronet_risk_apply_policy(pyronet_risk_engine_t *engine,
                                       pyronet_risk_level_t previous_level,
                                       int64_t now_ns)
 {
-  int64_t interval_ns = pyronet_risk_report_interval_for_level(engine->current_level);
-  uint8_t pm25_schedule = pyronet_risk_pm25_schedule_for_level(engine,
-                                                               engine->current_level);
+  int64_t interval_ns = pyronet_risk_report_interval_for_level(
+    engine->current_level);
 
-  if ((previous_level != engine->current_level)
-      && (engine->ops.set_pm25_schedule != NULL)) {
-    engine->ops.set_pm25_schedule(engine->ops.context, pm25_schedule);
-  }
-
-  if ((previous_level != engine->current_level)
-      && (engine->ops.set_report_interval != NULL)
-      && (interval_ns != engine->report_interval_ns)) {
-    engine->ops.set_report_interval(engine->ops.context, interval_ns);
-  }
+  (void)previous_level;
 
   engine->report_interval_ns = interval_ns;
   engine->next_report_due_ns = now_ns + interval_ns;
@@ -197,15 +173,7 @@ static void pyronet_risk_transition(pyronet_risk_engine_t *engine,
 
   engine->current_level = next_level;
 
-  if (reason != PYRONET_RISK_REASON_DECAY) {
-    engine->last_support_ns = now_ns;
-  }
-
-  if ((previous_level < PYRONET_RISK_LEVEL_4)
-      && (next_level == PYRONET_RISK_LEVEL_4)
-      && (engine->ops.request_pm25_sample != NULL)) {
-    engine->ops.request_pm25_sample(engine->ops.context);
-  }
+  engine->last_support_ns = now_ns;
 
   pyronet_risk_apply_policy(engine, previous_level, now_ns);
 
@@ -226,6 +194,8 @@ static void pyronet_risk_reconcile(pyronet_risk_engine_t *engine,
   pyronet_risk_level_t supported_level = pyronet_risk_supported_level_now(engine,
                                                                           now_ns);
 
+  (void)event_support_level;
+
   if (engine->override_active) {
     pyronet_risk_transition(engine,
                             engine->override_level,
@@ -235,36 +205,13 @@ static void pyronet_risk_reconcile(pyronet_risk_engine_t *engine,
     return;
   }
 
-  if (supported_level > engine->current_level) {
-    pyronet_risk_reason_t reason = promotion_reason;
-
-    if ((supported_level == PYRONET_RISK_LEVEL_5)
-        && (event_support_level != PYRONET_RISK_LEVEL_5)) {
-      reason = PYRONET_RISK_REASON_L5_SENSOR;
-    } else if ((supported_level == PYRONET_RISK_LEVEL_4)
-               && (promotion_reason == PYRONET_RISK_REASON_THRESHOLD)) {
-      reason = PYRONET_RISK_REASON_L4_VOC;
-    }
-
+  if (supported_level != engine->current_level) {
     pyronet_risk_transition(engine,
                             supported_level,
                             now_ns,
-                            reason,
+                            pyronet_risk_reason_for_level(supported_level,
+                                                          promotion_reason),
                             allow_critical_alerts && (supported_level == PYRONET_RISK_LEVEL_5));
-    return;
-  }
-
-  if (event_support_level >= engine->current_level) {
-    engine->last_support_ns = now_ns;
-  }
-
-  if ((supported_level < engine->current_level)
-      && ((now_ns - engine->last_support_ns) >= PYRONET_RISK_DECAY_TIMEOUT_NS)) {
-    pyronet_risk_transition(engine,
-                            supported_level,
-                            now_ns,
-                            PYRONET_RISK_REASON_DECAY,
-                            false);
   }
 }
 
@@ -433,17 +380,7 @@ void pyronet_risk_engine_receive_neighbor_alert(pyronet_risk_engine_t *engine,
     return;
   }
 
-  engine->neighbor_hold_until_ns = now_ns + PYRONET_RISK_DECAY_TIMEOUT_NS;
-
-  if (!engine->override_active && (engine->current_level == PYRONET_RISK_LEVEL_4)) {
-    engine->last_support_ns = now_ns;
-  }
-
-  pyronet_risk_reconcile(engine,
-                         now_ns,
-                         PYRONET_RISK_LEVEL_4,
-                         PYRONET_RISK_REASON_NEIGHBOR_ALERT,
-                         false);
+  engine->neighbor_hold_until_ns = now_ns;
 }
 
 void pyronet_risk_engine_set_override(pyronet_risk_engine_t *engine,

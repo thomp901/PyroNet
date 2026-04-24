@@ -13,7 +13,8 @@ The firmware emits two boot lines during `app_init()`:
 - `SWO_BOOT backend=SWO port=0 speed=<actual>`
 - `SWO_BOOT_READY`
 
-The current sensor bring-up path also probes the shared I2C bus during `app_init()`:
+The current sensor bring-up path also probes and initializes the shared I2C bus
+during `app_init()`:
 
 - SPS30 at address `0x69`
 - BME68x at address `0x76`
@@ -22,12 +23,18 @@ Probe output is emitted over the same log path from [sensor_bus.c](./sensor_bus.
 
 - `SENSOR_FOUND name=SPS30 addr=0x69` when the SPS30 ACKs
 - `SENSOR_PROBE name=SPS30 addr=0x69 status=<status>` when the SPS30 does not ACK cleanly
-- `SENSORS_READY bme68x=<0|1> sps30=<0|1>` after both probes complete
+- `BSEC_READY addr=0x76` when the BME688/BSEC stack is initialized
+- `SPS30_READY addr=0x69 fw=<major>.<minor>` when the SPS30 stack is initialized
+- `SENSORS_READY bme68x=<0|1> sps30=<0|1>` after bring-up completes, reflecting
+  initialized sensor services rather than probe-only presence
 
-The staged Sensirion driver sources live under [third_party/sps30](./third_party/sps30),
-but those files are not currently linked by the generated target. The current build
-only performs presence probing through [sensor_bus.c](./sensor_bus.c) and
-[board_i2c.c](./board_i2c.c).
+Once boot is complete, the firmware runs the non-stretch sensing path:
+
+- BME688/BSEC air-quality acquisition with one immediate bootstrap reading on
+  the first successful BME688 measurement, then a fixed 10-second app cadence
+- PM2.5 acquisition through the SPS30 on the same fixed 10-second app cadence
+- `SENSOR_READING ...`, `GAS_DIAGNOSTIC ...`, and `RISK_LEVEL ...` SWO lines
+  when live sensor readings are forwarded into the risk service
 
 Use the repo `Makefile` for the normal host workflow:
 

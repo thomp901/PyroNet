@@ -7,6 +7,7 @@ BUILD_DIR ?= $(CMAKE_DIR)/build
 IMAGE ?= $(BUILD_DIR)/$(CONFIG)/$(TARGET).hex
 ELF ?= $(BUILD_DIR)/$(CONFIG)/$(TARGET).out
 MAP ?= $(BUILD_DIR)/$(CONFIG)/$(TARGET).map
+PROVISIONING_CONFIG ?= config/pyronet_app_provisioning_config.h
 
 CMAKE ?= $(shell command -v cmake 2>/dev/null || printf '%s' "$(HOME)/.silabs/slt/installs/conan/p/cmake0491e58cd027f/p/CMake.app/Contents/bin/cmake")
 COMMANDER ?= $(HOME)/.silabs/slt/installs/archive/Commander.app/Contents/MacOS/commander
@@ -18,7 +19,7 @@ SWOSPEED ?= 875000
 TIMEOUT ?= 5
 ENDMARKER ?= SWO_BOOT_READY
 
-.PHONY: build probe info flash swo swo-attach verify-swo test-risk clean
+.PHONY: build probe info flash flash-now stamp-boot-time-now swo swo-attach verify-swo test-risk clean
 
 build: check-cmake
 	cd $(CMAKE_DIR) && "$(CMAKE)" --workflow --preset project
@@ -31,6 +32,17 @@ info: check-commander
 
 flash: build check-commander
 	"$(COMMANDER)" flash "$(IMAGE)" --device "$(DEVICE)" --serialno "$(SERIALNO)" --tif "$(TIF)" --speed "$(SPEED)"
+
+stamp-boot-time-now:
+	@boot_unix_time_s="$$(date +%s)"; \
+	awk -v boot_unix_time_s="$$boot_unix_time_s" '\
+	/^#define PYRONET_APP_BOOT_UNIX_TIME_VALID[[:space:]]+/ { $$0 = "#define PYRONET_APP_BOOT_UNIX_TIME_VALID       1" } \
+	/^#define PYRONET_APP_BOOT_UNIX_TIME_S[[:space:]]+/ { $$0 = "#define PYRONET_APP_BOOT_UNIX_TIME_S           " boot_unix_time_s "U" } \
+	{ print }' "$(PROVISIONING_CONFIG)" > "$(PROVISIONING_CONFIG).tmp"; \
+	mv "$(PROVISIONING_CONFIG).tmp" "$(PROVISIONING_CONFIG)"; \
+	printf 'Stamped %s with PYRONET_APP_BOOT_UNIX_TIME_S=%s\n' "$(PROVISIONING_CONFIG)" "$$boot_unix_time_s"
+
+flash-now: stamp-boot-time-now flash
 
 swo: check-commander
 	"$(COMMANDER)" swo read --device "$(DEVICE)" --serialno "$(SERIALNO)" --tif "$(TIF)" --swospeed "$(SWOSPEED)" --timeout "$(TIMEOUT)" --endmarker "$(ENDMARKER)"

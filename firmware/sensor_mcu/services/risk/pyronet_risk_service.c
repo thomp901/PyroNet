@@ -633,21 +633,30 @@ static void pyronet_risk_service_broadcast_neighbor_alert(
 
 static void pyronet_risk_service_request_pm25_sample(void *context)
 {
-  (void)context;
+  pyronet_risk_service_t *service = (pyronet_risk_service_t *)context;
+
   printf("PM25_SAMPLE_REQUEST immediate=1\r\n");
+
+  if ((service != NULL) && (service->sensor_ops.request_pm25_sample != NULL)) {
+    service->sensor_ops.request_pm25_sample(service->sensor_ops.context);
+  }
 }
 
 static void pyronet_risk_service_set_pm25_schedule(void *context,
                                                    uint8_t samples_per_day)
 {
-  (void)context;
+  pyronet_risk_service_t *service = (pyronet_risk_service_t *)context;
 
   if (samples_per_day == 0U) {
     printf("PM25_SCHEDULE samples_per_day=default\r\n");
-    return;
+  } else {
+    printf("PM25_SCHEDULE samples_per_day=%u\r\n", samples_per_day);
   }
 
-  printf("PM25_SCHEDULE samples_per_day=%u\r\n", samples_per_day);
+  if ((service != NULL) && (service->sensor_ops.set_pm25_schedule != NULL)) {
+    service->sensor_ops.set_pm25_schedule(service->sensor_ops.context,
+                                          samples_per_day);
+  }
 }
 
 static void pyronet_risk_service_set_report_interval(void *context,
@@ -662,7 +671,8 @@ static void pyronet_risk_service_set_report_interval(void *context,
 void pyronet_risk_service_init(pyronet_risk_service_t *service,
                                int64_t now_ns,
                                void *time_context,
-                               pyronet_risk_service_resolve_unix_time_fn_t resolve_unix_time)
+                               pyronet_risk_service_resolve_unix_time_fn_t resolve_unix_time,
+                               const pyronet_risk_service_sensor_ops_t *sensor_ops)
 {
   pyronet_risk_engine_ops_t ops = {
     .context = service,
@@ -681,6 +691,9 @@ void pyronet_risk_service_init(pyronet_risk_service_t *service,
   memset(service, 0, sizeof(*service));
   service->time_context = time_context;
   service->resolve_unix_time = resolve_unix_time;
+  if (sensor_ops != NULL) {
+    service->sensor_ops = *sensor_ops;
+  }
   service->node_id = PYRONET_RISK_SERVICE_NODE_ID_INVALID;
   service->node_id_valid = false;
   service->battery_pct = PYRONET_RISK_SERVICE_BATTERY_UNAVAILABLE;
@@ -800,6 +813,40 @@ void pyronet_risk_service_set_override(pyronet_risk_service_t *service,
   }
 
   pyronet_risk_engine_set_override(&service->engine, active, level, now_ns);
+}
+
+bool pyronet_risk_service_current_snapshot(const pyronet_risk_service_t *service,
+                                           pyronet_risk_snapshot_t *out_snapshot)
+{
+  if ((service == NULL) || (out_snapshot == NULL)) {
+    return false;
+  }
+
+  memset(out_snapshot, 0, sizeof(*out_snapshot));
+  out_snapshot->config_id = service->engine.config.config_id;
+  out_snapshot->previous_level = service->engine.current_level;
+  out_snapshot->current_level = service->engine.current_level;
+  out_snapshot->reason = PYRONET_RISK_REASON_NONE;
+  out_snapshot->override_active = service->engine.override_active;
+  out_snapshot->has_air_quality = service->engine.has_air_quality;
+  out_snapshot->temperature_c = service->engine.latest_temperature_c;
+  out_snapshot->humidity_percent = service->engine.latest_humidity_percent;
+  out_snapshot->voc = service->engine.latest_voc;
+  out_snapshot->has_pm25 = service->engine.has_pm25;
+  out_snapshot->pm25_ug_m3 = service->engine.latest_pm25_ug_m3;
+
+  if (service->engine.has_air_quality && service->engine.has_pm25) {
+    out_snapshot->timestamp_ns =
+      (service->engine.air_quality_timestamp_ns >= service->engine.pm25_timestamp_ns)
+        ? service->engine.air_quality_timestamp_ns
+        : service->engine.pm25_timestamp_ns;
+  } else if (service->engine.has_air_quality) {
+    out_snapshot->timestamp_ns = service->engine.air_quality_timestamp_ns;
+  } else if (service->engine.has_pm25) {
+    out_snapshot->timestamp_ns = service->engine.pm25_timestamp_ns;
+  }
+
+  return out_snapshot->has_air_quality && out_snapshot->has_pm25;
 }
 
 pyronet_risk_level_t pyronet_risk_service_current_level(

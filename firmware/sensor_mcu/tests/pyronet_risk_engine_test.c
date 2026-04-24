@@ -149,12 +149,12 @@ static void test_threshold_and_l4_progression(void)
   pyronet_risk_engine_submit_air_quality(&engine, 10 * TEST_MINUTE_NS, 48.0f, 20.0f, 320.0f);
   test_expect_level(&engine, PYRONET_RISK_LEVEL_4,
                     "VOC should promote to level 4");
-  test_expect_true(callbacks.pm25_request_count == 1,
-                   "L4 entry should request an immediate PM2.5 sample");
-  test_expect_true(callbacks.last_pm25_schedule == 6U,
-                   "L4 entry should switch PM schedule to 6/day");
-  test_expect_true(callbacks.last_report_interval_ns == 5 * TEST_MINUTE_NS,
-                   "L4 entry should switch reports to 5 minutes");
+  test_expect_true(callbacks.pm25_request_count == 0,
+                   "risk engine should not drive immediate PM2.5 sampling");
+  test_expect_true(callbacks.pm25_schedule_count == 0,
+                   "risk engine should not drive PM2.5 sampling cadence");
+  test_expect_true(callbacks.report_interval_count == 0,
+                   "risk engine should not drive report interval callbacks");
 }
 
 static void test_l5_sensor_entry_sends_alerts(void)
@@ -173,8 +173,8 @@ static void test_l5_sensor_entry_sends_alerts(void)
                    "sensor-driven L5 entry must send a sensor alert");
   test_expect_true(callbacks.neighbor_alert_count == 1,
                    "sensor-driven L5 entry must broadcast a neighbor alert");
-  test_expect_true(callbacks.last_pm25_schedule == 8U,
-                   "L5 entry should switch PM schedule to 8/day");
+  test_expect_true(callbacks.pm25_schedule_count == 0,
+                   "L5 entry should not change PM schedule");
 }
 
 static void test_manual_override_does_not_alert(void)
@@ -191,7 +191,7 @@ static void test_manual_override_does_not_alert(void)
                    "manual override must not broadcast a neighbor alert");
 }
 
-static void test_decay_demotes_l5_to_l4(void)
+static void test_local_readings_demote_immediately(void)
 {
   test_callbacks_t callbacks;
   pyronet_risk_engine_t engine = test_engine_init(&callbacks);
@@ -203,77 +203,37 @@ static void test_decay_demotes_l5_to_l4(void)
                     "setup should reach level 5");
 
   pyronet_risk_engine_submit_pm25(&engine, entry_ns + TEST_MINUTE_NS, 10.0f);
-  test_expect_level(&engine, PYRONET_RISK_LEVEL_5,
-                    "L5 should hold until decay timeout expires");
-
-  pyronet_risk_engine_tick(&engine, entry_ns + (30 * TEST_MINUTE_NS));
-  test_expect_level(&engine, PYRONET_RISK_LEVEL_5,
-                    "L5 should not decay before the full timeout");
-
-  pyronet_risk_engine_tick(&engine, entry_ns + (30 * TEST_MINUTE_NS) + 1);
   test_expect_level(&engine, PYRONET_RISK_LEVEL_4,
-                    "L5 should decay to L4 when VOC still supports L4");
-}
-
-static void test_decay_demotes_directly_to_live_level(void)
-{
-  test_callbacks_t callbacks;
-  pyronet_risk_engine_t engine = test_engine_init(&callbacks);
-  int64_t entry_ns = 5 * TEST_MINUTE_NS;
-
-  pyronet_risk_engine_submit_air_quality(&engine, entry_ns, 50.0f, 20.0f, 520.0f);
-  pyronet_risk_engine_submit_pm25(&engine, entry_ns + 1, 40.0f);
-  test_expect_level(&engine, PYRONET_RISK_LEVEL_5,
-                    "setup should reach level 5");
+                    "L5 should demote immediately when PM2.5 no longer supports L5");
 
   pyronet_risk_engine_submit_air_quality(&engine,
-                                         entry_ns + TEST_MINUTE_NS,
+                                         entry_ns + (2 * TEST_MINUTE_NS),
                                          46.0f,
                                          20.0f,
                                          220.0f);
-  pyronet_risk_engine_submit_pm25(&engine, entry_ns + TEST_MINUTE_NS + 1, 10.0f);
-  pyronet_risk_engine_tick(&engine, entry_ns + (30 * TEST_MINUTE_NS) + 1);
   test_expect_level(&engine, PYRONET_RISK_LEVEL_3,
-                    "decay should drop directly to the highest live level");
+                    "risk should track current local thresholds immediately");
 
   pyronet_risk_engine_submit_air_quality(&engine,
-                                         entry_ns + (31 * TEST_MINUTE_NS),
-                                         36.0f,
-                                         35.0f,
-                                         120.0f);
-  pyronet_risk_engine_tick(&engine, entry_ns + (61 * TEST_MINUTE_NS) + 1);
-  test_expect_level(&engine, PYRONET_RISK_LEVEL_2,
-                    "L4/L3 decay should preserve lower live threshold levels");
-
-  pyronet_risk_engine_submit_air_quality(&engine,
-                                         entry_ns + (62 * TEST_MINUTE_NS),
+                                         entry_ns + (3 * TEST_MINUTE_NS),
                                          24.0f,
                                          60.0f,
                                          40.0f);
-  pyronet_risk_engine_tick(&engine, entry_ns + (92 * TEST_MINUTE_NS) + 1);
   test_expect_level(&engine, PYRONET_RISK_LEVEL_1,
-                    "normal readings should eventually decay back to L1");
+                    "normal local readings should return to L1 immediately");
 }
 
-static void test_neighbor_alert_l4_decay(void)
+static void test_neighbor_alert_does_not_change_local_risk(void)
 {
   test_callbacks_t callbacks;
   pyronet_risk_engine_t engine = test_engine_init(&callbacks);
 
   pyronet_risk_engine_receive_neighbor_alert(&engine, 1);
-  test_expect_level(&engine, PYRONET_RISK_LEVEL_4,
-                    "neighbor alert should trigger level 4");
-
-  pyronet_risk_engine_tick(&engine, 30 * TEST_MINUTE_NS);
-  test_expect_level(&engine, PYRONET_RISK_LEVEL_4,
-                    "neighbor-triggered L4 should hold until timeout");
-
-  pyronet_risk_engine_tick(&engine, (30 * TEST_MINUTE_NS) + 2);
   test_expect_level(&engine, PYRONET_RISK_LEVEL_1,
-                    "neighbor-triggered L4 should decay if no live support exists");
+                    "neighbor alert should not affect local sensor-derived risk");
 }
 
-static void test_periodic_reporting_uses_level_interval(void)
+static void test_periodic_reporting_uses_fixed_interval(void)
 {
   test_callbacks_t callbacks;
   pyronet_risk_engine_t engine = test_engine_init(&callbacks);
@@ -288,11 +248,22 @@ static void test_periodic_reporting_uses_level_interval(void)
 
   pyronet_risk_engine_tick(&engine, (8 * TEST_HOUR_NS) + (4 * TEST_HOUR_NS));
   test_expect_true(callbacks.periodic_report_count == 1,
-                   "level-change report should reset the periodic deadline");
+                   "risk level no longer shortens the periodic report interval");
 
-  pyronet_risk_engine_tick(&engine, (8 * TEST_HOUR_NS) + (4 * TEST_HOUR_NS) + 2);
+  pyronet_risk_engine_tick(&engine, (16 * TEST_HOUR_NS) + 2);
   test_expect_true(callbacks.periodic_report_count == 2,
-                   "L2 should report every 4 hours");
+                   "fixed periodic report interval should remain 8 hours");
+}
+
+static void test_no_local_support_after_neighbor_alert_stays_l1(void)
+{
+  test_callbacks_t callbacks;
+  pyronet_risk_engine_t engine = test_engine_init(&callbacks);
+
+  pyronet_risk_engine_receive_neighbor_alert(&engine, 1);
+  pyronet_risk_engine_tick(&engine, 30 * TEST_MINUTE_NS);
+  test_expect_level(&engine, PYRONET_RISK_LEVEL_1,
+                    "normal readings should eventually decay back to L1");
 }
 
 int main(void)
@@ -301,10 +272,10 @@ int main(void)
   test_threshold_and_l4_progression();
   test_l5_sensor_entry_sends_alerts();
   test_manual_override_does_not_alert();
-  test_decay_demotes_l5_to_l4();
-  test_decay_demotes_directly_to_live_level();
-  test_neighbor_alert_l4_decay();
-  test_periodic_reporting_uses_level_interval();
+  test_local_readings_demote_immediately();
+  test_neighbor_alert_does_not_change_local_risk();
+  test_periodic_reporting_uses_fixed_interval();
+  test_no_local_support_after_neighbor_alert_stays_l1();
   puts("pyronet_risk_engine tests passed");
   return 0;
 }
