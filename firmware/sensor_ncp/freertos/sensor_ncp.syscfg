@@ -70,6 +70,11 @@ ITM.swoPin.$assign = "DIO16";
 
 /* ======== Drivers ======== */
 var RF = scripting.addModule("/ti/drivers/RF");
+RF.globalEventMask = [
+    "RF_GlobalEventRadioSetup",
+    "RF_GlobalEventRadioPowerDown",
+];
+RF.globalCallbackFunction = "rfDriverCallbackAntennaSwitching";
 
 var TRNG = scripting.addModule("/ti/drivers/TRNG", {}, false);
 var trng = TRNG.addInstance();

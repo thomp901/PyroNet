@@ -10,7 +10,7 @@ SDK_WISUN_PROJECTSPEC := $(SDK_WISUN_EXAMPLE_DIR)/freertos/ticlang/ns_coap_node_
 SDK_WISUN_LINKER_CMD := $(SDK_WISUN_EXAMPLE_DIR)/freertos/ticlang/cc13x2x7_cc26x2x7.cmd
 
 LOCAL_APP_DIR := ../../application
-LOCAL_SRC_FILES := ../../freertos/main_freertos.c ../../sensor_ncp.c ../../swo_debug.c ../../uart_transport.c ../../pyronet_ncp.c ../../pyronet_wisun_globals.c ../../host/host_proto.c ../../host/host_uart.c ../../host/host_link.c ../../ncp/pyronet_mesh_decode.c ../../ncp/pyronet_ncp_events.c ../../ncp/pyronet_ncp_pending_tx.c ../../ncp/pyronet_ncp_rx.c ../../ncp/pyronet_ncp_state.c ../../ncp/pyronet_ncp_tx.c
+LOCAL_SRC_FILES := ../../freertos/main_freertos.c ../../sensor_ncp.c ../../swo_debug.c ../../uart_transport.c ../../pyronet_ncp.c ../../pyronet_wisun_globals.c ../../host/host_proto.c ../../host/host_uart.c ../../host/host_link.c ../../ncp/pyronet_mesh_decode.c ../../ncp/pyronet_ncp_events.c ../../ncp/pyronet_ncp_pending_tx.c ../../ncp/pyronet_ncp_rx.c ../../ncp/pyronet_ncp_state.c ../../ncp/pyronet_ncp_tx.c ../../user_rf_switch_cfg.c
 LOCAL_TRACE_SRC := ../../wisun/platform/ns_trace.c
 LOCAL_WISUN_OVERRIDE_SRC := ../../wisun/overrides/Security/protocols/tls_sec_prot/tls_sec_prot_lib.c \
     ../../wisun/overrides/mbedtls/src/aes_alt.c \
