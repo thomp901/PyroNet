@@ -265,7 +265,6 @@ CREATE TABLE gateway_uplinks (
             family(observed_src_ipv6) = 6
             AND NOT (observed_src_ipv6 <<= inet '::/128')
             AND NOT (observed_src_ipv6 <<= inet '::1/128')
-            AND NOT (observed_src_ipv6 <<= inet 'fe80::/10')
             AND NOT (observed_src_ipv6 <<= inet 'ff00::/8')
         )
     ),
@@ -399,7 +398,6 @@ CREATE TABLE devices (
             family(current_ipv6) = 6
             AND NOT (current_ipv6 <<= inet '::/128')
             AND NOT (current_ipv6 <<= inet '::1/128')
-            AND NOT (current_ipv6 <<= inet 'fe80::/10')
             AND NOT (current_ipv6 <<= inet 'ff00::/8')
         )
     ),
@@ -408,7 +406,6 @@ CREATE TABLE devices (
             family(current_parent_ipv6) = 6
             AND NOT (current_parent_ipv6 <<= inet '::/128')
             AND NOT (current_parent_ipv6 <<= inet '::1/128')
-            AND NOT (current_parent_ipv6 <<= inet 'fe80::/10')
             AND NOT (current_parent_ipv6 <<= inet 'ff00::/8')
         )
     ),
@@ -447,7 +444,6 @@ CREATE TABLE device_registrations (
         family(observed_ipv6) = 6
         AND NOT (observed_ipv6 <<= inet '::/128')
         AND NOT (observed_ipv6 <<= inet '::1/128')
-        AND NOT (observed_ipv6 <<= inet 'fe80::/10')
         AND NOT (observed_ipv6 <<= inet 'ff00::/8')
     ),
     CONSTRAINT chk_device_registrations_latitude CHECK (latitude >= -90 AND latitude <= 90),
@@ -469,7 +465,6 @@ CREATE TABLE device_ipv6_history (
         family(ipv6_address) = 6
         AND NOT (ipv6_address <<= inet '::/128')
         AND NOT (ipv6_address <<= inet '::1/128')
-        AND NOT (ipv6_address <<= inet 'fe80::/10')
         AND NOT (ipv6_address <<= inet 'ff00::/8')
     ),
     CONSTRAINT chk_device_ipv6_history_valid_window CHECK (valid_to IS NULL OR valid_to > valid_from)
@@ -489,7 +484,6 @@ CREATE TABLE device_parent_observations (
             family(observed_parent_ipv6) = 6
             AND NOT (observed_parent_ipv6 <<= inet '::/128')
             AND NOT (observed_parent_ipv6 <<= inet '::1/128')
-            AND NOT (observed_parent_ipv6 <<= inet 'fe80::/10')
             AND NOT (observed_parent_ipv6 <<= inet 'ff00::/8')
         )
     ),

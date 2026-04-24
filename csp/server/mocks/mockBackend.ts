@@ -37,6 +37,7 @@ import type {
   ReadingHistoryPoint,
   TelemetrySnapshot,
 } from "../../src/api/types";
+import { mergeConfigThresholds } from "../../src/api/configThresholds";
 import { packetDirections, packetEventTypes, packetLogCodes } from "../../src/api/types";
 
 interface DeviceRecord {
@@ -1391,6 +1392,7 @@ export function createMockConfigRevision(draft: ConfigRevisionDraft): Configurat
   const nextId = Math.max(...configRevisions.map((revision) => revision.id)) + 1;
   const nextConfigId = Math.max(...configRevisions.map((revision) => revision.configId)) + 1;
   const currentActive = configRevisions.find((revision) => revision.retiredAt === null);
+  const thresholds = mergeConfigThresholds(draft.thresholds);
 
   if (currentActive) {
     currentActive.retiredAt = NOW;
@@ -1403,7 +1405,7 @@ export function createMockConfigRevision(draft: ConfigRevisionDraft): Configurat
     retiredAt: null,
     createdAt: NOW,
     notes: draft.notes ?? null,
-    thresholds: draft.thresholds,
+    thresholds,
   });
 
   const targetNodeIds = draft.targetNodeIds?.length ? draft.targetNodeIds : devices.map((device) => device.nodeId);

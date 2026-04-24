@@ -1,5 +1,5 @@
 import type { HistoryResponse, HistoryWindow, NodeId, PacketHistoryQuery, PacketHistoryResponse } from "./types";
-import { apiGet } from "../lib/http";
+import { apiDelete, apiGet } from "../lib/http";
 import { formatNodeId } from "../lib/nodeId";
 
 export async function getHistory(nodeId?: NodeId, window: HistoryWindow = "24h") {
@@ -39,4 +39,8 @@ export async function getPacketHistory(query: PacketHistoryQuery = {}) {
   const path = params.size > 0 ? `/history/packets?${params.toString()}` : "/history/packets";
 
   return apiGet<PacketHistoryResponse>(path);
+}
+
+export async function clearPacketHistory() {
+  return apiDelete<{ ok: true }>("/history/packets");
 }

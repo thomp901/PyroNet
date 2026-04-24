@@ -6,6 +6,7 @@ import {
   triggerThresholdPush,
   triggerTimeSync,
 } from "../api/configuration";
+import { cloneConfigThresholds, DEFAULT_CONFIG_THRESHOLDS } from "../api/configThresholds";
 import type { ConfigThresholds } from "../api/types";
 import { EmptyState } from "../components/common/EmptyState";
 import { LoadingState } from "../components/common/LoadingState";
@@ -14,18 +15,6 @@ import { TableShell } from "../components/common/TableShell";
 import { convertCelsiusToFahrenheit, convertFahrenheitToCelsius, formatTimestamp } from "../lib/format";
 import { setTemperatureUnit, useTemperatureUnit } from "../lib/temperatureDisplay";
 import { useAsyncData } from "../lib/useAsyncData";
-
-const emptyThresholds: ConfigThresholds = {
-  l2TempThresh: 0,
-  l2HumidityThresh: 0,
-  l2VocThresh: 0,
-  l3TempThresh: 0,
-  l3HumidityThresh: 0,
-  l3VocThresh: 0,
-  l4VocThresh: 0,
-  l5VocThresh: 0,
-  l5Pm25Thresh: 0,
-};
 
 const thresholdGroups: Array<{
   title: string;
@@ -73,7 +62,7 @@ function roundThresholdValue(value: number) {
 
 export function ConfigurationPage() {
   const { data, error, loading, reload } = useAsyncData(getConfiguration, []);
-  const [thresholds, setThresholds] = useState<ConfigThresholds>(emptyThresholds);
+  const [thresholds, setThresholds] = useState<ConfigThresholds>(() => cloneConfigThresholds());
   const [notes, setNotes] = useState("");
   const temperatureUnit = useTemperatureUnit();
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -81,9 +70,11 @@ export function ConfigurationPage() {
 
   useEffect(() => {
     if (!data?.activeRevision) {
+      setThresholds(cloneConfigThresholds(DEFAULT_CONFIG_THRESHOLDS));
+      setNotes("");
       return;
     }
-    setThresholds(data.activeRevision.thresholds);
+    setThresholds(cloneConfigThresholds(data.activeRevision.thresholds));
     setNotes(data.activeRevision.notes ?? "");
   }, [data]);
 
@@ -234,9 +225,19 @@ export function ConfigurationPage() {
               <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} />
             </label>
           </div>
-          <button type="submit" className="primary-button" disabled={submitting}>
-            Publish new revision
-          </button>
+          <div className="button-row">
+            <button type="submit" className="primary-button" disabled={submitting}>
+              Publish new revision
+            </button>
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={submitting}
+              onClick={() => setThresholds(cloneConfigThresholds())}
+            >
+              Reset to defaults
+            </button>
+          </div>
         </form>
 
         <div className="card">

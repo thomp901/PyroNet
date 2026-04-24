@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getPacketHistory } from "../api/history";
+import { clearPacketHistory, getPacketHistory } from "../api/history";
 import type { PacketDirection, PacketEventType, PacketHistoryQuery, PacketHistoryResponse, PacketLogCode, PacketLogStatus } from "../api/types";
 import { EmptyState } from "../components/common/EmptyState";
 import { LoadingState } from "../components/common/LoadingState";
@@ -48,7 +48,10 @@ export function HistoryPage() {
   const [entries, setEntries] = useState<PacketHistoryResponse["entries"]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -86,7 +89,7 @@ export function HistoryPage() {
     return () => {
       cancelled = true;
     };
-  }, [filters.direction, filters.eventType, filters.nodeId, filters.packetCode, filters.status]);
+  }, [filters.direction, filters.eventType, filters.nodeId, filters.packetCode, filters.status, reloadToken]);
 
   async function handleLoadMore() {
     if (!data?.hasMore) {
@@ -121,6 +124,42 @@ export function HistoryPage() {
 
   function clearFilters() {
     setFilters({});
+  }
+
+  async function handleClearSqlEntries() {
+    const confirmed = window.confirm(
+      "Are you sure you want to clear all SQL-backed traffic log entries? This permanently deletes packet history, registrations, telemetry, and related downlink records.",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setClearing(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      await clearPacketHistory();
+      setEntries([]);
+      setData((current) =>
+        current
+          ? {
+              ...current,
+              entries: [],
+              totalCount: 0,
+              offset: 0,
+              hasMore: false,
+            }
+          : current,
+      );
+      setSuccessMessage("SQL-backed traffic log entries cleared.");
+      setReloadToken((current) => current + 1);
+    } catch (clearError) {
+      setError(getErrorMessage(clearError));
+    } finally {
+      setClearing(false);
+    }
   }
 
   const activeFilterCount = [filters.nodeId, filters.direction, filters.packetCode, filters.eventType, filters.status].filter(Boolean).length;
@@ -249,8 +288,12 @@ export function HistoryPage() {
               Showing {entries.length} of {data.totalCount} packets matching the current filter set.
             </p>
           </div>
+          <button type="button" className="danger-button" onClick={() => void handleClearSqlEntries()} disabled={clearing}>
+            {clearing ? "Clearing SQL entries..." : "Clear SQL Entries"}
+          </button>
         </div>
 
+        {successMessage ? <div className="history-log-feedback history-log-feedback-success">{successMessage}</div> : null}
         {error ? <div className="history-log-feedback history-log-feedback-error">{error}</div> : null}
 
         {entries.length > 0 ? (

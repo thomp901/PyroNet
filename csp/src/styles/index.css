@@ -949,6 +949,12 @@ table {
   color: #ffcec6;
 }
 
+.history-log-feedback-success {
+  border: 1px solid rgba(79, 157, 103, 0.34);
+  background: rgba(79, 157, 103, 0.14);
+  color: #cdecd6;
+}
+
 .history-log-actions {
   display: flex;
   justify-content: center;
@@ -1176,7 +1182,8 @@ textarea {
 }
 
 .primary-button,
-.secondary-button {
+.secondary-button,
+.danger-button {
   border: 1px solid transparent;
   border-radius: 12px;
   padding: 10px 14px;
@@ -1195,13 +1202,21 @@ textarea {
   border-color: rgba(255, 243, 233, 0.14);
 }
 
+.danger-button {
+  background: rgba(203, 58, 40, 0.16);
+  color: #ffddd7;
+  border-color: rgba(203, 58, 40, 0.3);
+}
+
 .primary-button:hover,
-.secondary-button:hover {
+.secondary-button:hover,
+.danger-button:hover {
   transform: translateY(-1px);
 }
 
 .primary-button:disabled,
-.secondary-button:disabled {
+.secondary-button:disabled,
+.danger-button:disabled {
   cursor: default;
   opacity: 0.55;
   transform: none;
