@@ -49,6 +49,7 @@ target_include_directories(slc PUBLIC
 
 add_executable(sensor_mcu
     ../debug_console.c
+    ../fault_handlers.c
 )
 
 target_include_directories(sensor_mcu PUBLIC

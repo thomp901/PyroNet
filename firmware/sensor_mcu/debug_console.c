@@ -189,6 +189,21 @@ uint32_t debug_console_swo_speed_hz(void)
   return debug_console_configured_swo_speed_hz;
 }
 
+void debug_console_panic_write(const char *text)
+{
+  if (text == NULL) {
+    return;
+  }
+
+  while (*text != '\0') {
+    if (*text == '\n') {
+      debug_console_putc('\r');
+    }
+    debug_console_putc(*text);
+    text++;
+  }
+}
+
 void debug_console_emit_boot_markers(void)
 {
   if (!debug_console_initialized) {

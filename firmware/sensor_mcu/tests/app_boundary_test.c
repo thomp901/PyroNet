@@ -42,6 +42,10 @@ void debug_console_emit_boot_markers(void)
 {
 }
 
+void fault_handlers_init(void)
+{
+}
+
 void monotonic_time_init(void)
 {
 }

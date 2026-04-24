@@ -16,5 +16,6 @@ bool debug_console_is_initialized(void);
 const char *debug_console_backend_name(void);
 uint32_t debug_console_swo_speed_hz(void);
 void debug_console_emit_boot_markers(void);
+void debug_console_panic_write(const char *text);
 
 #endif

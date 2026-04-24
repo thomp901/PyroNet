@@ -32,6 +32,50 @@ static float app_decode_fixed_x10_u16(uint16_t value)
   return ((float)value) / 10.0f;
 }
 
+static long app_abs_fraction(long scaled, unsigned int decimals)
+{
+  long divisor = 1L;
+  unsigned int index;
+
+  for (index = 0U; index < decimals; index++) {
+    divisor *= 10L;
+  }
+
+  scaled %= divisor;
+  return (scaled < 0L) ? -scaled : scaled;
+}
+
+static void app_log_config_thresholds(
+  const pyronet_host_config_update_received_v1_t *event)
+{
+  if (event == NULL) {
+    return;
+  }
+
+  printf("==== CONFIG_THRESHOLDS BEGIN config_id=%lu ====\r\n",
+         (unsigned long)event->config_id);
+  printf("CONFIG_THRESHOLD level=2 temp_min_c=%ld.%02ld rh_max_pct=%lu.%02lu voc_min_ppm=%lu\r\n",
+         (long)event->l2_temp_thresh / 100L,
+         app_abs_fraction((long)event->l2_temp_thresh, 2U),
+         (unsigned long)event->l2_humidity_thresh / 100UL,
+         (unsigned long)app_abs_fraction((long)event->l2_humidity_thresh, 2U),
+         (unsigned long)event->l2_bvoc_ppm_thresh);
+  printf("CONFIG_THRESHOLD level=3 temp_min_c=%ld.%02ld rh_max_pct=%lu.%02lu voc_min_ppm=%lu\r\n",
+         (long)event->l3_temp_thresh / 100L,
+         app_abs_fraction((long)event->l3_temp_thresh, 2U),
+         (unsigned long)event->l3_humidity_thresh / 100UL,
+         (unsigned long)app_abs_fraction((long)event->l3_humidity_thresh, 2U),
+         (unsigned long)event->l3_bvoc_ppm_thresh);
+  printf("CONFIG_THRESHOLD level=4 voc_min_ppm=%lu\r\n",
+         (unsigned long)event->l4_bvoc_ppm_thresh);
+  printf("CONFIG_THRESHOLD level=5 voc_min_ppm=%lu pm25_min_ug_m3=%lu.%01lu\r\n",
+         (unsigned long)event->l5_bvoc_ppm_thresh,
+         (unsigned long)event->l5_pm25_thresh / 10UL,
+         (unsigned long)app_abs_fraction((long)event->l5_pm25_thresh, 1U));
+  printf("==== CONFIG_THRESHOLDS END config_id=%lu ====\r\n",
+         (unsigned long)event->config_id);
+}
+
 static void app_days_since_epoch_to_ymd(int64_t days,
                                         uint16_t *year,
                                         uint8_t *month,
@@ -231,6 +275,9 @@ static void app_handle_config_update_rx(
   printf("CONFIG_UPDATE_RX accepted=%u config_id=%lu\r\n",
          accepted ? 1U : 0U,
          (unsigned long)event->config_id);
+  if (accepted) {
+    app_log_config_thresholds(event);
+  }
 }
 
 void app_host_events_init_handlers(host_link_event_handlers_t *handlers,
