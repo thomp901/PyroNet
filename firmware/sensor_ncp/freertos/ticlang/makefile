@@ -10,8 +10,14 @@ SDK_WISUN_PROJECTSPEC := $(SDK_WISUN_EXAMPLE_DIR)/freertos/ticlang/ns_coap_node_
 SDK_WISUN_LINKER_CMD := $(SDK_WISUN_EXAMPLE_DIR)/freertos/ticlang/cc13x2x7_cc26x2x7.cmd
 
 LOCAL_APP_DIR := ../../application
-LOCAL_SRC_FILES := ../../freertos/main_freertos.c ../../sensor_ncp.c ../../swo_debug.c ../../uart_transport.c ../../pyronet_ncp.c ../../pyronet_wisun_globals.c ../../host/host_proto.c ../../host/host_uart.c ../../host/host_link.c ../../ncp/pyronet_mesh_decode.c ../../ncp/pyronet_ncp_events.c ../../ncp/pyronet_ncp_pending_tx.c ../../ncp/pyronet_ncp_rx.c ../../ncp/pyronet_ncp_state.c ../../ncp/pyronet_ncp_tx.c
+LOCAL_SRC_FILES := ../../freertos/main_freertos.c ../../freertos/pyronet_freertos_hooks.c ../../sensor_ncp.c ../../swo_debug.c ../../uart_transport.c ../../pyronet_ncp.c ../../pyronet_wisun_diag.c ../../pyronet_wisun_globals.c ../../host/host_proto.c ../../host/host_uart.c ../../host/host_link.c ../../ncp/pyronet_mesh_decode.c ../../ncp/pyronet_ncp_events.c ../../ncp/pyronet_ncp_pending_tx.c ../../ncp/pyronet_ncp_rx.c ../../ncp/pyronet_ncp_state.c ../../ncp/pyronet_ncp_tx.c
 LOCAL_TRACE_SRC := ../../wisun/platform/ns_trace.c
+LOCAL_WISUN_OVERRIDE_SRC := ../../wisun/overrides/Security/protocols/eap_tls_sec_prot/supp_eap_tls_sec_prot.c \
+    ../../wisun/overrides/Security/protocols/tls_sec_prot/tls_sec_prot.c \
+    ../../wisun/overrides/Security/protocols/tls_sec_prot/tls_sec_prot_lib.c \
+    ../../wisun/overrides/mbedtls/src/aes.c \
+    ../../wisun/overrides/mbedtls/src/aes_alt.c \
+    ../../wisun/overrides/mbedtls/src/ctr_drbg.c
 LOCAL_EVENTLOOP_TIMER_SRC := $(SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR)/source/third_party/mbed/nanostack/sal-stack-nanostack-eventloop/source/ns_timer.cpp
 BUILD_DIR := build
 NAME := sensor_ncp
@@ -25,9 +31,9 @@ SYSCFG_C_FILES = $(filter %.c,$(SYSCFG_FILES))
 SYSCFG_H_FILES = $(filter %.h,$(SYSCFG_FILES))
 SYSCFG_OPT_FILES = $(filter %.opt,$(SYSCFG_FILES))
 
-EXAMPLE_C_FILES := $(shell PROJECTSPEC="$(SDK_WISUN_PROJECTSPEC)" SDK="$(SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR)" python3 -c "import os, xml.etree.ElementTree as ET; sdk=os.environ['SDK']; token='\$${COM_TI_SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR}'; excluded=('ncp_interface','/source/ti/ti_wisunfan/mbed_port/mbednanostack2tirtos/platform/ns_trace.c','/source/ti/ti_wisunfan/apps/udp_nanostack_mesh_tirf/main.c','/source/ti/ti_wisunfan/apps/udp_nanostack_mesh_tirf/application.c'); root=ET.parse(os.environ['PROJECTSPEC']).getroot(); print(' '.join([node.attrib.get('path', '').replace(token, sdk) for node in root.findall('.//file') if node.attrib.get('path', '').endswith('.c') and not any(ex in node.attrib.get('path', '') for ex in excluded)]))")
+EXAMPLE_C_FILES := $(shell PROJECTSPEC="$(SDK_WISUN_PROJECTSPEC)" SDK="$(SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR)" python3 -c "import os, xml.etree.ElementTree as ET; sdk=os.environ['SDK']; token='\$${COM_TI_SIMPLELINK_CC13XX_CC26XX_SDK_INSTALL_DIR}'; excluded=('ncp_interface','/source/ti/ti_wisunfan/mbed_port/mbednanostack2tirtos/platform/ns_trace.c','/source/ti/ti_wisunfan/apps/udp_nanostack_mesh_tirf/main.c','/source/ti/ti_wisunfan/apps/udp_nanostack_mesh_tirf/application.c','/source/ti/ti_wisunfan/mbed_port/mbedtls2tirtos/mbedtls/mbed-crypto/src/aes_alt.c','/source/third_party/mbed/nanostack/sal-stack-nanostack/source/Security/protocols/eap_tls_sec_prot/supp_eap_tls_sec_prot.c','/source/third_party/mbed/nanostack/sal-stack-nanostack/source/Security/protocols/tls_sec_prot/tls_sec_prot.c','/source/third_party/mbed/nanostack/sal-stack-nanostack/source/Security/protocols/tls_sec_prot/tls_sec_prot_lib.c','/source/third_party/ti_wisunfan/mbedtls/src/aes.c','/source/third_party/ti_wisunfan/mbedtls/src/ctr_drbg.c'); root=ET.parse(os.environ['PROJECTSPEC']).getroot(); print(' '.join([node.attrib.get('path', '').replace(token, sdk) for node in root.findall('.//file') if node.attrib.get('path', '').endswith('.c') and not any(ex in node.attrib.get('path', '') for ex in excluded)]))")
 
-SRC_FILES := $(EXAMPLE_C_FILES) $(LOCAL_SRC_FILES) $(LOCAL_TRACE_SRC)
+SRC_FILES := $(EXAMPLE_C_FILES) $(LOCAL_SRC_FILES) $(LOCAL_TRACE_SRC) $(LOCAL_WISUN_OVERRIDE_SRC)
 CPP_FILES := $(LOCAL_EVENTLOOP_TIMER_SRC)
 
 define sanitize
@@ -39,6 +45,7 @@ OBJECTS := $(foreach src,$(SRC_FILES),$(BUILD_DIR)/$(call sanitize,$(src)).obj) 
            $(foreach src,$(SYSCFG_C_FILES),$(BUILD_DIR)/$(basename $(notdir $(src))).obj)
 
 CFLAGS += -I. \
+    -I../.. \
     -I$(LOCAL_APP_DIR) \
     -I../../wisun/include \
     -I../../wisun/platform \
